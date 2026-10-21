@@ -17,7 +17,7 @@ for (const meta of TOPICS.filter((t) => t.ready)) {
       if (!t.explain) err(w, "немає пояснення");
       if (!T.rules[t.rule]) err(w, `невідоме правило ${t.rule}`);
       const opts = [...(t.options || []), ...(t.pairs || []).flat(), ...(t.items || []).map((x) => (Array.isArray(x) ? x[0] : x))];
-      if (opts.some((o) => /\? ні|\? —|— ні[,.;!: ]|— ні$|(^|\s)ні!/.test(String(o)))) err(w, "підозрілий коментар у варіанті: " + opts.find((o) => /\? ні|\? —|— ні[,.;!: ]|— ні$|(^|\s)ні!/.test(String(o))));
+      if (opts.some((o) => /\? ні|— ні[,.;!: ]|— ні$|(^|\s)ні!/.test(String(o)))) err(w, "підозрілий коментар у варіанті: " + opts.find((o) => /\? ні|— ні[,.;!: ]|— ні$|(^|\s)ні!/.test(String(o))));
       if (/(^|\s)ні!|стоп:|— ні!/.test(t.explain || "")) err(w, "сумнівне пояснення");
       if (/\? ні|(^|\s)ні —|стоп:/.test((t.text || "") + " " + (t.q || "") + " " + (t.word || ""))) err(w, "сумнівний текст завдання");
       switch (t.type) {
