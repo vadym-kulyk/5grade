@@ -38,10 +38,10 @@ export const TOPICS = [
 
   { id: "miakyiznak", s: "s5", title: "Правила вживання м’якого знака", short: "М’який знак", lessons: "56–57", ready: true },
   { id: "apostrof", s: "s5", title: "Правила вживання апострофа", short: "Апостроф", lessons: "58–59", ready: true },
-  { id: "pereniesennia", s: "s5", title: "Склад. Перенесення слів", lessons: "60" },
-  { id: "mylozvuchnist", s: "s5", title: "Милозвучність: у – в, і – й, з – із – зі", short: "Милозвучність", lessons: "61" },
-  { id: "sproshchennia", s: "s5", title: "Спрощення в групах приголосних", short: "Спрощення", lessons: "62" },
-  { id: "pomylky", s: "s5", title: "Види помилок. Словники", lessons: "63–65" },
+  { id: "pereniesennia", s: "s5", title: "Склад. Перенесення слів", lessons: "60", ready: true },
+  { id: "mylozvuchnist", s: "s5", title: "Милозвучність: у – в, і – й, з – із – зі", short: "Милозвучність", lessons: "61", ready: true },
+  { id: "sproshchennia", s: "s5", title: "Спрощення в групах приголосних", short: "Спрощення", lessons: "62", ready: true },
+  { id: "pomylky", s: "s5", title: "Види помилок. Словники", lessons: "63–65", ready: true },
 
   { id: "slovospoluchennia", s: "s6", title: "Словосполучення і речення. Головне й залежне слово", short: "Словосполучення", lessons: "68–71" },
   { id: "vydyrechen", s: "s6", title: "Види речень за метою висловлювання та емоційним забарвленням", short: "Види речень", lessons: "72" },
