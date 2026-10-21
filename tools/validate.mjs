@@ -19,6 +19,7 @@ for (const meta of TOPICS.filter((t) => t.ready)) {
       const opts = [...(t.options || []), ...(t.pairs || []).flat(), ...(t.items || []).map((x) => (Array.isArray(x) ? x[0] : x))];
       if (opts.some((o) => /\? ні|\? —|— ні[,.;!: ]|— ні$|(^|\s)ні!/.test(String(o)))) err(w, "підозрілий коментар у варіанті: " + opts.find((o) => /\? ні|\? —|— ні[,.;!: ]|— ні$|(^|\s)ні!/.test(String(o))));
       if (/(^|\s)ні!|стоп:|— ні!/.test(t.explain || "")) err(w, "сумнівне пояснення");
+      if (/\? ні|(^|\s)ні —|стоп:/.test((t.text || "") + " " + (t.q || "") + " " + (t.word || ""))) err(w, "сумнівний текст завдання");
       switch (t.type) {
         case "choice": if (!(t.answer >= 0 && t.answer < t.options.length)) err(w, "answer поза варіантами"); if (new Set(t.options).size !== t.options.length) err(w, "однакові варіанти"); break;
         case "multi": if (!t.answer.every((a) => a >= 0 && a < t.options.length) || !t.answer.length) err(w, "multi answer"); break;
