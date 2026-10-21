@@ -24,8 +24,8 @@ export const TOPICS = [
   { id: "vzhyvannia", s: "s2", title: "Загальновживані слова й слова обмеженого вживання", short: "Слова обмеженого вживання", lessons: "26–28", ready: true },
   { id: "surzhyk", s: "s2", title: "Лексична помилка. Суржик", lessons: "29–31", ready: true },
 
-  { id: "frazeolohizmy", s: "s3", title: "Фразеологізми. Афоризми", lessons: "35–36" },
-  { id: "frazslovnyk", s: "s3", title: "Фразеологічний словник. Джерела фразеологізмів", short: "Джерела фразеологізмів", lessons: "37" },
+  { id: "frazeolohizmy", s: "s3", title: "Фразеологізми. Афоризми", lessons: "35–36", ready: true },
+  { id: "frazslovnyk", s: "s3", title: "Фразеологічний словник. Джерела фразеологізмів", short: "Джерела фразеологізмів", lessons: "37", ready: true },
 
   { id: "zvuky", s: "s4", title: "Голосні й приголосні звуки", lessons: "41" },
   { id: "hrafika", s: "s4", title: "Особливості графіки: я, ю, є, ї, щ", lessons: "42" },

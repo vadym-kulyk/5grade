@@ -13,7 +13,7 @@ function minSecFor(t) {
 
 // Короткий текст завдання для таблиці вчителя
 export function taskLabel(t) {
-  const s = [t.q, t.word, t.text].filter(Boolean).join(" ").replace(/<[^>]+>/g, "").replace(/\*/g, "");
+  const s = [t.q, t.word?.replace(/_/g, "…"), t.text].filter(Boolean).join(" ").replace(/<[^>]+>/g, "").replace(/\*/g, "").replace(/_/g, " ");
   return s.length > 140 ? s.slice(0, 137) + "…" : s;
 }
 
@@ -114,7 +114,7 @@ R.sort = (t) => {
 
 // Познач слова в тексті: правильні позначені * у t.text
 R.pick = (t) => {
-  const toks = t.text.split(/\s+/).map((w) => ({ w: w.replace(/^\*/, ""), ok: w.startsWith("*") }));
+  const toks = t.text.split(/\s+/).map((w) => ({ w: w.replace(/^\*/, "").replace(/_/g, " "), ok: w.startsWith("*") }));
   const sel = new Set();
   const spans = toks.map((tk, i) => h("button.word", { onclick: () => { sel.has(i) ? sel.delete(i) : sel.add(i); spans[i].classList.toggle("on"); } }, tk.w));
   return {
