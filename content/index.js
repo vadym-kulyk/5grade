@@ -14,15 +14,15 @@ export const SECTIONS = [
 ];
 
 export const TOPICS = [
-  { id: "mova", s: "s1", title: "Мова в житті людини й держави", lessons: "1–3" },
+  { id: "mova", s: "s1", title: "Мова в житті людини й держави", lessons: "1–3", ready: true },
 
-  { id: "znachennia", s: "s2", title: "Лексичне значення слова. Однозначні й багатозначні слова. Пряме й переносне значення", short: "Лексичне значення слова", lessons: "5–9" },
+  { id: "znachennia", s: "s2", title: "Лексичне значення слова. Однозначні й багатозначні слова. Пряме й переносне значення", short: "Лексичне значення слова", lessons: "5–9", ready: true },
   { id: "synonimy", s: "s2", title: "Синоніми. Антоніми", lessons: "12–18", ready: true },
-  { id: "omonimy", s: "s2", title: "Омоніми. Пароніми", lessons: "12–18" },
-  { id: "zapozycheni", s: "s2", title: "Власне українські й запозичені слова. Написання слів іншомовного походження", short: "Запозичені слова", lessons: "21–24" },
-  { id: "arhaizmy", s: "s2", title: "Архаїзми, історизми, неологізми", lessons: "25" },
-  { id: "vzhyvannia", s: "s2", title: "Загальновживані слова й слова обмеженого вживання", short: "Слова обмеженого вживання", lessons: "26–28" },
-  { id: "surzhyk", s: "s2", title: "Лексична помилка. Суржик", lessons: "29–31" },
+  { id: "omonimy", s: "s2", title: "Омоніми. Пароніми", lessons: "12–18", ready: true },
+  { id: "zapozycheni", s: "s2", title: "Власне українські й запозичені слова. Написання слів іншомовного походження", short: "Запозичені слова", lessons: "21–24", ready: true },
+  { id: "arhaizmy", s: "s2", title: "Архаїзми, історизми, неологізми", lessons: "25", ready: true },
+  { id: "vzhyvannia", s: "s2", title: "Загальновживані слова й слова обмеженого вживання", short: "Слова обмеженого вживання", lessons: "26–28", ready: true },
+  { id: "surzhyk", s: "s2", title: "Лексична помилка. Суржик", lessons: "29–31", ready: true },
 
   { id: "frazeolohizmy", s: "s3", title: "Фразеологізми. Афоризми", lessons: "35–36" },
   { id: "frazslovnyk", s: "s3", title: "Фразеологічний словник. Джерела фразеологізмів", short: "Джерела фразеологізмів", lessons: "37" },
