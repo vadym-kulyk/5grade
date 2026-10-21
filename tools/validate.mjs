@@ -17,7 +17,7 @@ for (const meta of TOPICS.filter((t) => t.ready)) {
       if (!t.explain) err(w, "немає пояснення");
       if (!T.rules[t.rule]) err(w, `невідоме правило ${t.rule}`);
       const opts = [...(t.options || []), ...(t.pairs || []).flat(), ...(t.items || []).map((x) => (Array.isArray(x) ? x[0] : x))];
-      if (opts.some((o) => /\?\s|— ні[,.;!: ]|— ні$|(^|\s)ні!/.test(String(o)))) err(w, "підозрілий коментар у варіанті: " + opts.find((o) => /\?\s|— ні[,.;!: ]|— ні$|(^|\s)ні!/.test(String(o))));
+      if (opts.some((o) => /\? ні|\? —|— ні[,.;!: ]|— ні$|(^|\s)ні!/.test(String(o)))) err(w, "підозрілий коментар у варіанті: " + opts.find((o) => /\? ні|\? —|— ні[,.;!: ]|— ні$|(^|\s)ні!/.test(String(o))));
       if (/(^|\s)ні!|стоп:|— ні!/.test(t.explain || "")) err(w, "сумнівне пояснення");
       switch (t.type) {
         case "choice": if (!(t.answer >= 0 && t.answer < t.options.length)) err(w, "answer поза варіантами"); if (new Set(t.options).size !== t.options.length) err(w, "однакові варіанти"); break;
