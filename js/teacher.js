@@ -158,7 +158,7 @@ function slow() {
     for (const x of a.answers || []) {
       const k = `${x.topic}~${x.id}`;
       const g = (agg[k] ||= { topic: x.topic, q: x.q, n: 0, sec: 0, ok: 0, students: new Set() });
-      g.n++; g.sec += x.sec; g.ok += x.ok ? 1 : 0; g.students.add(a.uid);
+      g.n++; g.sec += Math.min(x.sec, 180); // довше — учень, мабуть, відійшов g.ok += x.ok ? 1 : 0; g.students.add(a.uid);
     }
   }
   const list = Object.values(agg).filter((g) => g.n >= 1).map((g) => ({ ...g, avg: Math.round((g.sec / g.n) * 10) / 10, okp: pct(g.ok, g.n) }));

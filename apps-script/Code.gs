@@ -24,6 +24,7 @@ const TOPICS = [
   ['informatsiia', 'Інформація'], ['typymovlennia', 'Типи мовлення'], ['chytannia', 'Читання'], ['zhanry', 'Жанри мовлення'],
 ];
 const TOPIC_TITLE = Object.fromEntries(TOPICS);
+const MAX_SEC = 180; // довше — учень, мабуть, відійшов; не псуємо середній час
 const TYPE = { level: 'Рівень теми', review: 'Робота над помилками', monitoring: 'Моніторингова робота' };
 const RANKS = [[0, 'Новачок'], [150, 'Писар'], [500, 'Буквознавець'], [1200, 'Словознавець'], [2500, 'Грамотій'], [4500, 'Книжник'], [7000, 'Літописець'], [10000, 'Мовознавець'], [14000, 'Хранитель Слова'], [19000, 'Майстер Мови']];
 const rankOf = (xp) => RANKS.filter((r) => (xp || 0) >= r[0]).pop()[1];
@@ -148,7 +149,7 @@ function sync() {
   attempts.forEach((a) => (a.answers || []).forEach((x) => {
     const k = x.topic + '~' + x.id;
     const g = agg[k] || (agg[k] = { topic: x.topic, q: x.q, n: 0, sec: 0, ok: 0, us: {} });
-    g.n++; g.sec += x.sec || 0; g.ok += x.ok ? 1 : 0; g.us[a.uid] = 1;
+    g.n++; g.sec += Math.min(x.sec || 0, MAX_SEC); g.ok += x.ok ? 1 : 0; g.us[a.uid] = 1;
   }));
   const rowsQ = Object.keys(agg).map((k) => agg[k]).map((g) => [TOPIC_TITLE[g.topic] || g.topic, g.q, Math.round(g.sec / g.n * 10) / 10, g.n, Object.keys(g.us).length, g.ok / g.n]).sort((a, b) => b[2] - a[2]).slice(0, 100);
   if (rowsQ.length) {
@@ -156,7 +157,7 @@ function sync() {
     sQ.getRange(2, 6, rowsQ.length, 1).setNumberFormat('0%');
     sQ.getRange(1, 1, rowsQ.length + 1, colsQ.length).createFilter();
     sQ.setConditionalFormatRules([
-      SpreadsheetApp.newConditionalFormatRule().setGradientMinpointWithValue('#ffffff', SpreadsheetApp.InterpolationType.MIN).setGradientMaxpointWithValue('#d9c4f2', SpreadsheetApp.InterpolationType.MAX).setRanges([sQ.getRange(2, 3, rowsQ.length, 1)]).build(),
+      SpreadsheetApp.newConditionalFormatRule().setGradientMinpoint('#ffffff').setGradientMaxpoint('#d9c4f2').setRanges([sQ.getRange(2, 3, rowsQ.length, 1)]).build(),
       SpreadsheetApp.newConditionalFormatRule().whenNumberLessThan(0.5).setFontColor('#c13f2c').setBold(true).setRanges([sQ.getRange(2, 6, rowsQ.length, 1)]).build(),
     ]);
   }
