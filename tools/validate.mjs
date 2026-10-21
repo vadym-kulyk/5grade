@@ -26,7 +26,7 @@ for (const meta of TOPICS.filter((t) => t.ready)) {
         case "tf": if (typeof t.answer !== "boolean") err(w, "tf answer"); break;
         case "gap": if (!t.word.includes("_") || !t.options.includes(t.answer)) err(w, "gap"); break;
         case "input": if (!Array.isArray(t.answer) || !t.answer.length) err(w, "input answer"); break;
-        case "match": if (new Set(t.pairs.map((p) => p[1])).size !== t.pairs.length) err(w, "match: однакові праві частини"); break;
+        case "match": if (new Set([...t.pairs.map((p) => p[1]), ...(t.extra || [])]).size !== t.pairs.length + (t.extra || []).length) err(w, "match: однакові праві частини або пастки"); break;
         case "sort": if (!t.items.every(([, g]) => g >= 0 && g < t.groups.length)) err(w, "sort group"); break;
         case "pick": if (!t.text.includes("*")) err(w, "pick без *"); break;
         case "order": if (!t.items?.length) err(w, "order"); break;

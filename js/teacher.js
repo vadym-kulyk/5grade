@@ -1,12 +1,12 @@
 // Кабінет учителя: огляд, спроби, найдовші питання, звіт учня, налаштування.
 import { h, mount, toast, pct, bar, ring, fmtDate, fmtTime, confirmBox, today, num } from "./ui.js";
 import { watchAuth, teacherLogin, teacherRegister, logout, isTeacher, read, patch, write, r, remove, errText } from "./fb.js";
-import { TEACHER_EMAIL, CLASSES } from "./config.js";
+import { TEACHER_EMAIL, CLASSES, LEVELS_PER_TOPIC, TASKS_PER_LEVEL } from "./config.js";
 import { SECTIONS, TOPICS, topicById, shortTitle } from "../content/index.js";
 import { rankOf, topicPct, BADGES } from "./game.js";
 
 let data = null;
-let tab = "overview", cls = "all", studentId = null;
+let tab = "overview", cls = "all", studentId = null, topicId = null;
 let stopAuth = null;
 
 export function teacherApp() {
@@ -49,7 +49,7 @@ const ready = () => TOPICS.filter((t) => t.ready);
 const heat = (v) => `hsl(${Math.round(v * 1.1)}, 70%, ${v ? 88 - v * 0.25 : 96}%)`;
 
 function draw() {
-  const tabs = [["overview", "📊 Огляд"], ["attempts", "🗂️ Спроби"], ["slow", "⏱️ Найдовші питання"], ["student", "👤 Учень"], ["settings", "⚙️ Налаштування"]];
+  const tabs = [["overview", "📊 Огляд"], ["attempts", "🗂️ Спроби"], ["topic", "📚 Тема"], ["slow", "⏱️ Найдовші питання"], ["student", "👤 Учень"], ["settings", "⚙️ Налаштування"]];
   mount(
     h("header.topbar.topbar--teacher",
       h("a.topbar__logo", { href: "#/teacher" }, h("img", { src: "assets/logo-wordmark.png", alt: "Midgard" })),
@@ -58,7 +58,7 @@ function draw() {
         h("select.select", { onchange: (e) => { cls = e.target.value; draw(); } }, h("option", { value: "all" }, "Усі класи"), CLASSES.map((c) => h("option", { value: c, selected: c === cls }, c))),
         h("button.btn.btn--small", { onclick: async () => { await load(); draw(); toast("Оновлено"); } }, "↻"),
         h("button.btn.btn--small", { onclick: () => logout() }, "Вийти"))),
-    h("main.page.page--wide", { overview, attempts: attemptsView, slow, student: studentView, settings: settingsView }[tab]()));
+    h("main.page.page--wide", { overview, attempts: attemptsView, topic: topicView, slow, student: studentView, settings: settingsView }[tab]()));
 }
 
 // ---------- Огляд ----------
@@ -106,6 +106,50 @@ function activityChart(at) {
 }
 
 // ---------- Спроби ----------
+// ---------- Тема: результати всіх учнів ----------
+function topicView() {
+  const rt = ready();
+  if (!topicId || !topicById[topicId]) topicId = rt[0]?.id;
+  const st = students();
+  const ids = new Set(st.map(([id]) => id));
+  const at = data.attempts.filter((a) => ids.has(a.uid) && a.topic === topicId);
+  const rows = st.map(([id, u]) => {
+    const p = data.progress[id]?.[topicId] || {};
+    const mine = at.filter((a) => a.uid === id);
+    return { id, u, p, v: topicPct(p), mine, avgSec: mine.length ? Math.round((mine.reduce((s, a) => s + a.avgSec, 0) / mine.length) * 10) / 10 : null };
+  }).sort((a, b) => b.v - a.v || a.u.name.localeCompare(b.u.name, "uk"));
+  const started = rows.filter((x) => x.mine.length || x.v);
+  const avg = st.length ? Math.round(rows.reduce((s, x) => s + x.v, 0) / st.length) : 0;
+  // питання теми з найбільшою кількістю помилок
+  const agg = {};
+  at.forEach((a) => (a.answers || []).forEach((x) => { const g = agg[x.id] || (agg[x.id] = { q: x.q, n: 0, ok: 0 }); g.n++; g.ok += x.ok ? 1 : 0; }));
+  const hard = Object.values(agg).filter((g) => g.ok < g.n).sort((a, b) => a.ok / a.n - b.ok / b.n || b.n - a.n).slice(0, 10);
+  const lv = Array.from({ length: LEVELS_PER_TOPIC }, (_, i) => i + 1);
+  return [
+    h("div.filters.card",
+      h("select.select", { onchange: (e) => { topicId = e.target.value; draw(); } }, rt.map((t) => h("option", { value: t.id, selected: t.id === topicId }, shortTitle(t)))),
+      h("button.btn.btn--small", { onclick: () => csv(at) }, "⬇ CSV спроб теми")),
+    h("div.kpis",
+      kpi("📈", avg + "%", "середній % теми"), kpi("👩‍🎓", `${started.length}/${st.length}`, "почали тему"),
+      kpi("💯", rows.filter((x) => x.v === 100).length, "на 100 %"), kpi("🗂️", at.length, "спроб"), kpi("⚡", at.filter((a) => a.flagged).length, "спроб із ⚡")),
+    h("section.card", h("h2", `Результати учнів: ${shortTitle(topicById[topicId])}`),
+      h("p.note", `Рівень — найкращий результат із ${TASKS_PER_LEVEL}. Натисни на ім’я, щоб відкрити звіт учня.`),
+      h("div.tablewrap", h("table.tbl.heat",
+        h("thead", h("tr", h("th", "Учень"), h("th", "Клас"), h("th", "% теми"), lv.map((n) => h("th", `Р${n}`)), h("th", "Спроб"), h("th", "⚡"), h("th", "Сер. на завдання"), h("th", "Остання спроба"))),
+        h("tbody", rows.map(({ id, u, p, v, mine, avgSec }) => h("tr",
+          h("td", h("a", { href: "#/teacher", onclick: (e) => { e.preventDefault(); studentId = id; tab = "student"; draw(); } }, u.name)),
+          h("td", u.cls), h("td.mono.center", { style: { background: heat(v) } }, v + "%"),
+          lv.map((n) => { const L = p.levels?.[n]; return h("td.mono.center", { style: { background: L ? heat((L.best / TASKS_PER_LEVEL) * 100) : "" } }, L ? `${L.best}` : "—"); }),
+          h("td.mono.center", mine.length || ""), h("td.mono.center", mine.filter((a) => a.flagged).length || ""),
+          h("td.mono", avgSec == null ? "—" : `${num(avgSec)} с`),
+          h("td.note", mine[0] ? `${fmtDate(mine[0].end)} ${fmtTime(mine[0].end)}` : "—"))))))),
+    h("section.card", h("h2", "🧩 Де найчастіше помиляються"),
+      hard.length ? h("div.tablewrap", h("table.tbl", h("thead", h("tr", ["Завдання", "Відповідей", "% правильних"].map((x) => h("th", x)))),
+        h("tbody", hard.map((g) => h("tr", h("td", g.q), h("td.mono.center", g.n), h("td.mono.center", pct(g.ok, g.n) + "%"))))))
+        : h("p.note", "Помилок у цій темі ще немає.")),
+  ];
+}
+
 function attemptsView() {
   const f = { student: "", topic: "", type: "", flagged: false };
   const box = h("div");

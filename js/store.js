@@ -128,8 +128,9 @@ export async function saveSession(s) {
     const L = p.levels?.[s.level] || {};
     attemptNo = (L.attempts || 0) + 1;
     const okNoFast = s.answers.filter((a) => a.ok && !a.fast).length;
-    const best = Math.max(L.best || 0, okNoFast);
-    upd[`progress/${uid}/${s.topic}/levels/${s.level}`] = { best, attempts: attemptNo, last: okNoFast, lastAt: end };
+    // Прогрес рахує всі правильні відповіді; за поспіх лише не дають монет і досвіду
+    const best = Math.max(L.best || 0, correct);
+    upd[`progress/${uid}/${s.topic}/levels/${s.level}`] = { best, attempts: attemptNo, last: correct, lastAt: end };
     if (okNoFast === total) { coinsGain += ECONOMY.levelPerfect; extra.perfect = true; if (!fast) extra.careful = true; }
     // Чи стала тема 100 % саме зараз
     const levels = { ...(p.levels || {}), [s.level]: { best } };

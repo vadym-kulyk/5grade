@@ -83,7 +83,7 @@ R.gap = (t) => {
 
 // Відповідність: ліворуч — поняття, праворуч — вибір зі списку
 R.match = (t) => {
-  const rights = shuffle(t.pairs.map((p) => p[1]));
+  const rights = shuffle([...t.pairs.map((p) => p[1]), ...(t.extra || [])]);
   const sels = t.pairs.map(([l]) => h("select.select", h("option", { value: "" }, "— обери —"), rights.map((x) => h("option", { value: x }, x))));
   return {
     el: h("div.match", t.pairs.map(([l], i) => h("div.match__row", h("div.match__l", l), sels[i]))),

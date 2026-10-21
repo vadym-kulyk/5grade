@@ -2,7 +2,7 @@
  * Українська мова · 5 клас — таблиця результатів для вчителя.
  * Скрипт сам забирає дані з Firebase (кожні 10 хвилин) і будує аркуші:
  *   «Спроби» (кожна спроба — рядок, з фільтрами), «Учні», «Прогрес» (учень × тема),
- *   «Найдовші питання», «Дашборд» (графіки) і звіти учнів у PDF.
+ *   «Теми» (обери тему — результати всіх учнів), «Найдовші питання», «Дашборд» (графіки) і звіти учнів у PDF.
  * Встановлення — див. README.md у репозиторії.
  */
 
@@ -54,7 +54,7 @@ function fetchDb(path) {
 function sheet(name, index) {
   const ss = SpreadsheetApp.getActive();
   let sh = ss.getSheetByName(name);
-  if (!sh) sh = ss.insertSheet(name, index);
+  if (!sh) sh = index === undefined ? ss.insertSheet(name) : ss.insertSheet(name, index);
   return sh;
 }
 
@@ -139,6 +139,43 @@ function sync() {
     sP.setConditionalFormatRules([SpreadsheetApp.newConditionalFormatRule().setGradientMinpointWithValue('#fdecea', SpreadsheetApp.InterpolationType.NUMBER, '0').setGradientMidpointWithValue('#fbe9a6', SpreadsheetApp.InterpolationType.NUMBER, '0.6').setGradientMaxpointWithValue('#9fd36b', SpreadsheetApp.InterpolationType.NUMBER, '1').setRanges([r]).build()]);
   }
   sP.setColumnWidth(2, 150); touchedTopics.length && sP.setColumnWidths(3, touchedTopics.length, 64);
+
+  // ---------- Теми: обери тему — побачиш результати всіх учнів ----------
+  const sTD = sheet('Теми (дані)');
+  sTD.clear();
+  const colsT = ['Клас', 'Учень', '% теми', 'Рівень 1', 'Рівень 2', 'Рівень 3', 'Рівень 4', 'Рівень 5', 'Спроб', 'Спроб із ⚡', 'Сер. час на завдання, с', 'Остання спроба'];
+  const rowsT = [];
+  touchedTopics.forEach((id) => uids.forEach((uid) => {
+    const p = (progress[uid] || {})[id] || {}, lv = p.levels || {};
+    const my = attempts.filter((a) => a.uid === uid && a.topic === id);
+    rowsT.push([TOPIC_TITLE[id], users[uid].cls, users[uid].name, (p.pct || 0) / 100]
+      .concat([1, 2, 3, 4, 5].map((n) => (lv[n] ? lv[n].best : '')))
+      .concat([my.length, my.filter((a) => a.flagged).length,
+        my.length ? Math.round(my.reduce((s, a) => s + (a.avgSec || 0), 0) / my.length * 10) / 10 : '',
+        my.length ? Utilities.formatDate(new Date(my[0].end), tz, 'dd.MM.yyyy HH:mm') : '']));
+  }));
+  sTD.getRange(1, 1, 1, colsT.length + 1).setValues([['Тема'].concat(colsT)]);
+  if (rowsT.length) sTD.getRange(2, 1, rowsT.length, colsT.length + 1).setValues(rowsT);
+  sTD.hideSheet();
+
+  const sT = sheet('Теми', 2);
+  const chosen = sT.getRange('B1').getValue() || (touchedTopics.length ? TOPIC_TITLE[touchedTopics[0]] : TOPICS[0][1]);
+  sT.clear(); sT.clearConditionalFormatRules();
+  sT.getRange('A1').setValue('Тема:').setFontWeight('bold').setFontSize(14);
+  sT.getRange('B1').setValue(chosen).setFontWeight('bold').setFontSize(14).setBackground('#eef7d6')
+    .setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(TOPICS.map((t) => t[1]), true).build());
+  sT.getRange('D1').setValue('← обери тему зі списку').setFontColor('#6b6577');
+  sT.getRange(3, 1, 1, colsT.length).setValues([colsT]).setFontWeight('bold').setBackground('#3f7a16').setFontColor('#ffffff').setWrap(true).setVerticalAlignment('middle');
+  sT.setFrozenRows(3); sT.setRowHeight(3, 38);
+  sT.getRange('A4').setFormula("=IFERROR(FILTER('Теми (дані)'!B2:M, 'Теми (дані)'!A2:A = B1), \"З цієї теми ще немає результатів\")");
+  const nT = Math.max(uids.length, 1);
+  sT.getRange(4, 3, nT, 1).setNumberFormat('0%');
+  sT.setConditionalFormatRules([
+    SpreadsheetApp.newConditionalFormatRule().setGradientMinpointWithValue('#fdecea', SpreadsheetApp.InterpolationType.NUMBER, '0').setGradientMidpointWithValue('#fbe9a6', SpreadsheetApp.InterpolationType.NUMBER, '0.6').setGradientMaxpointWithValue('#9fd36b', SpreadsheetApp.InterpolationType.NUMBER, '1').setRanges([sT.getRange(4, 3, nT, 1)]).build(),
+    SpreadsheetApp.newConditionalFormatRule().setGradientMinpointWithValue('#fdecea', SpreadsheetApp.InterpolationType.NUMBER, '0').setGradientMidpointWithValue('#fbe9a6', SpreadsheetApp.InterpolationType.NUMBER, '6').setGradientMaxpointWithValue('#9fd36b', SpreadsheetApp.InterpolationType.NUMBER, '10').setRanges([sT.getRange(4, 4, nT, 5)]).build(),
+    SpreadsheetApp.newConditionalFormatRule().whenNumberGreaterThan(0).setBackground('#fff1b8').setRanges([sT.getRange(4, 10, nT, 1)]).build(),
+  ]);
+  sT.setColumnWidths(1, colsT.length, 95); sT.setColumnWidth(2, 260); sT.setColumnWidth(12, 140);
 
   // ---------- Найдовші питання ----------
   const sQ = sheet('Найдовші питання', 3);
