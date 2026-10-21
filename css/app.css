@@ -205,7 +205,7 @@ a.tcard:hover { transform: translateY(-2px); border-color: var(--lime); box-shad
 .task__actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: center; }
 .opts { display: grid; gap: 10px; }
 .opts--row { display: flex; flex-wrap: wrap; justify-content: center; }
-.opt { text-align: left; padding: 14px 16px; border-radius: var(--r-sm); border: 2px solid var(--line); background: var(--bg); font-weight: 600; font-size: 18px; cursor: pointer; transition: border-color .12s, background .12s; min-height: 52px; }
+.opt { white-space: pre-line; text-align: left; padding: 14px 16px; border-radius: var(--r-sm); border: 2px solid var(--line); background: var(--bg); font-weight: 600; font-size: 18px; cursor: pointer; transition: border-color .12s, background .12s; min-height: 52px; }
 .opt:hover { border-color: var(--lime); }
 .opt.on { border-color: var(--violet); background: color-mix(in srgb, var(--violet) 9%, white); }
 .opt--gap { min-width: 92px; text-align: center; font-size: 24px; font-family: var(--f-mono); }
