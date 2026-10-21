@@ -1,0 +1,72 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "roster": {
+      ".read": true,
+      "$cls": {
+        "$uid": {
+          ".write": "auth != null && (auth.uid === $uid || auth.token.email === 'badim1aaa@gmail.com')",
+          ".validate": "newData.hasChildren(['name', 'login']) && newData.child('name').isString() && newData.child('name').val().length <= 30"
+        }
+      }
+    },
+
+    "users": {
+      ".read": "auth != null && auth.token.email === 'badim1aaa@gmail.com'",
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && (auth.uid === $uid || auth.token.email === 'badim1aaa@gmail.com')"
+      }
+    },
+    "public": {
+      ".read": "auth != null",
+      "$uid": { ".write": "auth != null && (auth.uid === $uid || auth.token.email === 'badim1aaa@gmail.com')" }
+    },
+    "pins": {
+      ".read": "auth != null && auth.token.email === 'badim1aaa@gmail.com'",
+      "$uid": {
+        ".write": "auth != null && (auth.uid === $uid || auth.token.email === 'badim1aaa@gmail.com')",
+        ".validate": "newData.isString() && newData.val().matches(/^[0-9]{4}$/)"
+      }
+    },
+    "progress": {
+      ".read": "auth != null && auth.token.email === 'badim1aaa@gmail.com'",
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+    "attempts": {
+      ".read": "auth != null && auth.token.email === 'badim1aaa@gmail.com'",
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        "$attempt": { ".write": "auth != null && auth.uid === $uid && !data.exists()" }
+      }
+    },
+    "mistakes": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+    "settings": {
+      ".read": "auth != null",
+      ".write": "auth != null && auth.token.email === 'badim1aaa@gmail.com'"
+    },
+    "presence": {
+      ".read": "auth != null",
+      "$uid": { ".write": "auth != null && auth.uid === $uid" }
+    },
+    "chat": {
+      ".read": "auth != null",
+      ".write": "auth != null && auth.token.email === 'badim1aaa@gmail.com'",
+      ".indexOn": ["t"],
+      "$msg": {
+        ".write": "auth != null && !data.exists() && root.child('settings/chatEnabled').val() === true",
+        ".validate": "newData.child('uid').val() === auth.uid && newData.child('text').isString() && newData.child('text').val().length <= 120"
+      }
+    }
+  }
+}

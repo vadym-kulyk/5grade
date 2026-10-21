@@ -1,0 +1,9 @@
+{
+  "name": "Українська мова · 5 клас",
+  "short_name": "Укрмова 5",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#99cc00",
+  "icons": [{ "src": "assets/icon.png", "sizes": "512x512", "type": "image/png" }]
+}
