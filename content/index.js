@@ -56,11 +56,11 @@ export const TOPICS = [
   { id: "dialoh", s: "s6", title: "Діалог", lessons: "118–120", ready: true },
   { id: "punktuatsiia", s: "s6", title: "Пунктуаційна помилка. Узагальнення", short: "Пунктуаційна помилка", lessons: "121–123", ready: true },
 
-  { id: "spilkuvannia", s: "s7", title: "Спілкування: види, учасники, правила, безпека в мережі", short: "Спілкування", lessons: "4, 66–67, 82–83, 90–91" },
-  { id: "informatsiia", s: "s7", title: "Інформація: види, джерела, добір", short: "Інформація", lessons: "10–11, 19" },
-  { id: "typymovlennia", s: "s7", title: "Опис, розповідь, роздум. Первинні й вторинні тексти", short: "Типи мовлення", lessons: "20, 74" },
-  { id: "chytannia", s: "s7", title: "Види й мета читання", short: "Читання", lessons: "32–33" },
-  { id: "zhanry", s: "s7", title: "Жанри мовлення: комплімент, похвала, запрошення, прохання, привітання, вибачення, подяка", short: "Жанри мовлення", lessons: "39–40, 124, 136" },
+  { id: "spilkuvannia", s: "s7", title: "Спілкування: види, учасники, правила, безпека в мережі", short: "Спілкування", lessons: "4, 66–67, 82–83, 90–91", ready: true },
+  { id: "informatsiia", s: "s7", title: "Інформація: види, джерела, добір", short: "Інформація", lessons: "10–11, 19", ready: true },
+  { id: "typymovlennia", s: "s7", title: "Опис, розповідь, роздум. Первинні й вторинні тексти", short: "Типи мовлення", lessons: "20, 74", ready: true },
+  { id: "chytannia", s: "s7", title: "Види й мета читання", short: "Читання", lessons: "32–33", ready: true },
+  { id: "zhanry", s: "s7", title: "Жанри мовлення: комплімент, похвала, запрошення, прохання, привітання, вибачення, подяка", short: "Жанри мовлення", lessons: "39–40, 124, 136", ready: true },
 ];
 
 export const topicById = Object.fromEntries(TOPICS.map((t) => [t.id, t]));
