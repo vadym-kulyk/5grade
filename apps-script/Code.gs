@@ -243,6 +243,7 @@ function renderTopic(sT) {
 
 // Коли вчитель обирає іншу тему в B1 — одразу перемальовуємо
 function onEdit(e) {
+  if (!e || !e.range) return; // запуск вручну з редактора — нічого не робимо
   const sh = e.range.getSheet();
   if (sh.getName() === 'Теми' && e.range.getA1Notation() === 'B1') renderTopic(sh);
 }
