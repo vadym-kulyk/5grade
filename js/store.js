@@ -57,10 +57,14 @@ export async function buyHint() {
   return true;
 }
 
+// У ключах бази не можна мати крапку, а id речей мають вигляд «top.tee-lime»
+export const ownKey = (id) => id.replace(/\./g, "_");
+export const owns = (id) => !!state.user?.owned?.[ownKey(id)];
+
 export async function buyItem(item) {
   const c = coins();
-  if (c < item.price || state.user.owned?.[item.id]) return false;
-  const upd = { [`users/${state.uid}/coins`]: c - item.price, [`users/${state.uid}/owned/${item.id}`]: Date.now() };
+  if (c < item.price || owns(item.id)) return false;
+  const upd = { [`users/${state.uid}/coins`]: c - item.price, [`users/${state.uid}/owned/${ownKey(item.id)}`]: Date.now() };
   await update(ref(db), upd);
   await awardBadges({});
   return true;

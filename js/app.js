@@ -2,7 +2,7 @@
 import { h, $, mount, toast, modal, shuffle, pct, ring, bar, fmtDate, fmtTime, say, today, num } from "./ui.js";
 import { watchAuth, logout, studentLogin, studentRegister, changePin, isTeacher, read, errText } from "./fb.js";
 import { CLASSES, ECONOMY, LEVELS_PER_TOPIC, TASKS_PER_LEVEL } from "./config.js";
-import { state, onChange, bindStudent, unbind, saveSession, loadAttempts, buyItem, saveAvatar, awardBadges } from "./store.js";
+import { state, onChange, bindStudent, unbind, saveSession, loadAttempts, buyItem, owns, saveAvatar, awardBadges } from "./store.js";
 import { RANKS, rankOf, BADGES, badgeById, topicPct, overall } from "./game.js";
 import { SECTIONS, TOPICS, topicById, sectionById, shortTitle, loadTopic, BOOK } from "../content/index.js";
 import { runQuiz } from "./quiz.js";
@@ -386,19 +386,35 @@ function shop() {
   const grid = h("div.shop__grid");
   const tabs = h("div.shop__tabs");
   const rkLevel = rankOf(u.xp).level;
+  const info = h("p.note");
+  // Зберігаємо лише куплені або безкоштовні речі; примірене без оплати повертаємо назад
+  const wearable = (d, bought) => {
+    const ok = (id) => { const it = itemById[id]; return !it || isFree(it) || id === bought || owns(id); };
+    const saved = fullAvatar(state.user.avatar);
+    const out = { ...d }; let dropped = 0;
+    for (const c of Object.keys(out)) if (!ok(out[c])) { out[c] = ok(saved[c]) ? saved[c] : fullAvatar({})[c]; dropped++; }
+    return [out, dropped];
+  };
+  async function save(bought) {
+    const [clean, dropped] = wearable(draft, bought);
+    await saveAvatar(clean);
+    if (dropped) { draft = clean; view.set(draft); toast("Збережено лише куплені речі. Приміряне без оплати знято 🙂", "info", 3500); }
+    return dropped;
+  }
   page(h("section.shop",
     h("div.shop__left.card", prev,
       h("div.note.center", "Покрути персонажа пальцем або мишкою"),
-      h("button.btn.btn--primary", { onclick: async () => { await saveAvatar(draft); toast("Образ збережено ✨", "win"); } }, "💾 Зберегти образ"),
-      h("p.note", `Монет: ${u.coins || 0} 🪙. Речей: ${Object.keys(u.owned || {}).length}. Деякі речі відкриваються лише з певним званням.`)),
+      h("button.btn.btn--primary", { onclick: async () => { if (!(await save())) toast("Образ збережено ✨", "win"); draw(); } }, "💾 Зберегти образ"),
+      info),
     h("div.shop__right", tabs, grid)));
   const view = avatarPreview(prev, draft, { size: Math.min(320, innerWidth - 64) });
 
   function draw() {
     const owned = state.user.owned || {};
+    info.textContent = `Монет: ${state.user.coins || 0} 🪙. Речей: ${Object.keys(owned).length}. Деякі речі відкриваються лише з певним званням.`;
     tabs.replaceChildren(...CATEGORIES.map((c) => h(`button.chipbtn${c.id === cat ? ".on" : ""}`, { onclick: () => { cat = c.id; draw(); } }, c.icon, " ", c.title)));
     grid.replaceChildren(...ITEMS.filter((i) => i.cat === cat).map((it) => {
-      const own = isFree(it) || owned[it.id];
+      const own = isFree(it) || owns(it.id);
       const locked = it.rank > rkLevel;
       const on = draft[cat] === it.id;
       const swatch = it.data.color && it.data.color !== "rainbow" ? h("span.swatch", { style: { background: it.data.color } }) : null;
@@ -413,7 +429,7 @@ function shop() {
       draft[it.cat] = it.id; view.set(draft); // примірка
       if ((state.user.coins || 0) < it.price) { draw(); return toast(`Примірка 👀 Потрібно ${it.price} 🪙, у тебе ${state.user.coins || 0}.`, "info", 3000); }
       const close = modal(h("div.center", h("h2", it.name), h("p", `Купити за ${it.price} 🪙?`),
-        h("div.row.gap.center", h("button.btn.btn--primary", { onclick: async () => { close(); if (await buyItem(it)) { toast("Куплено! 🛍️", "win"); await saveAvatar(draft); } draw(); } }, "Купити"),
+        h("div.row.gap.center", h("button.btn.btn--primary", { onclick: async () => { close(); if (await buyItem(it)) { toast(`Куплено! −${it.price} 🪙`, "win"); await save(it.id); } draw(); } }, "Купити"),
           h("button.btn", { onclick: () => { close(); draw(); } }, "Лише приміряти"))));
       return;
     }
