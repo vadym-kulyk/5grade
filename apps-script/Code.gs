@@ -167,9 +167,8 @@ function sync() {
   sT.getRange('D1').setValue('← обери тему зі списку').setFontColor('#6b6577');
   sT.getRange(3, 1, 1, colsT.length).setValues([colsT]).setFontWeight('bold').setBackground('#3f7a16').setFontColor('#ffffff').setWrap(true).setVerticalAlignment('middle');
   sT.setFrozenRows(3); sT.setRowHeight(3, 38);
-  sT.getRange('A4').setFormula("=IFERROR(FILTER('Теми (дані)'!B2:M, 'Теми (дані)'!A2:A = B1), \"З цієї теми ще немає результатів\")");
+  renderTopic(sT);
   const nT = Math.max(uids.length, 1);
-  sT.getRange(4, 3, nT, 1).setNumberFormat('0%');
   sT.setConditionalFormatRules([
     SpreadsheetApp.newConditionalFormatRule().setGradientMinpointWithValue('#fdecea', SpreadsheetApp.InterpolationType.NUMBER, '0').setGradientMidpointWithValue('#fbe9a6', SpreadsheetApp.InterpolationType.NUMBER, '0.6').setGradientMaxpointWithValue('#9fd36b', SpreadsheetApp.InterpolationType.NUMBER, '1').setRanges([sT.getRange(4, 3, nT, 1)]).build(),
     SpreadsheetApp.newConditionalFormatRule().setGradientMinpointWithValue('#fdecea', SpreadsheetApp.InterpolationType.NUMBER, '0').setGradientMidpointWithValue('#fbe9a6', SpreadsheetApp.InterpolationType.NUMBER, '6').setGradientMaxpointWithValue('#9fd36b', SpreadsheetApp.InterpolationType.NUMBER, '10').setRanges([sT.getRange(4, 4, nT, 5)]).build(),
@@ -227,6 +226,25 @@ function sync() {
   if (clsRows.length) sD.insertChart(sD.newChart().asColumnChart().addRange(sD.getRange(4, 7, clsRows.length + 1, 2)).setPosition(38, 10, 0, 0)
     .setOption('title', 'Середній досвід класу').setOption('colors', [YELLOW]).setOption('legend', { position: 'none' }).setOption('width', 620).setOption('height', 280).build());
   sD.setColumnWidth(1, 220);
+}
+
+// Вкладка «Теми»: показати рядки обраної в B1 теми (без формул — вони ламаються від мовних налаштувань)
+function renderTopic(sT) {
+  const title = sT.getRange('B1').getValue();
+  const data = SpreadsheetApp.getActive().getSheetByName('Теми (дані)').getDataRange().getValues().slice(1);
+  const rows = data.filter((r) => r[0] === title).map((r) => r.slice(1));
+  const last = Math.max(sT.getLastRow(), 4);
+  sT.getRange(4, 1, last - 3, 12).clearContent();
+  if (rows.length) {
+    sT.getRange(4, 1, rows.length, rows[0].length).setValues(rows);
+    sT.getRange(4, 3, rows.length, 1).setNumberFormat('0%');
+  } else sT.getRange('A4').setValue('З цієї теми ще немає результатів');
+}
+
+// Коли вчитель обирає іншу тему в B1 — одразу перемальовуємо
+function onEdit(e) {
+  const sh = e.range.getSheet();
+  if (sh.getName() === 'Теми' && e.range.getA1Notation() === 'B1') renderTopic(sh);
 }
 
 // ---------- Звіт одного учня в PDF ----------

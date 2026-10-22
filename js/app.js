@@ -2,7 +2,7 @@
 import { h, $, mount, toast, modal, shuffle, pct, ring, bar, fmtDate, fmtTime, say, today, num } from "./ui.js";
 import { watchAuth, logout, studentLogin, studentRegister, changePin, isTeacher, read, errText } from "./fb.js";
 import { CLASSES, ECONOMY, LEVELS_PER_TOPIC, TASKS_PER_LEVEL } from "./config.js";
-import { state, onChange, bindStudent, unbind, saveSession, loadAttempts, buyItem, owns, saveAvatar, awardBadges } from "./store.js";
+import { state, onChange, bindStudent, unbind, saveSession, loadAttempts, buyItem, owns, saveAvatar, awardBadges, settleAvatar } from "./store.js";
 import { RANKS, rankOf, BADGES, badgeById, topicPct, overall } from "./game.js";
 import { SECTIONS, TOPICS, topicById, sectionById, shortTitle, loadTopic, BOOK } from "../content/index.js";
 import { runQuiz } from "./quiz.js";
@@ -44,6 +44,16 @@ watchAuth(async (u) => {
     await bindStudent(u.uid);
   } else unbind();
   route();
+});
+
+// Разове виправлення неоплачених речей (баг магазину до 22.10)
+let settling = false;
+onChange(async () => {
+  if (settling || !state.user || state.user.shopFixed || state.teacher) return;
+  settling = true;
+  const res = await settleAvatar(itemById, isFree, fullAvatar).catch(() => null);
+  if (res) toast(`Ми полагодили магазин 🛠️ ${res.kept.length ? `За речі на твоєму персонажі списано ${res.paid} 🪙 — тепер вони твої.` : ""}${res.removed.length ? ` Не вистачило монет на: ${res.removed.join(", ")} — це знято з персонажа.` : ""}`, "info", 9000);
+  settling = false;
 });
 
 // Оновлюємо шапку (монети, звання), коли змінюються дані

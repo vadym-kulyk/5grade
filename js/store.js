@@ -61,6 +61,28 @@ export async function buyHint() {
 export const ownKey = (id) => id.replace(/\./g, "_");
 export const owns = (id) => !!state.user?.owned?.[ownKey(id)];
 
+// Разове виправлення: до 22.10 покупки не проходили, а приміряне можна було зберегти без оплати.
+// Платні речі на персонажі «доплачуємо», поки вистачає монет (від дешевших); решту знімаємо.
+export async function settleAvatar(itemById, isFree, fullAvatar) {
+  const u = state.user;
+  if (!u || u.shopFixed) return null;
+  const av = fullAvatar(u.avatar), clean = fullAvatar({});
+  const unpaid = Object.entries(av).map(([cat, id]) => [cat, itemById[id]])
+    .filter(([, it]) => it && !isFree(it) && !owns(it.id)).sort((a, b) => a[1].price - b[1].price);
+  let c = u.coins || 0, paid = 0;
+  const upd = { [`users/${state.uid}/shopFixed`]: Date.now() }, kept = [], removed = [];
+  for (const [cat, it] of unpaid) {
+    if (c >= it.price) { c -= it.price; paid += it.price; upd[`users/${state.uid}/owned/${ownKey(it.id)}`] = Date.now(); kept.push(it.name); }
+    else { av[cat] = clean[cat]; removed.push(it.name); }
+  }
+  if (unpaid.length) {
+    upd[`users/${state.uid}/coins`] = c;
+    upd[`users/${state.uid}/avatar`] = av; upd[`public/${state.uid}/avatar`] = av;
+  }
+  await update(ref(db), upd);
+  return unpaid.length ? { paid, kept, removed } : null;
+}
+
 export async function buyItem(item) {
   const c = coins();
   if (c < item.price || owns(item.id)) return false;
