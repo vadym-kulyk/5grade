@@ -93,7 +93,7 @@ function loginPage() {
     try { roster = (await read(`roster/${cls}`)) || {}; } catch (e) { list.replaceChildren(h("p.err", errText(e))); return; }
     const names = Object.entries(roster).sort((a, b) => a[1].name.localeCompare(b[1].name, "uk"));
     list.replaceChildren(
-      ...names.map(([uid, s]) => h("button.namebtn", { onclick: () => pinStep(s) }, h("span.namebtn__av", s.name[0]), s.name)),
+      ...names.map(([uid, s], i) => h("button.namebtn", { onclick: () => pinStep(s), style: { "--i": i } }, h(`span.namebtn__av.av${[...s.name].reduce((a, ch) => a + ch.codePointAt(0), 0) % 6}`, s.name[0]), s.name)),
       h("button.namebtn.namebtn--new", { onclick: registerStep }, h("span.namebtn__av", "+"), "Я тут уперше"));
   }
 
@@ -134,13 +134,19 @@ function loginPage() {
     area.scrollIntoView({ behavior: "smooth" });
   }
 
+  const letters = ["А", "Ґ", "Є", "Ї", "Ш", "Я", "’", "Ж", "Ю", "Щ", "Й", "Ь"];
   mount(h("main.login",
-    ...marks(),
+    h("div.login__bg", { "aria-hidden": "true" },
+      h("span.blob.blob--lime"), h("span.blob.blob--violet"), h("span.blob.blob--yellow"),
+      letters.map((l, i) => h("span.fly", { style: { "--x": `${(i * 37 + 7) % 96}%`, "--d": `${14 + (i % 5) * 3}s`, "--delay": `${-i * 2.3}s`, "--s": `${28 + (i % 4) * 14}px` } }, l))),
     h("div.login__box",
       h("img.mg-logo", { src: LOGO, alt: "Midgard" }),
-      h("h1", "Українська мова · 5 клас"),
-      h("p.lead", "Теорія, завдання, звання й 3D-школа. Обери свій клас і своє ім’я."),
-      tabs, list, area,
+      h("h1.login__title", "Українська мова ", h("span.hl", "5 клас")),
+      h("p.lead", "Вчися, заробляй монети, підвищуй звання й гуляй 3D-школою."),
+      h("div.login__chips", ["📚 41 тема", "🏅 10 звань", "🎨 123 речі для персонажа", "🏫 3D-школа"].map((t) => h("span.chip", t))),
+      h("div.login__panel",
+        h("p.login__step", "1. Обери свій клас"), tabs,
+        h("p.login__step", "2. Натисни на своє ім’я"), list, area),
       h("a.teacherlink", { href: "#/teacher" }, "Вхід для вчителя →"))));
   drawNames();
 }
