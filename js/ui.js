@@ -107,3 +107,14 @@ export function say(text) {
   speechSynthesis.cancel();
   speechSynthesis.speak(u);
 }
+
+// Прогрес за розділами: компактні плитки тем, розділ згортається. groups: [{title, items:[{label, v, href?}]}]
+export function groupedBars(groups, { color = (v) => (v === 100 ? "var(--right)" : "var(--lime)") } = {}) {
+  return h("div.gbars", groups.filter((g) => g.items.length).map((g) => {
+    const avg = Math.round(g.items.reduce((s, x) => s + x.v, 0) / g.items.length);
+    return h(`details.gbars__g.card${avg ? "" : ".gbars__g--empty"}`, { open: avg > 0 },
+      h("summary.gbars__sum", h("b", g.title), h("span.gbars__avg.mono", avg + "%"), bar(avg, color(avg))),
+      h("div.gbars__grid", g.items.map((x) => h(x.href ? "a.gtile" : "div.gtile", x.href ? { href: x.href } : {},
+        h("span.gtile__l", x.label), h("b.gtile__v.mono", x.v + "%"), bar(x.v, color(x.v)), x.sub ? h("small.gtile__s", x.sub) : null))));
+  }));
+}

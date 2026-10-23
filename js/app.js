@@ -1,5 +1,5 @@
 // Головний модуль: маршрути та сторінки учня.
-import { h, $, mount, toast, modal, shuffle, pct, ring, bar, fmtDate, fmtTime, say, today, num } from "./ui.js";
+import { h, $, mount, toast, modal, shuffle, pct, ring, bar, fmtDate, fmtTime, say, today, num, groupedBars } from "./ui.js";
 import { watchAuth, logout, studentLogin, studentRegister, changePin, isTeacher, read, errText } from "./fb.js";
 import { CLASSES, ECONOMY, LEVELS_PER_TOPIC, TASKS_PER_LEVEL } from "./config.js";
 import { state, onChange, bindStudent, unbind, saveSession, loadAttempts, buyItem, owns, saveAvatar, awardBadges, settleAvatar } from "./store.js";
@@ -454,11 +454,15 @@ function shop() {
   }
   page(h("section.shop",
     h("div.shop__left.card", prev,
-      h("div.note.center", "Покрути персонажа пальцем або мишкою"),
-      h("button.btn.btn--primary", { onclick: async () => { if (!(await save())) toast("Образ збережено ✨", "win"); draw(); } }, "💾 Зберегти образ"),
-      info),
+      h("div.shop__ctl",
+        h("div.note.center.shop__hint", "Покрути персонажа пальцем або мишкою"),
+        h("button.btn.btn--primary", { onclick: async () => { if (!(await save())) toast("Образ збережено ✨", "win"); draw(); } }, "💾 Зберегти образ"),
+        info)),
     h("div.shop__right", tabs, grid)));
-  const view = avatarPreview(prev, draft, { size: Math.min(320, innerWidth - 64) });
+  const small = innerWidth < 820;
+  const view = avatarPreview(prev, draft, { size: small ? 150 : Math.min(320, innerWidth - 64) });
+  // на телефоні персонаж закріплений під шапкою — щоб бачити, що приміряєш
+  document.documentElement.style.setProperty("--tbh", ($("#topbar")?.offsetHeight || 0) + "px");
 
   function draw() {
     const owned = state.user.owned || {};
@@ -493,19 +497,32 @@ function shop() {
 async function profile() {
   const u = state.user, p = state.progress || {};
   const rk = rankOf(u.xp);
+  const o = overall(p);
   const attemptsBox = h("div.card", h("p.note", "Завантаження історії…"));
+  const monBox = h("div");
   const pin1 = pinInput("Новий PIN"), pin2 = pinInput("Ще раз");
+  const ready = TOPICS.filter((t) => t.ready);
+  const groups = SECTIONS.map((sec) => ({ title: `${sec.n}. ${sec.title}`, items: ready.filter((t) => t.s === sec.id).map((t) => ({ label: shortTitle(t), v: topicPct(p[t.id]), href: `#/topic/${t.id}` })) }));
+  const got = BADGES.filter((b) => u.badges?.[b.id]), notYet = BADGES.filter((b) => !u.badges?.[b.id]);
+  const badge = (b, on) => h(`div.badgecard${on ? ".got" : ""}`, h("span.badgecard__i", b.icon), h("b", b.title), h("small", b.text));
 
   page(
     h("section.card.profhead",
-      h("div", h("h1", u.name), h("p.note", `Клас ${u.cls}`), h("div.rankline", h("span.rankbig", rk.icon), h("b", rk.title))),
-      h("button.btn", { onclick: () => { logout(); go("#/"); } }, "Вийти")),
-    h("h2.sec__title", "🪜 Звання"),
-    h("div.ranks", RANKS.map((r, i) => h(`div.rankstep${i < rk.level ? ".got" : ""}${i === rk.level - 1 ? ".cur" : ""}`, h("span", r.icon), h("b", r.title), h("small", `${r.xp} ⭐`)))),
+      h("div.profhead__who", h("span.rankbig", rk.icon), h("div", h("h1", u.name), h("p.note", `Клас ${u.cls} · ${rk.title}`))),
+      h("button.btn.btn--small", { onclick: () => { logout(); go("#/"); } }, "Вийти")),
+    h("div.stats.stats--profile",
+      stat("📈", o.avg + "%", "середній прогрес"), stat("💯", `${o.done}/${o.ready}`, "тем на 100 %"),
+      stat("⭐", u.xp || 0, "досвіду"), stat("🪙", u.coins || 0, "монет"), stat("🔥", u.streak?.best || 0, "найдовша серія"), stat("🏅", `${got.length}/${BADGES.length}`, "значків")),
+    h("section.card.rankcard",
+      h("div.rankcard__top", h("b", `${rk.icon} ${rk.title}`), h("span.note", rk.next ? `до «${rk.next.title}»: ${rk.next.xp - (u.xp || 0)} ⭐` : "Найвище звання!")),
+      bar(rk.toNext, "var(--violet)"),
+      h("details", h("summary.note", "Усі звання"), h("div.ranks", RANKS.map((r, i) => h(`div.rankstep${i < rk.level ? ".got" : ""}${i === rk.level - 1 ? ".cur" : ""}`, h("span", r.icon), h("b", r.title), h("small", `${r.xp} ⭐`)))))),
     h("h2.sec__title", "📈 Прогрес за темами"),
-    h("div.card.chart", TOPICS.filter((t) => t.ready).map((t) => { const v = topicPct(p[t.id]); return h("div.chart__row", h("span", shortTitle(t)), bar(v, v === 100 ? "var(--right)" : "var(--lime)"), h("b.mono", v + "%")); })),
-    h("h2.sec__title", "🏅 Значки"),
-    h("div.badges", BADGES.map((b) => h(`div.badgecard${u.badges?.[b.id] ? ".got" : ""}`, h("span.badgecard__i", b.icon), h("b", b.title), h("small", b.text)))),
+    groupedBars(groups),
+    monBox,
+    h("h2.sec__title", `🏅 Значки · ${got.length} з ${BADGES.length}`),
+    got.length ? h("div.badges", got.map((b) => badge(b, true))) : h("p.note", "Ще немає значків — пройди перший рівень!"),
+    notYet.length ? h("details.card", h("summary", `Ще не отримані (${notYet.length})`), h("div.badges", notYet.map((b) => badge(b, false)))) : null,
     h("h2.sec__title", "🗂️ Історія спроб"),
     attemptsBox,
     h("h2.sec__title", "🔑 Змінити PIN"),
@@ -515,14 +532,16 @@ async function profile() {
     } }, "Зберегти")));
 
   const at = Object.values(await loadAttempts()).sort((a, b) => b.end - a.end);
-  attemptsBox.replaceChildren(at.length ? h("div.tablewrap", h("table.tbl",
-    h("thead", h("tr", ["Дата", "Що", "Результат", "Час", "Монети"].map((x) => h("th", x)))),
-    h("tbody", at.slice(0, 50).map((a) => h("tr",
-      h("td", `${fmtDate(a.end)} ${fmtTime(a.end)}`),
-      h("td", a.type === "level" ? `${shortTitle(topicById[a.topic] || { title: a.topicTitle })}, рівень ${a.level}` : a.topicTitle),
-      h("td", h("b", `${a.pct}%`), ` (${a.correct}/${a.total})`, a.flagged ? " ⚡" : ""),
-      h("td.mono", `${Math.round(a.durSec / 60)} хв`),
-      h("td.mono", `+${a.coins}`)))))) : h("p.note", "Ще немає спроб."));
+  // Моніторингові: найкращий результат кожної роботи
+  const mon = {};
+  at.filter((a) => a.type === "monitoring").forEach((a) => { const m = (mon[a.monitoringId] ||= { title: a.topicTitle, best: 0, n: 0, last: a }); m.best = Math.max(m.best, a.pct); m.n++; });
+  if (Object.keys(mon).length) monBox.replaceChildren(h("h2.sec__title", "📋 Моніторингові роботи"),
+    h("div.gbars__grid.card", Object.values(mon).map((m) => h("div.gtile", h("span.gtile__l", m.title.replace("Моніторингова робота: ", "")), h("b.gtile__v.mono", m.best + "%"), bar(m.best, m.best >= 80 ? "var(--right)" : m.best >= 60 ? "var(--yellow)" : "var(--wrong)"), h("small.gtile__s", `спроб: ${m.n}`)))));
+  const what = (a) => a.type === "level" ? `${shortTitle(topicById[a.topic] || { title: a.topicTitle })}, рівень ${a.level}` : a.topicTitle;
+  attemptsBox.replaceChildren(at.length ? h("div.hist", at.slice(0, 50).map((a) => h("div.hist__row",
+    h("span.hist__pct.mono", { style: { background: a.pct >= 80 ? "#e3f1cf" : a.pct >= 60 ? "#fdf2c8" : "#fbe3df" } }, a.pct + "%"),
+    h("div.hist__main", h("b", what(a)), h("span.note", `${fmtDate(a.end)} ${fmtTime(a.end)} · ${a.correct}/${a.total} · ${Math.max(1, Math.round(a.durSec / 60))} хв${a.flagged ? " · ⚡" : ""}`)),
+    h("span.hist__coins.mono", `+${a.coins} 🪙`)))) : h("p.note", "Ще немає спроб."));
 }
 
 route();

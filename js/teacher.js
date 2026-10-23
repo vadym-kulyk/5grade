@@ -1,10 +1,10 @@
 // Кабінет учителя: огляд, спроби, найдовші питання, звіт учня, налаштування.
-import { h, mount, toast, pct, bar, ring, fmtDate, fmtTime, confirmBox, today, num } from "./ui.js";
+import { h, mount, toast, pct, bar, ring, fmtDate, fmtTime, confirmBox, today, num, groupedBars } from "./ui.js";
 import { watchAuth, teacherLogin, teacherRegister, logout, isTeacher, read, patch, write, r, remove, errText } from "./fb.js";
 import { TEACHER_EMAIL, CLASSES, LEVELS_PER_TOPIC, TASKS_PER_LEVEL } from "./config.js";
 import { SECTIONS, TOPICS, topicById, shortTitle } from "../content/index.js";
 import { rankOf, topicPct, BADGES } from "./game.js";
-import { previewView, liveView, startTeacherLive } from "./teacher-extra.js";
+import { previewView, liveView, startTeacherLive, monitoringView } from "./teacher-extra.js";
 import { MONITORING } from "../content/monitoring/index.js";
 
 let data = null;
@@ -51,7 +51,7 @@ const ready = () => TOPICS.filter((t) => t.ready);
 const heat = (v) => `hsl(${Math.round(v * 1.1)}, 70%, ${v ? 88 - v * 0.25 : 96}%)`;
 
 function draw() {
-  const tabs = [["overview", "📊 Огляд"], ["attempts", "🗂️ Спроби"], ["topic", "📚 Тема"], ["live", "🎤 Питання"], ["preview", "📖 Завдання"], ["slow", "⏱️ Найдовші питання"], ["student", "👤 Учень"], ["settings", "⚙️ Налаштування"]];
+  const tabs = [["overview", "📊 Огляд"], ["attempts", "🗂️ Спроби"], ["topic", "📚 Тема"], ["mon", "📋 Моніторингові"], ["live", "🎤 Питання"], ["preview", "📖 Завдання"], ["slow", "⏱️ Найдовші питання"], ["student", "👤 Учень"], ["settings", "⚙️ Налаштування"]];
   mount(
     h("header.topbar.topbar--teacher",
       h("a.topbar__logo", { href: "#/teacher" }, h("img", { src: "assets/logo-wordmark.png", alt: "Midgard" })),
@@ -60,7 +60,7 @@ function draw() {
         h("select.select", { onchange: (e) => { cls = e.target.value; draw(); } }, h("option", { value: "all" }, "Усі класи"), CLASSES.map((c) => h("option", { value: c, selected: c === cls }, c))),
         h("button.btn.btn--small", { onclick: async () => { await load(); draw(); toast("Оновлено"); } }, "↻"),
         h("button.btn.btn--small", { onclick: () => logout() }, "Вийти"))),
-    h("main.page.page--wide", { overview, attempts: attemptsView, topic: topicView, live: () => liveView({ students, ready }), preview: () => previewView({ ready }), slow, student: studentView, settings: settingsView }[tab]()));
+    h("main.page.page--wide", { overview, attempts: attemptsView, topic: topicView, mon: () => monitoringView({ students, data, redraw: () => draw(), openStudent: (id) => { studentId = id; tab = "student"; draw(); } }), live: () => liveView({ students, ready }), preview: () => previewView({ ready }), slow, student: studentView, settings: settingsView }[tab]()));
 }
 
 // ---------- Огляд ----------
@@ -78,8 +78,8 @@ function overview() {
     h("div.kpis",
       kpi("👩‍🎓", st.length, "учнів"), kpi("🗂️", at.length, "спроб усього"), kpi("📅", week.length, "спроб за тиждень"),
       kpi("🎯", avg + "%", "середній результат"), kpi("⚡", flagged, "спроб із позначкою швидкості")),
-    h("section.card", h("h2", "Середній прогрес за темами"),
-      h("div.chart", byTopic.map(({ t, v }) => h("div.chart__row", h("span", shortTitle(t)), bar(v), h("b.mono", v + "%"))))),
+    h("h2.sec__title", "Середній прогрес за темами"),
+    groupedBars(SECTIONS.map((sec) => ({ title: `${sec.n}. ${sec.title}`, items: byTopic.filter(({ t }) => t.s === sec.id).map(({ t, v }) => ({ label: shortTitle(t), v })) }))),
     h("section.card", h("h2", "Теплова карта: учень × тема"),
       h("p.note", "Клітинка — відсоток теми. Натисни на ім’я, щоб відкрити звіт учня."),
       h("div.tablewrap", h("table.tbl.heat",
@@ -259,9 +259,9 @@ function studentView() {
         h("div.card", h("h3", "🎯 Що повторити"), weak.length ? h("ul", weak.map((x) => h("li", x, wrongBy[topicByShort(x)] ? ` — помилок: ${wrongBy[topicByShort(x)]}` : ""))) : h("p.note", "Усі теми на 60 %+ 👏"))),
       fastTotal ? h("p.warnbox", `⚡ Занадто швидких відповідей: ${fastTotal}. Спроб із позначкою швидкості: ${at.filter((a) => a.flagged).length}.`) : null,
       h("section", h("h2", "Значки"), h("div.badges.badges--small", BADGES.filter((b) => u.badges?.[b.id]).map((b) => h("div.badgecard.got", h("span.badgecard__i", b.icon), h("b", b.title)))), !Object.keys(u.badges || {}).length && h("p.note", "Ще немає.")),
-      h("section", h("h2", "Останні спроби"), h("table.tbl",
+      h("section", h("h2", "Останні спроби"), h("div.tablewrap", h("table.tbl",
         h("thead", h("tr", ["Дата", "Що", "Результат", "Час", "Сер. на завдання", "⚡"].map((x) => h("th", x)))),
-        h("tbody", at.slice(0, 25).map((a) => h("tr", h("td", fmtDate(a.end)), h("td", what(a)), h("td", `${a.pct}% (${a.correct}/${a.total})`), h("td.mono", `${Math.round(a.durSec / 60)} хв`), h("td.mono", `${num(a.avgSec)} с`), h("td", a.flagged ? "⚡" : "")))))),
+        h("tbody", at.slice(0, 25).map((a) => h("tr", h("td", fmtDate(a.end)), h("td", what(a)), h("td", `${a.pct}% (${a.correct}/${a.total})`), h("td.mono", `${Math.round(a.durSec / 60)} хв`), h("td.mono", `${num(a.avgSec)} с`), h("td", a.flagged ? "⚡" : ""))))))),
       h("footer.report__foot", "Midgard · Українська мова 5 клас · за підручником А. Онатій, Т. Ткачук")),
   ];
 }

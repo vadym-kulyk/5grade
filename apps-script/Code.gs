@@ -2,7 +2,7 @@
  * Українська мова · 5 клас — таблиця результатів для вчителя.
  * Скрипт сам забирає дані з Firebase (кожні 10 хвилин) і будує аркуші:
  *   «Спроби» (кожна спроба — рядок, з фільтрами), «Учні», «Прогрес» (учень × тема),
- *   «Теми» (обери тему — результати всіх учнів), «Найдовші питання», «Дашборд» (графіки) і звіти учнів у PDF.
+ *   «Теми» (обери тему — результати всіх учнів), «Моніторингові» (учень × робота), «Найдовші питання», «Дашборд» (графіки) і звіти учнів у PDF.
  * Встановлення — див. README.md у репозиторії.
  */
 
@@ -176,6 +176,30 @@ function sync() {
   ]);
   sT.setColumnWidths(1, colsT.length, 95); sT.setColumnWidth(2, 260); sT.setColumnWidth(12, 140);
 
+  // ---------- Моніторингові: учень × робота ----------
+  const sM = sheet('Моніторингові', 3);
+  sM.getFilter() && sM.getFilter().remove(); sM.clear(); sM.clearConditionalFormatRules();
+  const colsM = ['Робота', 'Клас', 'Учень', 'Найкращий %', 'Останній %', 'Спроб', 'Спроб із ⚡', 'Сер. час на завдання, с', 'Остання спроба'];
+  header(sM, colsM, '#7a3fb0');
+  const mAgg = {};
+  attempts.filter((a) => a.type === 'monitoring').forEach((a) => {
+    const k = a.monitoringId + '~' + a.uid;
+    const g = mAgg[k] || (mAgg[k] = { title: String(a.topicTitle || a.monitoringId).replace(/^Моніторингова робота:\s*/, ''), uid: a.uid, best: 0, n: 0, fast: 0, sec: 0, last: null });
+    g.best = Math.max(g.best, a.pct || 0); g.n++; g.fast += a.flagged ? 1 : 0; g.sec += a.avgSec || 0;
+    if (!g.last || a.end > g.last.end) g.last = a;
+  });
+  const rowsM = Object.keys(mAgg).map((k) => mAgg[k]).filter((g) => users[g.uid])
+    .sort((a, b) => a.title.localeCompare(b.title, 'uk') || b.best - a.best)
+    .map((g) => [g.title, users[g.uid].cls, users[g.uid].name, g.best / 100, (g.last.pct || 0) / 100, g.n, g.fast, Math.round(g.sec / g.n * 10) / 10, new Date(g.last.end)]);
+  if (rowsM.length) {
+    sM.getRange(2, 1, rowsM.length, colsM.length).setValues(rowsM);
+    sM.getRange(2, 4, rowsM.length, 2).setNumberFormat('0%');
+    sM.getRange(2, 9, rowsM.length, 1).setNumberFormat('dd.MM.yyyy HH:mm');
+    sM.getRange(1, 1, rowsM.length + 1, colsM.length).createFilter();
+    sM.setConditionalFormatRules([SpreadsheetApp.newConditionalFormatRule().setGradientMinpointWithValue('#fdecea', SpreadsheetApp.InterpolationType.NUMBER, '0').setGradientMidpointWithValue('#fbe9a6', SpreadsheetApp.InterpolationType.NUMBER, '0.6').setGradientMaxpointWithValue('#9fd36b', SpreadsheetApp.InterpolationType.NUMBER, '1').setRanges([sM.getRange(2, 4, rowsM.length, 2)]).build()]);
+  } else sM.getRange('A2').setValue('Моніторингових спроб ще немає');
+  sM.setColumnWidths(1, colsM.length, 110); sM.setColumnWidth(1, 220); sM.setColumnWidth(3, 150); sM.setColumnWidth(9, 140);
+
   // ---------- Найдовші питання ----------
   const sQ = sheet('Найдовші питання', 3);
   sQ.clear(); sQ.getFilter() && sQ.getFilter().remove(); sQ.clearConditionalFormatRules();
@@ -238,6 +262,7 @@ function renderTopic(sT) {
   if (rows.length) {
     sT.getRange(4, 1, rows.length, rows[0].length).setValues(rows);
     sT.getRange(4, 3, rows.length, 1).setNumberFormat('0%');
+    sT.getRange(4, 12, rows.length, 1).setNumberFormat('dd.MM.yyyy HH:mm');
   } else sT.getRange('A4').setValue('З цієї теми ще немає результатів');
 }
 

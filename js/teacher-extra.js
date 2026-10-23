@@ -1,5 +1,5 @@
 // Кабінет учителя: перегляд будь-якого завдання і живі питання учням.
-import { h, toast, fmtTime, fmtDate, confirmBox } from "./ui.js";
+import { h, toast, fmtTime, fmtDate, confirmBox, num } from "./ui.js";
 import { r, push, update, remove, onValue } from "./fb.js";
 import { renderTask, kindLabel } from "./quiz.js";
 import { topicById, shortTitle } from "../content/index.js";
@@ -140,5 +140,78 @@ export function liveView({ students, ready }) {
       h("section.card", h("h2", "1. Кому"), h("p.note", "🟢 — учень зараз на сайті. Питання з’явиться на його екрані поверх будь-якої сторінки."), who),
       h("section.card", h("h2", "2. Питання за теорією"), lib)),
     h("section.card", h("h2", "3. Відповіді учнів"), h("p.note", "Оновлюється сама. ✓ — зараховано, ✗ — подумати ще; учень одразу бачить оцінку."), feed),
+  ];
+}
+
+// ---------- 📋 Статистика моніторингових робіт ----------
+let monSel = null;
+const heatC = (v) => (v == null ? "" : `hsl(${Math.round(v * 1.1)}, 70%, ${88 - v * 0.25}%)`);
+const short = (t = "") => t.replace(/^Моніторингова робота:\s*/, "");
+
+export function monitoringView({ students, data, openStudent, redraw }) {
+  const st = students();
+  const ids = new Set(st.map(([id]) => id));
+  const at = data.attempts.filter((a) => a.type === "monitoring" && ids.has(a.uid));
+  const works = {};
+  for (const a of at) {
+    const w = (works[a.monitoringId] ||= { id: a.monitoringId, title: short(a.topicTitle), list: [], by: {} });
+    w.list.push(a);
+    const s = (w.by[a.uid] ||= { best: 0, n: 0, last: null, sec: 0, fast: 0 });
+    s.best = Math.max(s.best, a.pct); s.n++; s.sec += a.avgSec || 0; s.fast += a.flagged ? 1 : 0;
+    if (!s.last || a.end > s.last.end) s.last = a;
+  }
+  // відкриті, але ще не написані
+  for (const [mid, m] of Object.entries(data.settings.monitoring || {})) {
+    if (!m?.open || works[mid]) continue;
+    const t = mid.startsWith("t_") ? topicById[mid.slice(2)] : null;
+    works[mid] = { id: mid, title: t ? shortTitle(t) : mid === "diag" ? "Вхідна діагностика" : mid, list: [], by: {} };
+  }
+  const W = Object.values(works).map((w) => {
+    const bests = Object.values(w.by).map((s) => s.best);
+    return { ...w, open: !!data.settings.monitoring?.[w.id]?.open, done: bests.length, avg: bests.length ? Math.round(bests.reduce((x, y) => x + y, 0) / bests.length) : null, lastAt: Math.max(0, ...w.list.map((a) => a.end)) };
+  }).sort((a, b) => b.lastAt - a.lastAt || a.title.localeCompare(b.title, "uk"));
+  if (!W.length) return h("section.card", h("h2", "📋 Моніторингові роботи"), h("p.note", "Ще немає відкритих або написаних робіт. Відкрий роботу в «⚙️ Налаштування» → «Моніторингові роботи»."));
+  if (!monSel || !works[monSel]) monSel = W[0].id;
+  const w = W.find((x) => x.id === monSel);
+
+  // найважчі завдання вибраної роботи
+  const agg = {};
+  w.list.forEach((a) => (a.answers || []).forEach((x) => { const g = (agg[x.id] ||= { q: x.q, n: 0, ok: 0, sec: 0 }); g.n++; g.ok += x.ok ? 1 : 0; g.sec += Math.min(x.sec || 0, 180); }));
+  const hard = Object.values(agg).sort((a, b) => a.ok / a.n - b.ok / b.n || b.n - a.n).slice(0, 10);
+  const rows = st.map(([uid, u]) => ({ uid, u, s: w.by[uid] })).sort((a, b) => (b.s?.best ?? -1) - (a.s?.best ?? -1) || a.u.name.localeCompare(b.u.name, "uk"));
+  const kpi = (ic, v, l) => h("div.kpi.card", h("span", ic), h("b", v), h("small", l));
+  const pctCell = (v) => h("td.mono.center", { style: { background: heatC(v) } }, v == null ? "—" : v + "%");
+
+  return [
+    h("section.card", h("h2", "📋 Усі моніторингові роботи"),
+      h("p.note", "Натисни на роботу, щоб побачити результати кожного учня й найважчі завдання. Відсоток — середнє з найкращих спроб учнів."),
+      h("div.tablewrap", h("table.tbl.mon",
+        h("thead", h("tr", ["Робота", "Статус", "Написали", "Середній %", "Спроб", "Остання спроба"].map((x) => h("th", x)))),
+        h("tbody", W.map((x) => h(`tr.mon__row${x.id === monSel ? ".on" : ""}`, { onclick: () => { monSel = x.id; redraw(); } },
+          h("td", h("b", x.title)), h("td", x.open ? h("span.tag.tag--on", "відкрита") : h("span.tag", "закрита")),
+          h("td.mono.center", `${x.done}/${st.length}`), pctCell(x.avg), h("td.mono.center", x.list.length),
+          h("td.note", x.lastAt ? `${fmtDate(x.lastAt)} ${fmtTime(x.lastAt)}` : "—"))))))),
+    W.length > 1 ? h("section.card", h("h2", "Учень × робота (найкращий %)"),
+      h("div.tablewrap", h("table.tbl.heat",
+        h("thead", h("tr", h("th", "Учень"), W.map((x) => h("th.rot", h("span", x.title))))),
+        h("tbody", st.map(([uid, u]) => h("tr", h("td", h("a", { href: "#/teacher", onclick: (e) => { e.preventDefault(); openStudent(uid); } }, u.name), h("span.note", ` ${u.cls}`)), W.map((x) => pctCell(x.by[uid]?.best)))))))) : null,
+    h("h2.sec__title", `📋 ${w.title}`),
+    h("div.kpis",
+      kpi("👩‍🎓", `${w.done}/${st.length}`, "написали"), kpi("📈", w.avg == null ? "—" : w.avg + "%", "середній найкращий"),
+      kpi("🏆", w.done ? Math.max(...Object.values(w.by).map((s) => s.best)) + "%" : "—", "найкращий"),
+      kpi("🗂️", w.list.length, "спроб"), kpi("⚡", w.list.filter((a) => a.flagged).length, "спроб із ⚡")),
+    h("section.card", h("h2", "Результати учнів"),
+      h("div.tablewrap", h("table.tbl",
+        h("thead", h("tr", ["Учень", "Клас", "Найкращий", "Останній", "Спроб", "Сер. на завдання", "⚡", "Остання спроба"].map((x) => h("th", x)))),
+        h("tbody", rows.map(({ uid, u, s }) => h(`tr${s ? "" : ".mon__none"}`,
+          h("td", h("a", { href: "#/teacher", onclick: (e) => { e.preventDefault(); openStudent(uid); } }, u.name)), h("td", u.cls),
+          s ? pctCell(s.best) : h("td.note", "не писав(-ла)"), s ? pctCell(s.last.pct) : h("td"),
+          h("td.mono.center", s?.n || ""), h("td.mono", s ? `${num(Math.round((s.sec / s.n) * 10) / 10)} с` : ""), h("td.center", s?.fast || ""),
+          h("td.note", s ? `${fmtDate(s.last.end)} ${fmtTime(s.last.end)}` : ""))))))),
+    h("section.card", h("h2", "🧩 Найважчі завдання"),
+      hard.length ? h("div.hist", hard.map((g) => { const v = Math.round((g.ok / g.n) * 100); return h("div.hist__row",
+        h("span.hist__pct.mono", { style: { background: heatC(v) } }, v + "%"),
+        h("div.hist__main", h("b", g.q), h("span.note", `правильно ${g.ok} з ${g.n} · сер. час ${num(Math.round((g.sec / g.n) * 10) / 10)} с`)), h("span")); }))
+        : h("p.note", "Цю роботу ще ніхто не писав.")),
   ];
 }
