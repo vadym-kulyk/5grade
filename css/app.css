@@ -212,9 +212,9 @@ a.tcard:hover { transform: translateY(-2px); border-color: var(--lime); box-shad
 .opt.right, .chipbtn.right { border-color: var(--right); background: color-mix(in srgb, var(--right-soft) 22%, white); }
 .opt.wrong { border-color: var(--wrong); background: color-mix(in srgb, var(--wrong-soft) 18%, white); }
 .gapword { text-align: center; font-size: clamp(30px, 6vw, 44px); font-weight: 800; letter-spacing: .02em; padding: 10px 0; }
-.gap { display: inline-block; min-width: .9em; border-bottom: 4px solid var(--violet); color: var(--violet); }
-.gap--on { color: var(--violet); }
-.gap--right { color: var(--right); border-color: var(--right); }
+.gapword .gap { display: inline-block; min-width: .9em; gap: 0; border-bottom: 4px solid var(--violet); color: var(--violet); }
+.gapword .gap--on { color: var(--violet); }
+.gapword .gap--right { color: var(--right); border-color: var(--right); }
 .inputrow { display: flex; gap: 8px; }
 .inputrow .input { font-size: 20px; }
 .input.right { border-color: var(--right); background: color-mix(in srgb, var(--right-soft) 15%, white); }
@@ -407,3 +407,42 @@ body.in-world { overflow: hidden; }
 .login .namebtn--new .namebtn__av { background: var(--lime); color: var(--text); }
 @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.96); } }
 @media (prefers-reduced-motion: reduce) { .blob, .fly, .login .namebtn { animation: none; } .fly { display: none; } }
+
+/* Живе питання від учителя (у учня) */
+.liveq { position: fixed; inset: 0; z-index: 900; display: grid; place-items: center; padding: 16px; background: rgba(30, 27, 38, .45); backdrop-filter: blur(4px); animation: lqIn .25s ease; }
+.liveq__card { width: min(560px, 100%); background: #fff; border-radius: 24px; padding: 22px; display: grid; gap: 12px; box-shadow: 0 30px 80px -20px rgba(77, 45, 130, .5); border: 3px solid var(--violet); }
+.liveq__head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.liveq__badge { background: var(--violet); color: #fff; font-weight: 800; padding: 6px 14px; border-radius: 999px; font-size: 14px; animation: lqPulse 1.6s ease-in-out infinite; }
+.liveq__q { margin: 0; font-size: clamp(20px, 3.5vw, 26px); }
+.liveq__text { width: 100%; resize: vertical; font-family: var(--f-text); font-size: 17px; }
+@keyframes lqIn { from { opacity: 0; } }
+@keyframes lqPulse { 50% { box-shadow: 0 0 0 8px rgba(157, 107, 219, .2); } }
+
+/* Учитель: живі питання */
+.lv { display: grid; grid-template-columns: minmax(280px, 1fr) 2fr; gap: var(--gap); align-items: start; }
+@media (max-width: 900px) { .lv { grid-template-columns: 1fr; } }
+.lv__who { display: grid; gap: 6px; }
+.lv__st { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 12px; border: 1.5px solid var(--line); cursor: pointer; flex-wrap: wrap; }
+.lv__st.on { border-color: var(--lime); background: #f6fbe8; }
+.lv__dot { width: 10px; height: 10px; border-radius: 50%; background: var(--line); flex: none; }
+.lv__dot.on { background: #3fbf3f; box-shadow: 0 0 0 3px rgba(63, 191, 63, .2); }
+.lv__page { margin-left: auto; }
+.lv__lib { display: grid; gap: 8px; }
+.lv__q { display: flex; gap: 10px; justify-content: space-between; align-items: flex-start; padding: 10px 12px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); }
+.lv__q details { margin-top: 4px; }
+.lv__custom { display: grid; gap: 8px; margin-top: 8px; }
+.lv__ans { white-space: pre-wrap; }
+.lv__mark { white-space: nowrap; }
+.lv__bad { background: var(--wrong); border-color: var(--wrong); color: #fff; }
+
+/* Учитель: перегляд завдань */
+.pv__grid { display: grid; gap: 8px; }
+.pv__row { display: grid; grid-template-columns: 200px 1fr; gap: 10px; align-items: center; }
+@media (max-width: 700px) { .pv__row { grid-template-columns: 1fr; } }
+.pv__lv { font-weight: 800; display: grid; } .pv__lv small { font-weight: 500; color: var(--muted); }
+.pv__nums { display: flex; flex-wrap: wrap; gap: 6px; }
+.pv__n { width: 40px; height: 40px; border-radius: 10px; border: 1.5px solid var(--line); background: #fff; font-weight: 800; cursor: pointer; font-family: var(--f-mono); }
+.pv__n:hover { border-color: var(--violet); }
+.pv__n.on { background: var(--violet); border-color: var(--violet); color: #fff; }
+.pv__card { display: grid; gap: 12px; }
+.pv__nav { justify-content: space-between; }

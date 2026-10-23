@@ -7,6 +7,7 @@ import { RANKS, rankOf, BADGES, badgeById, topicPct, overall } from "./game.js";
 import { SECTIONS, TOPICS, topicById, sectionById, shortTitle, loadTopic, BOOK } from "../content/index.js";
 import { runQuiz } from "./quiz.js";
 import { CATEGORIES, ITEMS, itemById, fullAvatar, isFree, avatarPreview } from "./avatar.js";
+import { startLive, stopLive } from "./live.js";
 
 const LOGO = "assets/logo-wordmark.png";
 const go = (hash) => (location.hash = hash);
@@ -42,7 +43,8 @@ watchAuth(async (u) => {
   if (u && !isTeacher(u)) {
     route();
     await bindStudent(u.uid);
-  } else unbind();
+    if (state.user) startLive(u.uid, state.user);
+  } else { stopLive(); unbind(); }
   route();
 });
 

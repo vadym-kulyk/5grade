@@ -59,6 +59,23 @@
       ".read": "auth != null",
       "$uid": { ".write": "auth != null && auth.uid === $uid" }
     },
+    "online": {
+      ".read": "auth != null && auth.token.email === 'badim1aaa@gmail.com'",
+      "$uid": { ".write": "auth != null && auth.uid === $uid" }
+    },
+    "live": {
+      ".read": "auth != null && auth.token.email === 'badim1aaa@gmail.com'",
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        "$q": {
+          ".write": "auth != null && auth.token.email === 'badim1aaa@gmail.com'",
+          "ans": {
+            ".write": "auth != null && auth.uid === $uid && !data.exists()",
+            ".validate": "newData.hasChildren(['oral', 'at']) && (!newData.child('text').exists() || (newData.child('text').isString() && newData.child('text').val().length <= 500))"
+          }
+        }
+      }
+    },
     "chat": {
       ".read": "auth != null",
       ".write": "auth != null && auth.token.email === 'badim1aaa@gmail.com'",

@@ -21,6 +21,8 @@ export function taskLabel(t) {
 // Кожен рендерер повертає { el, ready(), value(), check(v), reveal(ok) }
 
 const R = {};
+// Окреме завдання (для перегляду вчителем)
+export const renderTask = (t) => R[t.type](t);
 
 R.choice = (t) => {
   const idx = t.options.map((o, i) => i);
@@ -247,6 +249,6 @@ export function runQuiz(opts) {
 
 const praise = ["Правильно!", "Чудово!", "Так тримати!", "Влучно!", "Молодець!", "Бездоганно!"];
 const pickPraise = () => praise[Math.floor(Math.random() * praise.length)];
-function kindLabel(t) {
+export function kindLabel(t) {
   return { choice: "Обери відповідь", tf: "Правильно чи ні?", multi: "Кілька відповідей", input: "Впиши відповідь", gap: "Встав пропущене", match: "Знайди пару", sort: "Розподіли", pick: "Знайди в тексті", order: "Склади в порядку" }[t.type];
 }

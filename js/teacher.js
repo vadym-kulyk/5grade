@@ -4,6 +4,7 @@ import { watchAuth, teacherLogin, teacherRegister, logout, isTeacher, read, patc
 import { TEACHER_EMAIL, CLASSES, LEVELS_PER_TOPIC, TASKS_PER_LEVEL } from "./config.js";
 import { SECTIONS, TOPICS, topicById, shortTitle } from "../content/index.js";
 import { rankOf, topicPct, BADGES } from "./game.js";
+import { previewView, liveView, startTeacherLive } from "./teacher-extra.js";
 
 let data = null;
 let tab = "overview", cls = "all", studentId = null, topicId = null;
@@ -15,7 +16,7 @@ export function teacherApp() {
     if (location.hash !== "#/teacher") return;
     if (!isTeacher(u)) return loginView(u);
     mount(h("div.loading", "Завантаження даних класу…"));
-    try { await load(); draw(); } catch (e) { mount(h("main.page", h("p.err", errText(e)))); }
+    try { await load(); startTeacherLive(); draw(); } catch (e) { mount(h("main.page", h("p.err", errText(e)))); }
   });
 }
 
@@ -49,7 +50,7 @@ const ready = () => TOPICS.filter((t) => t.ready);
 const heat = (v) => `hsl(${Math.round(v * 1.1)}, 70%, ${v ? 88 - v * 0.25 : 96}%)`;
 
 function draw() {
-  const tabs = [["overview", "📊 Огляд"], ["attempts", "🗂️ Спроби"], ["topic", "📚 Тема"], ["slow", "⏱️ Найдовші питання"], ["student", "👤 Учень"], ["settings", "⚙️ Налаштування"]];
+  const tabs = [["overview", "📊 Огляд"], ["attempts", "🗂️ Спроби"], ["topic", "📚 Тема"], ["live", "🎤 Питання"], ["preview", "📖 Завдання"], ["slow", "⏱️ Найдовші питання"], ["student", "👤 Учень"], ["settings", "⚙️ Налаштування"]];
   mount(
     h("header.topbar.topbar--teacher",
       h("a.topbar__logo", { href: "#/teacher" }, h("img", { src: "assets/logo-wordmark.png", alt: "Midgard" })),
@@ -58,7 +59,7 @@ function draw() {
         h("select.select", { onchange: (e) => { cls = e.target.value; draw(); } }, h("option", { value: "all" }, "Усі класи"), CLASSES.map((c) => h("option", { value: c, selected: c === cls }, c))),
         h("button.btn.btn--small", { onclick: async () => { await load(); draw(); toast("Оновлено"); } }, "↻"),
         h("button.btn.btn--small", { onclick: () => logout() }, "Вийти"))),
-    h("main.page.page--wide", { overview, attempts: attemptsView, topic: topicView, slow, student: studentView, settings: settingsView }[tab]()));
+    h("main.page.page--wide", { overview, attempts: attemptsView, topic: topicView, live: () => liveView({ students, ready }), preview: () => previewView({ ready }), slow, student: studentView, settings: settingsView }[tab]()));
 }
 
 // ---------- Огляд ----------
