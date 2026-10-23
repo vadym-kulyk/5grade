@@ -145,7 +145,7 @@ function loginPage() {
       h("img.mg-logo", { src: LOGO, alt: "Midgard" }),
       h("h1.login__title", "Українська мова ", h("span.hl", "5 клас")),
       h("p.lead", "Вчися, заробляй монети, підвищуй звання й гуляй 3D-школою."),
-      h("div.login__chips", ["📚 41 тема", "🏅 10 звань", "🎨 123 речі для персонажа", "🏫 3D-школа"].map((t) => h("span.chip", t))),
+      h("div.login__chips", ["📚 41 тема", "🏅 10 звань", `🎨 ${ITEMS.length} речей для персонажа`, "🏫 3D-школа"].map((t) => h("span.chip", t))),
       h("div.login__panel",
         h("p.login__step", "1. Обери свій клас"), tabs,
         h("p.login__step", "2. Натисни на своє ім’я"), list, area),
