@@ -3,11 +3,18 @@ import { h, toast, fmtTime, fmtDate, confirmBox } from "./ui.js";
 import { r, push, update, remove, onValue } from "./fb.js";
 import { renderTask, kindLabel } from "./quiz.js";
 import { topicById, shortTitle } from "../content/index.js";
+import { MONITORING } from "../content/monitoring/index.js";
 
 // ---------- 📖 Перегляд завдань ----------
 const pv = { topic: null, i: 0 };
 const topicCache = {};
-const loadTopic = async (id) => (topicCache[id] ??= (await import(`../content/topics/${id}.js`)).default);
+// Тема разом із моніторинговою роботою (як шостий «рівень» для перегляду)
+const loadTopic = async (id) => (topicCache[id] ??= await (async () => {
+  const T = (await import(`../content/topics/${id}.js`)).default;
+  if (!MONITORING.includes(id)) return T;
+  const M = (await import(`../content/monitoring/${id}.js`)).default;
+  return { ...T, levels: [...T.levels, { title: "📋 Моніторингова робота", tasks: M.tasks, mon: true }] };
+})());
 
 export function previewView({ ready }) {
   const rt = ready();
@@ -21,8 +28,8 @@ export function previewView({ ready }) {
     const tasks = T.levels.flatMap((L, li) => L.tasks.map((t) => ({ ...t, topic: T.id, lv: li + 1, lvTitle: L.title })));
     pv.i = Math.max(0, Math.min(pv.i, tasks.length - 1));
     grid.replaceChildren(...T.levels.map((L, li) => h("div.pv__row",
-      h("span.pv__lv", `Рівень ${li + 1}`, h("small", L.title)),
-      h("div.pv__nums", L.tasks.map((_, k) => { const n = li * 10 + k; return h(`button.pv__n${n === pv.i ? ".on" : ""}`, { onclick: () => { pv.i = n; draw(); } }, n + 1); })))));
+      h("span.pv__lv", L.mon ? "Моніторингова" : `Рівень ${li + 1}`, h("small", L.mon ? `${L.tasks.length} завдань` : L.title)),
+      h("div.pv__nums", L.tasks.map((_, k) => { const n = T.levels.slice(0, li).reduce((s, x) => s + x.tasks.length, 0) + k; return h(`button.pv__n${n === pv.i ? ".on" : ""}`, { onclick: () => { pv.i = n; draw(); } }, n + 1); })))));
     const t = tasks[pv.i];
     const view = renderTask(t);
     const out = h("div");
@@ -38,7 +45,7 @@ export function previewView({ ready }) {
     };
     view.setOnPick?.(() => setTimeout(() => finish(false), 150));
     card.replaceChildren(
-      h("div.pv__meta", h("span.note", `${shortTitle(topicById[T.id])} · рівень ${t.lv} «${t.lvTitle}» · завдання ${pv.i + 1} з ${tasks.length} · ${t.id}`)),
+      h("div.pv__meta", h("span.note", `${shortTitle(topicById[T.id])} · ${T.levels[t.lv - 1].mon ? "моніторингова робота" : `рівень ${t.lv} «${t.lvTitle}»`} · завдання ${pv.i + 1} з ${tasks.length} · ${t.id}`)),
       h("div.task__kind", kindLabel(t)), t.q && h("h2.task__q", { html: t.q }), view.el,
       h("div.task__actions",
         view.autoSubmit ? null : h("button.btn.btn--primary", { onclick: () => (view.ready() ? finish(false) : toast("Спершу дай відповідь або натисни «Показати відповідь»", "info")) }, "Перевірити"),

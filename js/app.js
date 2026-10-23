@@ -8,6 +8,9 @@ import { SECTIONS, TOPICS, topicById, sectionById, shortTitle, loadTopic, BOOK }
 import { runQuiz } from "./quiz.js";
 import { CATEGORIES, ITEMS, itemById, fullAvatar, isFree, avatarPreview } from "./avatar.js";
 import { startLive, stopLive } from "./live.js";
+import { MONITORING } from "../content/monitoring/index.js";
+const loadMon = async (id) => (await import(`../content/monitoring/${id}.js`)).default;
+const monOpen = (id) => MONITORING.includes(id) && state.settings?.monitoring?.[`t_${id}`]?.open === true;
 
 const LOGO = "assets/logo-wordmark.png";
 const go = (hash) => (location.hash = hash);
@@ -168,7 +171,8 @@ function home() {
   const avBox = h("div.hero__av");
   const assigned = TOPICS.filter((t) => state.settings?.topics?.[t.id]?.assigned && t.ready);
   const mon = state.settings?.monitoring || {};
-  const openMon = [...SECTIONS.filter((s) => mon[s.id]?.open), ...(mon.diag?.open ? [{ id: "diag", title: "Вхідна діагностика", n: "🧭" }] : [])];
+  const openMon = [...SECTIONS.filter((s) => mon[s.id]?.open), ...(mon.diag?.open ? [{ id: "diag", title: "Вхідна діагностика", n: "🧭" }] : []),
+    ...TOPICS.filter((t) => t.ready && monOpen(t.id)).map((t) => ({ id: `t_${t.id}`, title: shortTitle(t) }))];
 
   page(
     h("section.hero.card",
@@ -263,6 +267,7 @@ async function topicPage(id) {
       ring(v, 110, 12, v === 100 ? "var(--right)" : "var(--lime)")),
     h("h2.sec__title", "📖 Теорія"),
     theory,
+    monOpen(id) ? h("a.card.quick__item.quick__item--mon.topicmon", { href: `#/monitoring/t_${id}` }, h("span.quick__ic", "📋"), h("b", "Моніторингова робота з теми"), h("span.note", "Відкрив учитель · складні завдання без підказок")) : null,
     h("h2.sec__title", "🎯 Рівні (по 10 завдань)"),
     h("p.note", `Відсоток теми — сума найкращих результатів усіх рівнів. Перший правильний розв’язок: +${ECONOMY.firstSolve} 🪙, 10 з 10: +${ECONOMY.levelPerfect} 🪙, тема на 100 %: +${ECONOMY.topicPerfect} 🪙.`),
     levels,
@@ -346,7 +351,8 @@ async function review() {
     if (!topicById[m.topic]?.ready) continue;
     const T = await loadTopic(m.topic);
     Object.assign(rules, T.rules);
-    const tk = T.levels.flatMap((L) => L.tasks).find((x) => x.id === m.id);
+    let tk = T.levels.flatMap((L) => L.tasks).find((x) => x.id === m.id);
+    if (!tk && MONITORING.includes(m.topic)) tk = (await loadMon(m.topic)).tasks.find((x) => x.id === m.id);
     if (tk) tasks.push({ ...tk, topic: m.topic });
   }
   runQuiz({
@@ -364,6 +370,7 @@ async function review() {
 async function monitoring(sid) {
   const mon = state.settings?.monitoring?.[sid];
   if (!mon?.open) return go("#/");
+  if (sid.startsWith("t_")) return topicMonitoring(sid.slice(2));
   const isDiag = sid === "diag";
   const topics = TOPICS.filter((t) => t.ready && (isDiag || t.s === sid));
   if (!topics.length) return page(h("a.back", { href: "#/" }, "← На головну"), h("p.card", "У цьому розділі ще немає готових тем."));
@@ -390,6 +397,32 @@ async function monitoring(sid) {
         mount(h("div.loading", "Зберігаю…"));
         const res = await saveSession({ type: "monitoring", monitoringId: sid, title, start: st, answers });
         resultPage(res, null, { back: "#/" });
+      },
+    });
+  }
+}
+
+// Моніторингова робота однієї теми: окремі складні завдання, без підказок
+async function topicMonitoring(id) {
+  const t = topicById[id];
+  if (!t?.ready || !monOpen(id)) return go("#/");
+  page(h("div.loading", "Завантаження…"));
+  const [T, M] = await Promise.all([loadTopic(id), loadMon(id)]);
+  const tasks = M.tasks.map((x) => ({ ...x, topic: id }));
+  const title = `Моніторингова робота: ${shortTitle(t)}`;
+  page(h("a.back", { href: `#/topic/${id}` }, "← До теми"), h("section.card.center",
+    h("div.result__big", "📋"), h("h1", title),
+    h("p", M.intro || `${tasks.length} завдань.`),
+    h("p.note", "Підказок немає. Результат побачить учитель. Пройти можна кілька разів — зберігаються всі спроби."),
+    h("button.btn.btn--primary.btn--big", { onclick: start }, "Почати")));
+  function start() {
+    runQuiz({
+      title, type: "monitoring", rules: T.rules, tasks: shuffle(tasks), noHints: true,
+      exit: () => go(`#/topic/${id}`),
+      onFinish: async (answers, st) => {
+        mount(h("div.loading", "Зберігаю…"));
+        const res = await saveSession({ type: "monitoring", monitoringId: `t_${id}`, topic: id, title, start: st, answers });
+        resultPage(res, null, { back: `#/topic/${id}` });
       },
     });
   }

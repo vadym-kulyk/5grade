@@ -5,6 +5,7 @@ import { TEACHER_EMAIL, CLASSES, LEVELS_PER_TOPIC, TASKS_PER_LEVEL } from "./con
 import { SECTIONS, TOPICS, topicById, shortTitle } from "../content/index.js";
 import { rankOf, topicPct, BADGES } from "./game.js";
 import { previewView, liveView, startTeacherLive } from "./teacher-extra.js";
+import { MONITORING } from "../content/monitoring/index.js";
 
 let data = null;
 let tab = "overview", cls = "all", studentId = null, topicId = null;
@@ -281,7 +282,10 @@ function settingsView() {
     h("section.card", h("h2", "📋 Моніторингові роботи"),
       h("p.note", "Відкрий роботу — учні побачать її на головній. Завдання беруться з усіх готових тем розділу (до 25 штук)."),
       sw(s.monitoring?.diag?.open === true, (v) => save("monitoring/diag/open", v), "Вхідна діагностика (з усіх готових тем)"),
-      SECTIONS.map((x) => sw(s.monitoring?.[x.id]?.open === true, (v) => save(`monitoring/${x.id}/open`, v), `Розділ ${x.n}. ${x.title}`))),
+      SECTIONS.map((x) => sw(s.monitoring?.[x.id]?.open === true, (v) => save(`monitoring/${x.id}/open`, v), `Розділ ${x.n}. ${x.title}`)),
+      h("h3", "За темами (складні, без підказок)"),
+      h("p.note", "Кожна робота закрита, доки ти її не відкриєш. Учні побачать її на головній і на сторінці теми. Переглянути завдання можна у вкладці «📖 Завдання»."),
+      TOPICS.filter((t) => t.ready && MONITORING.includes(t.id)).map((t) => sw(s.monitoring?.[`t_${t.id}`]?.open === true, (v) => save(`monitoring/t_${t.id}/open`, v), shortTitle(t)))),
     h("section.card", h("h2", "📌 Теми: відкрити, закрити, задати з дедлайном"),
       h("div.tablewrap", h("table.tbl",
         h("thead", h("tr", ["Тема", "Готова", "Відкрита", "Задано", "Дедлайн"].map((x) => h("th", x)))),

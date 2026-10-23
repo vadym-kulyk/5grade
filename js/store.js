@@ -191,7 +191,7 @@ export async function saveSession(s) {
   const durSec = Math.round((end - s.start) / 1000);
   const avgSec = total ? Math.round((s.answers.reduce((a, b) => a + b.sec, 0) / total) * 10) / 10 : 0;
   const attempt = {
-    type: s.type, topic: s.topic || null, topicTitle: s.topic ? topicById[s.topic]?.title : s.title,
+    type: s.type, topic: s.topic || null, topicTitle: s.type === "monitoring" ? s.title : s.topic ? topicById[s.topic]?.title : s.title,
     level: s.level || null, monitoringId: s.monitoringId || null,
     name: u.name, cls: u.cls, start: s.start, end, durSec, avgSec,
     correct, total, pct: Math.round((correct / total) * 100),

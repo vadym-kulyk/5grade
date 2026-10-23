@@ -176,7 +176,7 @@ export function runQuiz(opts) {
     let hintUsed = false;
     const hintBox = h("div.hintbox");
     const check = h("button.btn.btn--primary.btn--big", { onclick: submit }, "Перевірити");
-    const hintBtn = h("button.btn.btn--hint", { onclick: hint }, `💡 Підказка · ${ECONOMY.hintPrice} 🪙`);
+    const hintBtn = opts.noHints ? h("span") : h("button.btn.btn--hint", { onclick: hint }, `💡 Підказка · ${ECONOMY.hintPrice} 🪙`);
     const card = h("div.task",
       h("div.task__kind", kindLabel(t)),
       t.q && h("h2.task__q", { html: t.q }),
