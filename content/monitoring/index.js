@@ -1,2 +1,2 @@
 // Теми, для яких уже є моніторингова робота (content/monitoring/<id>.js).
-export const MONITORING = ["miakyiznak", "apostrof"];
+export const MONITORING = ["mova", "znachennia", "synonimy", "omonimy", "zapozycheni", "arhaizmy", "vzhyvannia", "surzhyk", "frazeolohizmy", "frazslovnyk", "zvuky", "hrafika", "naholos", "eta", "cherhuvannia", "dzvinki", "vymova", "miaki", "miakyiznak", "apostrof", "pereniesennia", "mylozvuchnist", "sproshchennia", "pomylky", "slovospoluchennia", "vydyrechen", "osnova", "odnoskladni", "oznachennia", "dodatok", "obstavyna", "odnoridni", "skladne", "priamamova", "dialoh", "punktuatsiia", "spilkuvannia", "informatsiia", "typymovlennia", "chytannia", "zhanry"];
