@@ -152,6 +152,7 @@ function loginPage() {
       h("div.login__panel",
         h("p.login__step", "1. Обери свій клас"), tabs,
         h("p.login__step", "2. Натисни на своє ім’я"), list, area),
+      h("div.login__qr", h("img", { src: "assets/qr.png", alt: "QR-код", width: 150, height: 150 }), h("p.note", "📱 Відкрий платформу на телефоні: наведи камеру на QR‑код")),
       h("a.teacherlink", { href: "#/teacher" }, "Вхід для вчителя →"))));
   drawNames();
 }

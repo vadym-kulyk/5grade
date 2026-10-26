@@ -517,3 +517,6 @@ a.gtile:hover { border-color: var(--lime); }
 .tag { display: inline-block; padding: 2px 10px; border-radius: 999px; background: var(--surface-2); font-size: 12px; font-weight: 700; }
 .tag--on { background: #e3f1cf; color: var(--right); }
 @media (max-width: 520px) { .cols { gap: 2px; } .cols__c:not(:nth-child(7n+1)) small { visibility: hidden; } .cols small { font-size: 9px; } }
+.login__qr { justify-self: center; display: grid; justify-items: center; gap: 6px; padding: 14px 18px 10px; border-radius: 22px; background: rgba(255, 255, 255, .8); border: 1px solid rgba(255, 255, 255, .9); box-shadow: var(--shadow); }
+.login__qr img { display: block; width: 150px; height: 150px; border-radius: 10px; }
+.login__qr p { margin: 0; text-align: center; max-width: 220px; }
