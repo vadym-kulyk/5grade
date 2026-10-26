@@ -8,9 +8,11 @@ import { SECTIONS, TOPICS, topicById, sectionById, shortTitle, loadTopic, BOOK }
 import { runQuiz } from "./quiz.js";
 import { CATEGORIES, ITEMS, itemById, fullAvatar, isFree, avatarPreview } from "./avatar.js";
 import { startLive, stopLive } from "./live.js";
-import { MONITORING } from "../content/monitoring/index.js";
+import { monWorks, monWork } from "../content/monitoring/index.js";
 const loadMon = async (id) => (await import(`../content/monitoring/${id}.js`)).default;
-const monOpen = (id) => MONITORING.includes(id) && state.settings?.monitoring?.[`t_${id}`]?.open === true;
+// відкриті вчителем роботи теми (варіант 1, 2…)
+const openWorks = (topic) => monWorks(topic).filter((w) => state.settings?.monitoring?.[`t_${w.id}`]?.open === true);
+const workTitle = (w) => shortTitle(topicById[w.topic]) + (w.n > 1 ? ` · варіант ${w.n}` : "");
 
 const LOGO = "assets/logo-wordmark.png";
 const go = (hash) => (location.hash = hash);
@@ -173,7 +175,7 @@ function home() {
   const assigned = TOPICS.filter((t) => state.settings?.topics?.[t.id]?.assigned && t.ready);
   const mon = state.settings?.monitoring || {};
   const openMon = [...SECTIONS.filter((s) => mon[s.id]?.open), ...(mon.diag?.open ? [{ id: "diag", title: "Вхідна діагностика", n: "🧭" }] : []),
-    ...TOPICS.filter((t) => t.ready && monOpen(t.id)).map((t) => ({ id: `t_${t.id}`, title: shortTitle(t) }))];
+    ...TOPICS.filter((t) => t.ready).flatMap((t) => openWorks(t.id)).map((w) => ({ id: `t_${w.id}`, title: workTitle(w) }))];
 
   page(
     h("section.hero.card",
@@ -268,7 +270,7 @@ async function topicPage(id) {
       ring(v, 110, 12, v === 100 ? "var(--right)" : "var(--lime)")),
     h("h2.sec__title", "📖 Теорія"),
     theory,
-    monOpen(id) ? h("a.card.quick__item.quick__item--mon.topicmon", { href: `#/monitoring/t_${id}` }, h("span.quick__ic", "📋"), h("b", "Моніторингова робота з теми"), h("span.note", "Відкрив учитель · складні завдання без підказок")) : null,
+    ...openWorks(id).map((w) => h("a.card.quick__item.quick__item--mon.topicmon", { href: `#/monitoring/t_${w.id}` }, h("span.quick__ic", "📋"), h("b", w.n > 1 ? `Моніторингова робота · варіант ${w.n}` : "Моніторингова робота з теми"), h("span.note", "Відкрив учитель · складні завдання без підказок"))),
     h("h2.sec__title", "🎯 Рівні (по 10 завдань)"),
     h("p.note", `Відсоток теми — сума найкращих результатів усіх рівнів. Перший правильний розв’язок: +${ECONOMY.firstSolve} 🪙, 10 з 10: +${ECONOMY.levelPerfect} 🪙, тема на 100 %: +${ECONOMY.topicPerfect} 🪙.`),
     levels,
@@ -353,7 +355,7 @@ async function review() {
     const T = await loadTopic(m.topic);
     Object.assign(rules, T.rules);
     let tk = T.levels.flatMap((L) => L.tasks).find((x) => x.id === m.id);
-    if (!tk && MONITORING.includes(m.topic)) tk = (await loadMon(m.topic)).tasks.find((x) => x.id === m.id);
+    for (const w of monWorks(m.topic)) { if (tk) break; tk = (await loadMon(w.id)).tasks.find((x) => x.id === m.id); }
     if (tk) tasks.push({ ...tk, topic: m.topic });
   }
   runQuiz({
@@ -404,13 +406,14 @@ async function monitoring(sid) {
 }
 
 // Моніторингова робота однієї теми: окремі складні завдання, без підказок
-async function topicMonitoring(id) {
-  const t = topicById[id];
-  if (!t?.ready || !monOpen(id)) return go("#/");
+async function topicMonitoring(wid) {
+  const w = monWork(wid);
+  const id = w?.topic, t = topicById[id];
+  if (!t?.ready || !openWorks(id).some((x) => x.id === wid)) return go("#/");
   page(h("div.loading", "Завантаження…"));
-  const [T, M] = await Promise.all([loadTopic(id), loadMon(id)]);
+  const [T, M] = await Promise.all([loadTopic(id), loadMon(wid)]);
   const tasks = M.tasks.map((x) => ({ ...x, topic: id }));
-  const title = `Моніторингова робота: ${shortTitle(t)}`;
+  const title = `Моніторингова робота: ${workTitle(w)}`;
   page(h("a.back", { href: `#/topic/${id}` }, "← До теми"), h("section.card.center",
     h("div.result__big", "📋"), h("h1", title),
     h("p", M.intro || `${tasks.length} завдань.`),
@@ -422,7 +425,7 @@ async function topicMonitoring(id) {
       exit: () => go(`#/topic/${id}`),
       onFinish: async (answers, st) => {
         mount(h("div.loading", "Зберігаю…"));
-        const res = await saveSession({ type: "monitoring", monitoringId: `t_${id}`, topic: id, title, start: st, answers });
+        const res = await saveSession({ type: "monitoring", monitoringId: `t_${wid}`, topic: id, title, start: st, answers });
         resultPage(res, null, { back: `#/topic/${id}` });
       },
     });

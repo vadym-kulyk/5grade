@@ -1,6 +1,6 @@
 // Перевірка тем: node tools/validate.mjs
 import { TOPICS } from "../content/index.js";
-import { MONITORING } from "../content/monitoring/index.js";
+import { MONITORING, MON_EXTRA } from "../content/monitoring/index.js";
 import fs from "node:fs";
 let bad = 0;
 const err = (t, m) => { bad++; console.log(`✗ [${t}] ${m}`); };
@@ -52,6 +52,12 @@ for (const meta of TOPICS.filter((t) => t.ready)) {
     if (M.tasks.length < 15) err(meta.id, `моніторингова: лише ${M.tasks.length} завдань`);
     for (const t of M.tasks) { const w = `${meta.id}/мон/${t.id}`; if (ids.has(t.id)) err(w, "повтор id"); ids.add(t.id); checkTask(T, w, t); }
     console.log(`  📋 моніторингова: ${M.tasks.length} завдань`);
+  }
+  for (const x of MON_EXTRA.filter((x) => x.topic === meta.id)) {
+    const M = (await import(`../content/monitoring/${x.id}.js`)).default;
+    if (M.tasks.length < 15) err(meta.id, `моніторингова, варіант ${x.n}: лише ${M.tasks.length} завдань`);
+    for (const t of M.tasks) { const w = `${meta.id}/мон${x.n}/${t.id}`; if (ids.has(t.id)) err(w, "повтор id"); ids.add(t.id); checkTask(T, w, t); }
+    console.log(`  📋 моніторингова, варіант ${x.n}: ${M.tasks.length} завдань`);
   }
 }
 process.exit(bad ? 1 : 0);
