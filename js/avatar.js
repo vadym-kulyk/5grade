@@ -21,6 +21,7 @@ export const CATEGORIES = [
   { id: "neck", title: "Намиста й шарфи", icon: "📿" },
   { id: "top", title: "Верх", icon: "👕" },
   { id: "bottom", title: "Низ", icon: "👖" },
+  { id: "tights", title: "Колготи", icon: "🧦" },
   { id: "shoes", title: "Взуття", icon: "👟" },
   { id: "hat", title: "Головний убір", icon: "🎩" },
   { id: "glasses", title: "Окуляри", icon: "🕶️" },
@@ -110,6 +111,23 @@ export const ITEMS = [
     .map(([id, n, p, rk]) => C("back", id, n, p, { style: id }, rk || 0)),
   ...[["hamster", "Хом’ячок", 400], ["panda", "Панда", 700], ["unicorn", "Єдиноріг", 1500, 5]]
     .map(([id, n, p, rk]) => C("pet", id, n, p, { style: id }, rk || 0)),
+  // ---------- Яскраве: принти, неон, пухнасті спідниці ----------
+  ...[["neon-pink", "Ядерно-рожева футболка", "plain", "#ff1fa9", 100], ["neon-lime", "Ядерно-лаймова футболка", "plain", "#b6ff1a", 100],
+    ["pr-skull", "Футболка з черепом", "skull", "#1e1b26", 250], ["pr-skull-pink", "Рожева з черепом", "skull", "#ff1fa9", 300], ["pr-lime-bolt", "Лаймова з блискавкою", "bolt", "#99cc00", 250],
+    ["pr-star", "Футболка із зіркою", "bigstar", "#2f3b6b", 200], ["pr-cat", "Футболка з котиком", "cat", "#f4f1f9", 250], ["pr-smile", "Футболка зі смайлом", "smile", "#f7c915", 200],
+    ["pr-heart-neon", "Неонове серце", "heart", "#1e1b26", 300], ["pr-ua", "Футболка «Україна»", "ua", "#f4f1f9", 300], ["pr-rainbow", "Райдужна футболка", "rainbow", "#f4f1f9", 350], ["pr-leopard", "Леопардова", "leopard", "#e8b47a", 400]]
+    .map(([id, n, pat, c, p]) => C("top", id, n, p, { pattern: pat, color: c })),
+  ...[["fluffy-pink", "Пухнаста яскраво-рожева спідниця", "#ff1fa9", 350, 5], ["fluffy-lime", "Пухнаста лаймова спідниця", "#b6ff1a", 350, 5], ["fluffy-violet", "Пухнаста фіолетова спідниця", "#9d6bdb", 350, 5],
+    ["hot-denim", "Короткі джинсові шорти", "#4a6fa5", 120, 6], ["hot-pink", "Короткі рожеві шорти", "#ff1fa9", 150, 6], ["hot-black", "Короткі чорні шорти", "#1e1b26", 120, 6],
+    ["skull-shorts", "Короткі шорти з черепом", "#1e1b26", 300, 6, "skull"], ["skull-shorts-pink", "Рожеві шорти з черепом", "#ff1fa9", 350, 6, "skull"]]
+    .map(([id, n, c, p, kind, print]) => C("bottom", id, n, p, { color: c, kind, print })),
+  ...[["none", "Без колгот", 0, "", ""], ["neon-stripes", "Ядерно-рожеві в смужку", 150, "#ff1fa9", "#1e1b26"], ["pink-white", "Рожево-білі в смужку", 150, "#ff1fa9", "#ffffff"],
+    ["neon", "Ядерно-рожеві", 100, "#ff1fa9", ""], ["bw", "Чорно-білі в смужку", 120, "#1e1b26", "#ffffff"], ["lime-stripes", "Лаймові в смужку", 150, "#b6ff1a", "#1e1b26"],
+    ["rainbow", "Райдужні", 300, "rainbow", ""], ["black", "Чорні", 0, "#1e1b26", ""], ["white", "Білі", 0, "#f4f1f9", ""], ["fishnet", "Сіточка", 250, "fishnet", ""]]
+    .map(([id, n, p, c, c2]) => C("tights", id, n, p, { color: c, stripe: c2 })),
+  ...[["mega", "Довжелезні", 300], ["mega-color", "Довжелезні рожеві", 400]].map(([id, n, p]) => C("lashes", id, n, p, { style: id })),
+  ...[["huge", "Величезні губи", "#ff2b8a", 300], ["huge-red", "Величезні червоні губи", "#d1102e", 300], ["huge-neon", "Величезні ядерно-рожеві", "#ff1fa9", 400]]
+    .map(([id, n, c, p]) => C("lips", id, n, p, { color: c, big: true, gloss: true })),
 ];
 export const itemById = Object.fromEntries(ITEMS.map((i) => [i.id, i]));
 
@@ -118,7 +136,7 @@ export const DEFAULT_AVATAR = {
   top: "top.tee-lime", bottom: "bottom.jeans", shoes: "shoes.sneakers", hat: "hat.none", glasses: "glasses.none",
   back: "back.none", pet: "pet.none", aura: "aura.none",
   eyeColor: "eyeColor.black", lashes: "lashes.none", brows: "brows.natural", lips: "lips.natural", facedeco: "facedeco.blush",
-  hairAcc: "hairAcc.none", earrings: "earrings.none", neck: "neck.none",
+  hairAcc: "hairAcc.none", earrings: "earrings.none", neck: "neck.none", tights: "tights.none",
 };
 export const isFree = (it) => it.price === 0 && !it.rank;
 export const fullAvatar = (a) => ({ ...DEFAULT_AVATAR, ...(a || {}) });
@@ -164,6 +182,7 @@ function faceTexture(skin, eyes, mouth, f = {}) {
     else { E(20); E(44); }
     drawLashes(g, f.lashes || "none", eyes);
     g.fillStyle = lip; g.strokeStyle = lip;
+    if (f.big) { bigLips(g, lip); if (f.gloss) { g.fillStyle = "rgba(255,255,255,.8)"; g.fillRect(21, 40, 6, 2.5); g.fillRect(34, 52, 6, 2); } return; }
     switch (mouth) {
       case "grin": g.beginPath(); g.arc(32, 40, 10, 0.15 * Math.PI, 0.85 * Math.PI); g.fill(); break;
       case "o": g.beginPath(); g.arc(32, 45, 4, 0, 7); g.fill(); break;
@@ -176,13 +195,22 @@ function faceTexture(skin, eyes, mouth, f = {}) {
   });
 }
 
+// Величезні губи: верхня «пташка» й пухка нижня
+function bigLips(g, c) {
+  g.save(); g.fillStyle = c;
+  g.beginPath(); g.moveTo(13, 46); g.bezierCurveTo(18, 33, 27, 34, 32, 39); g.bezierCurveTo(37, 34, 46, 33, 51, 46); g.closePath(); g.fill();
+  g.beginPath(); g.moveTo(13, 46); g.bezierCurveTo(17, 62, 47, 62, 51, 46); g.closePath(); g.fill();
+  g.strokeStyle = "rgba(0,0,0,.4)"; g.lineWidth = 1.2; g.beginPath(); g.moveTo(14, 46); g.quadraticCurveTo(32, 49, 50, 46); g.stroke();
+  g.restore();
+}
+
 // Вії: короткі штрихи над оком
 function drawLashes(g, style, eyes) {
   if (style === "none" || eyes === "robot") return;
-  const cfg = { short: [3, 2], long: [3, 4], fluffy: [5, 3.5], doll: [5, 5], color: [4, 4.5] }[style];
+  const cfg = { short: [3, 2], long: [3, 4], fluffy: [5, 3.5], doll: [5, 5], color: [4, 4.5], mega: [7, 13], "mega-color": [7, 13] }[style];
   if (!cfg) return;
   const [n, L] = cfg;
-  g.save(); g.strokeStyle = style === "color" ? "#9d6bdb" : "#1e1b26"; g.lineWidth = 1.3; g.lineCap = "round";
+  g.save(); g.strokeStyle = style === "color" ? "#9d6bdb" : style === "mega-color" ? "#ff1fa9" : "#1e1b26"; g.lineWidth = style.startsWith("mega") ? 2.2 : 1.3; g.lineCap = "round";
   for (const [x, side] of [[20, -1], [44, 1]]) {
     for (let k = 0; k < n; k++) {
       // віяло зверху ока, довші — назовні
@@ -238,6 +266,26 @@ function heart(g, x, y, c) {
   g.bezierCurveTo(x - 9, y - 1, x - 4, y - 8, x, y - 3); g.bezierCurveTo(x + 4, y - 8, x + 9, y - 1, x, y + 6); g.fill(); g.restore();
 }
 
+function skull(g, x, y, k, c, bg) {
+  g.save(); g.translate(x, y); g.scale(k, k); g.fillStyle = c;
+  g.beginPath(); g.arc(0, -4, 13, 0, 7); g.fill(); g.fillRect(-8, 4, 16, 9);
+  g.fillStyle = bg; g.beginPath(); g.arc(-5, -3, 3.8, 0, 7); g.arc(5, -3, 3.8, 0, 7); g.fill();
+  g.beginPath(); g.moveTo(0, 2); g.lineTo(-2, 6); g.lineTo(2, 6); g.fill();
+  for (const dx of [-5, -1.5, 2]) g.fillRect(dx, 9, 2, 4);
+  g.restore();
+}
+
+// Колготи / принт на шортах
+function tightsMat(t) {
+  if (!t.color) return null;
+  if (!t.stripe && t.color[0] === "#") return mat(t.color);
+  return new THREE.MeshLambertMaterial({ map: canvasTex(32, 32, (g) => {
+    if (t.color === "rainbow") { ["#e2445c", "#f7a51a", "#f7c915", "#99cc00", "#58b4f0", "#9d6bdb"].forEach((c, i) => { g.fillStyle = c; g.fillRect(0, i * 32 / 6, 32, 32 / 6 + 1); }); return; }
+    if (t.color === "fishnet") { g.fillStyle = "#f1c19c"; g.fillRect(0, 0, 32, 32); g.strokeStyle = "#1e1b26"; g.lineWidth = 1; for (let k = -32; k < 64; k += 6) { g.beginPath(); g.moveTo(k, 0); g.lineTo(k + 32, 32); g.moveTo(k + 32, 0); g.lineTo(k, 32); g.stroke(); } return; }
+    g.fillStyle = t.color; g.fillRect(0, 0, 32, 32); g.fillStyle = t.stripe; for (let y = 0; y < 32; y += 8) g.fillRect(0, y, 32, 4);
+  }) });
+}
+
 function topTexture(pattern, color) {
   return canvasTex(64, 64, (g) => {
     g.fillStyle = color; g.fillRect(0, 0, 64, 64);
@@ -265,6 +313,14 @@ function topTexture(pattern, color) {
       case "frill": g.fillStyle = "#f08fc0"; for (let x = 0; x < 64; x += 8) { g.beginPath(); g.arc(x + 4, 6, 4, 0, Math.PI); g.fill(); } for (let y = 18; y < 64; y += 14) for (let x = 0; x < 64; x += 8) { g.beginPath(); g.arc(x + 4, y, 3, 0, Math.PI); g.fill(); } break;
       case "heart": heart(g, 32, 32, "#e2445c"); g.save(); g.translate(32, 32); g.scale(2.2, 2.2); g.translate(-32, -32); heart(g, 32, 32, "#e2445c"); g.restore(); break;
       case "cardigan": g.fillStyle = "#fff"; g.fillRect(26, 0, 12, 64); g.fillStyle = "#9d6bdb"; for (let y = 12; y < 64; y += 14) { g.beginPath(); g.arc(24, y, 2.2, 0, 7); g.fill(); } g.fillStyle = "rgba(0,0,0,.12)"; g.fillRect(6, 40, 14, 12); g.fillRect(44, 40, 14, 12); break;
+      case "skull": skull(g, 32, 30, 1, color === "#1e1b26" ? "#f4f1f9" : "#1e1b26", color); break;
+      case "bolt": g.fillStyle = "#1e1b26"; g.beginPath(); for (const [x, y] of [[36, 6], [20, 34], [31, 34], [26, 58], [44, 26], [33, 26], [40, 6]]) g.lineTo(x, y); g.fill(); break;
+      case "bigstar": star(g, 32, 32, 22, "#f7c915"); break;
+      case "cat": { g.fillStyle = "#1e1b26"; g.beginPath(); g.arc(32, 34, 14, 0, 7); g.fill(); g.beginPath(); g.moveTo(19, 28); g.lineTo(21, 12); g.lineTo(30, 22); g.fill(); g.beginPath(); g.moveTo(45, 28); g.lineTo(43, 12); g.lineTo(34, 22); g.fill(); g.fillStyle = "#b6ff1a"; g.fillRect(25, 30, 4, 4); g.fillRect(35, 30, 4, 4); g.fillStyle = "#ff1fa9"; g.fillRect(30, 37, 4, 3); break; }
+      case "smile": g.fillStyle = "#1e1b26"; g.fillRect(23, 22, 5, 8); g.fillRect(36, 22, 5, 8); g.lineWidth = 4; g.strokeStyle = "#1e1b26"; g.beginPath(); g.arc(32, 32, 14, 0.15 * Math.PI, 0.85 * Math.PI); g.stroke(); break;
+      case "ua": g.fillStyle = "#0057b7"; g.fillRect(12, 18, 40, 14); g.fillStyle = "#ffd700"; g.fillRect(12, 32, 40, 14); heart(g, 32, 54, "#e2445c"); break;
+      case "rainbow": ["#e2445c", "#f7a51a", "#f7c915", "#99cc00", "#58b4f0", "#9d6bdb"].forEach((c, i) => { g.strokeStyle = c; g.lineWidth = 3; g.beginPath(); g.arc(32, 46, 22 - i * 3, Math.PI, 2 * Math.PI); g.stroke(); }); break;
+      case "leopard": g.fillStyle = "#3a2a1a"; for (let y = 4; y < 64; y += 12) for (let x = (y / 12) % 2 ? 2 : 8; x < 64; x += 12) { g.beginPath(); g.ellipse(x, y, 3.5, 2.5, 0.6, 0, 7); g.fill(); } break;
       case "robe": g.fillStyle = "#99cc00"; g.fillRect(0, 0, 64, 6); g.fillRect(29, 0, 6, 64); star(g, 16, 30, 6, "#f7c915"); star(g, 48, 40, 5, "#f7c915"); break;
     }
   });
@@ -278,22 +334,35 @@ export function buildAvatar(cfg) {
   const hairC = get("hairColor").color;
   const top = get("top"), bottom = get("bottom"), shoes = get("shoes");
   const g = new THREE.Group();
+  const mTights = tightsMat(get("tights"));
   const mSkin = mat(skin), mHair = mat(hairC), mTop = mat(top.color), mBottom = mat(bottom.color), mShoes = mat(shoes.color);
 
   // Ноги (низ + взуття)
   const legs = new THREE.Group();
   for (const x of [-0.15, 0.15]) {
     const leg = new THREE.Group();
-    const short = bottom.kind === 1;
-    leg.add(at(box(0.26, short ? 0.32 : 0.62, 0.3, mBottom), 0, short ? 0.54 : 0.39, 0));
-    if (short) leg.add(at(box(0.24, 0.3, 0.28, mSkin), 0, 0.23, 0));
+    const short = bottom.kind === 1, hot = bottom.kind === 6;
+    // спідниці/сукні: ноги в колготах, якщо їх вдягнено
+    const legM = (bottom.kind === 2 || bottom.kind === 3 || bottom.kind === 5) && mTights ? mTights : mBottom;
+    if (hot) {
+      const print = bottom.print && x > 0 ? new THREE.MeshLambertMaterial({ map: canvasTex(32, 32, (c) => { c.fillStyle = bottom.color; c.fillRect(0, 0, 32, 32); skull(c, 16, 16, 0.85, bottom.color === "#1e1b26" ? "#f4f1f9" : "#1e1b26", bottom.color); }) }) : mBottom;
+      leg.add(at(box(0.27, 0.16, 0.31, [mBottom, mBottom, mBottom, mBottom, print, mBottom]), 0, 0.62, 0));
+      leg.add(at(box(0.24, 0.46, 0.28, mTights || mSkin), 0, 0.31, 0));
+    } else {
+      leg.add(at(box(0.26, short ? 0.32 : 0.62, 0.3, legM), 0, short ? 0.54 : 0.39, 0));
+      if (short) leg.add(at(box(0.24, 0.3, 0.28, mTights || mSkin), 0, 0.23, 0));
+    }
     leg.add(at(box(0.28, 0.12, 0.36, mShoes), 0, 0.06, 0.03));
     leg.position.x = x;
     legs.add(leg);
   }
   g.add(legs);
   if (bottom.kind === 2) g.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.44, 0.36, 8), mBottom), 0, 0.58, 0));
+  if (bottom.kind === 5) { const fl = mat(bottom.color, { transparent: true, opacity: 0.95 }), fl2 = mat(shade(bottom.color, 0.35), { transparent: true, opacity: 0.9 });
+    [[0.75, 0.16, 0.7, fl], [0.86, 0.16, 0.6, fl2], [0.8, 0.14, 0.5, fl]].forEach(([r, hh, y, m]) => g.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.33, r, hh, 16), m), 0, y, 0))); }
   if (bottom.kind === 3) { const tutu = mat(bottom.color, { transparent: true, opacity: 0.92 }); g.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.33, 0.58, 0.14, 12), tutu), 0, 0.68, 0)); g.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.33, 0.5, 0.12, 12), tutu), 0, 0.6, 0)); }
+  // Сукня: колготи на ногах (якщо штани — їх не видно)
+  if (top.dress && mTights && ![1, 6].includes(bottom.kind)) legs.children.forEach((l) => (l.children[0].material = mTights));
   // Сукня: спідниця кольору верху поверх ніг
   if (top.dress) g.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.33, top.dress === 2 ? 0.62 : 0.48, top.dress === 2 ? 0.62 : 0.46, 12), mTop), 0, top.dress === 2 ? 0.42 : 0.5, 0));
 
@@ -318,7 +387,7 @@ export function buildAvatar(cfg) {
   // Голова з обличчям
   const fTex = faceTexture(skin, get("eyes").style, get("mouth").style, {
     iris: get("eyeColor").color, lashes: get("lashes").style, brows: get("brows").style, browColor: shade(hairC, -0.25),
-    lips: get("lips").color, gloss: get("lips").gloss, deco: get("facedeco").style,
+    lips: get("lips").color, gloss: get("lips").gloss, big: get("lips").big, deco: get("facedeco").style,
   });
   const mFace = new THREE.MeshLambertMaterial({ map: fTex });
   const head = new THREE.Group();
@@ -336,13 +405,13 @@ export function buildAvatar(cfg) {
   const aura = addAura(g, get("aura").color);
 
   g.userData = {
-    arms, legs: legs.children, head,
+    arms, legs: legs.children, head, pet,
     animate(t, moving = 0) {
       const sw = Math.sin(t * 9) * 0.6 * moving;
       legs.children[0].rotation.x = sw; legs.children[1].rotation.x = -sw;
       arms[0].rotation.x = -sw; arms[1].rotation.x = sw;
       head.position.y = 1.7 + Math.sin(t * 2) * 0.012;
-      if (pet) { pet.position.y = 0.05 + Math.abs(Math.sin(t * 4)) * 0.08; pet.rotation.y = Math.sin(t) * 0.3; }
+      if (pet && g.userData.pet === pet) { pet.position.y = 0.05 + Math.abs(Math.sin(t * 4)) * 0.08; pet.rotation.y = Math.sin(t) * 0.3; }
       if (aura) aura.rotation.y = t * 0.8;
     },
   };
@@ -571,5 +640,29 @@ export function avatarPreview(container, cfg, { size = 280, spin = true } = {}) 
   return {
     set(newCfg) { scene.remove(model); model = buildAvatar(newCfg); scene.add(model); },
     stop() { alive = false; },
+  };
+}
+
+// Улюбленець ходить слідом за власником (3D-школа): відчіпляємо від персонажа й ведемо окремо
+export function petFollower(model, scene) {
+  const p = model.userData.pet;
+  if (!p) return null;
+  model.remove(p); model.userData.pet = null; scene.add(p);
+  const f = { x: model.position.x + 0.8, z: model.position.z + 0.6, ry: model.rotation.y };
+  return {
+    update(dt, t, ox, oz, ory, oy = 0) {
+      // місце трохи позаду й праворуч від власника
+      const tx = ox - Math.sin(ory) * 1.0 + Math.cos(ory) * 0.75, tz = oz - Math.cos(ory) * 1.0 - Math.sin(ory) * 0.75;
+      const dx = tx - f.x, dz = tz - f.z, d = Math.hypot(dx, dz);
+      const moving = d > 0.12;
+      if (d > 8) { f.x = tx; f.z = tz; } // телепорт, якщо загубився
+      else if (moving) { const k = Math.min(1, dt * 5); f.x += dx * k; f.z += dz * k; }
+      const want = moving ? Math.atan2(dx, dz) : ory;
+      let a = (want - f.ry) % (Math.PI * 2); if (a > Math.PI) a -= Math.PI * 2; if (a < -Math.PI) a += Math.PI * 2;
+      f.ry += a * Math.min(1, dt * 8);
+      p.position.set(f.x, oy + 0.05 + (moving ? Math.abs(Math.sin(t * 12)) * 0.12 : Math.abs(Math.sin(t * 3)) * 0.04), f.z);
+      p.rotation.set(0, f.ry, moving ? Math.sin(t * 12) * 0.08 : 0);
+    },
+    dispose() { scene.remove(p); },
   };
 }

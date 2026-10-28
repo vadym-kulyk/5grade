@@ -2,7 +2,7 @@
 import * as THREE from "three";
 import { h, mount, toast } from "./ui.js";
 import { r, set, push, onValue, off, onDisconnect, remove, query, limitToLast } from "./fb.js";
-import { buildAvatar } from "./avatar.js";
+import { buildAvatar, petFollower } from "./avatar.js";
 import { awardBadges } from "./store.js";
 import { SECTIONS, TOPICS, shortTitle } from "../content/index.js";
 import { rankOf } from "./game.js";
@@ -53,6 +53,7 @@ export function openWorld(state) {
   // ---------- Мій персонаж ----------
   const me = { x: (Math.random() - 0.5) * 8, z: 6 + Math.random() * 4, ry: Math.PI, mv: 0, model: buildAvatar(u.avatar), action: null, actionT: 0 };
   scene.add(me.model);
+  me.pet = petFollower(me.model, scene);
   me.model.add(nameSprite(u.name, rankOf(u.xp).icon));
   let camYaw = 0, camPitch = 0.35;
 
@@ -69,16 +70,18 @@ export function openWorld(state) {
       let o = others.get(id);
       const avKey = JSON.stringify(p.av || {});
       if (!o || o.avKey !== avKey) {
-        if (o) scene.remove(o.model);
+        if (o) { scene.remove(o.model); o.pet?.dispose(); }
         o = { model: buildAvatar(p.av), avKey, x: p.x, z: p.z, ry: p.ry, tx: p.x, tz: p.z, tr: p.ry };
         o.model.add(nameSprite(p.name, p.rk || ""));
+        o.model.position.set(p.x, 0, p.z);
         scene.add(o.model);
+        o.pet = petFollower(o.model, scene);
         others.set(id, o);
       }
       Object.assign(o, { tx: p.x, tz: p.z, tr: p.ry, mv: p.mv, name: p.name });
       if (p.e && p.e.t !== o.eT) { o.eT = p.e.t; if (now - p.e.t < 5000) { if (p.e.text) bubble(o.model, p.e.text); if (p.e.a) { o.action = p.e.a; o.actionT = 0; } } }
     }
-    for (const [id, o] of others) if (!all[id] || now - (all[id].t || 0) > 60000) { scene.remove(o.model); others.delete(id); }
+    for (const [id, o] of others) if (!all[id] || now - (all[id].t || 0) > 60000) { scene.remove(o.model); o.pet?.dispose(); others.delete(id); }
     online.textContent = `🟢 У школі: ${others.size + 1}`;
   });
 
@@ -184,6 +187,7 @@ export function openWorld(state) {
     me.model.position.set(me.x, me.model.position.y, me.z);
     me.model.rotation.y = me.ry;
     me.model.userData.animate(t, me.mv);
+    me.pet?.update(dt, t, me.x, me.z, me.ry);
 
     for (const o of others.values()) {
       o.x += (o.tx - o.x) * Math.min(1, dt * 8);
@@ -193,6 +197,7 @@ export function openWorld(state) {
       o.model.position.set(o.x, o.model.position.y, o.z);
       o.model.rotation.y = o.ry;
       o.model.userData.animate(t, o.mv || 0);
+      o.pet?.update(dt, t, o.x, o.z, o.ry);
     }
 
     // камера позаду персонажа
