@@ -325,6 +325,7 @@ function resultPage(res, T, links) {
         stat("🐢", `${num(res.avgSec)} с`, "на завдання")),
       res.streakBonus ? h("p.win", res.streak > 1 ? `🔥 ${res.streak} ${days(res.streak)} поспіль! Бонус +${res.streakBonus} 🪙` : `🔥 Перший день серії! Бонус +${res.streakBonus} 🪙. Приходь завтра — бонус зросте.`) : null,
       res.topicNowPerfect ? h("p.win", `💯 Тему опановано на 100 %! Бонус +${ECONOMY.topicPerfect} 🪙`) : null,
+      res.leaves ? h("p.warnbox", `👀 Ти виходив(-ла) зі сторінки ${res.leaves} раз(и), разом ${res.awaySec} с. Учитель це бачить. Наступного разу не відволікайся 🙂`) : null,
       res.fast ? h("p.warnbox", `⚡ ${res.fast} відповідей були занадто швидкими. За них не нараховано монет і досвіду, а вчитель бачить позначку швидкості. Читай кожне завдання уважно!`) : null),
     T && h("section.card.recs",
       h("h2", "🔎 Рекомендації"),
@@ -391,6 +392,7 @@ async function monitoring(sid) {
     h("div.result__big", "📋"), h("h1", title),
     h("p", `${tasks.length} завдань із тем: ${topics.map(shortTitle).join(", ")}.`),
     h("p.note", "Підказки працюють, але коштують дорого. Результат побачить учитель. Пройти можна кілька разів — зберігаються всі спроби."),
+    h("p.warnbox", "👀 Не виходь зі сторінки, доки пишеш роботу: учитель бачить, скільки разів і на скільки ти перемикався на інші вкладки чи застосунки."),
     h("button.btn.btn--primary.btn--big", { onclick: start }, "Почати")));
   function start() {
     runQuiz({
@@ -418,6 +420,7 @@ async function topicMonitoring(wid) {
     h("div.result__big", "📋"), h("h1", title),
     h("p", M.intro || `${tasks.length} завдань.`),
     h("p.note", "Підказок немає. Результат побачить учитель. Пройти можна кілька разів — зберігаються всі спроби."),
+    h("p.warnbox", "👀 Не виходь зі сторінки, доки пишеш роботу: учитель бачить, скільки разів і на скільки ти перемикався на інші вкладки чи застосунки."),
     h("button.btn.btn--primary.btn--big", { onclick: start }, "Почати")));
   function start() {
     runQuiz({

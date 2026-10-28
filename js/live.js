@@ -6,6 +6,7 @@ import { r, update, onValue, off, set, onDisconnect, serverTimestamp } from "./f
 let liveRef = null, onlineRef = null, box = null, shownId = null, marksSeen = null;
 const pageName = () => location.hash.replace(/^#\/?/, "").split("/")[0] || "головна";
 const onHash = () => onlineRef && update(onlineRef, { page: pageName(), at: serverTimestamp() });
+const onVis = () => onlineRef && update(onlineRef, { away: document.hidden, at: serverTimestamp() }).catch(() => {});
 
 export function startLive(uid, user) {
   stopLive();
@@ -13,6 +14,7 @@ export function startLive(uid, user) {
   onDisconnect(onlineRef).remove();
   set(onlineRef, { name: user.name, cls: user.cls, page: pageName(), at: serverTimestamp() });
   addEventListener("hashchange", onHash);
+  document.addEventListener("visibilitychange", onVis);
 
   liveRef = r(`live/${uid}`);
   onValue(liveRef, (s) => {
@@ -32,6 +34,7 @@ export function stopLive() {
   if (liveRef) off(liveRef);
   if (onlineRef) set(onlineRef, null).catch(() => {});
   removeEventListener("hashchange", onHash);
+  document.removeEventListener("visibilitychange", onVis);
   liveRef = onlineRef = null; marksSeen = null;
   hide();
 }

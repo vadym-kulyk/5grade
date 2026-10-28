@@ -151,11 +151,23 @@ export function runQuiz(opts) {
   const answers = [];
   const start = Date.now();
   let i = 0, fastStreak = 0;
+  // Виходи зі сторінки (інша вкладка, застосунок, вимкнений екран): на якому питанні, скільки разів, на скільки
+  const away = {};
+  let awayAt = 0;
+  const onVis = () => {
+    if (!shell.isConnected || i >= tasks.length) return document.removeEventListener("visibilitychange", onVis);
+    if (document.hidden) { awayAt = Date.now(); (away[i] ||= { n: 0, sec: 0 }).n++; }
+    else if (awayAt) {
+      away[i].sec += (Date.now() - awayAt) / 1000; awayAt = 0;
+      if (opts.type === "monitoring") toast("👀 Ти виходив(-ла) зі сторінки. Учитель бачить, скільки разів і на скільки.", "warn", 5000);
+    }
+  };
 
   const head = h("div.quiz__head");
   const body = h("div.quiz__body");
   const shell = h("section.quiz", head, body);
   mount(shell);
+  document.addEventListener("visibilitychange", onVis);
   const leave = async () => { if (answers.length === 0 || (await confirmBox("Вийти? Результат цієї спроби не збережеться."))) opts.exit(); };
 
   function drawHead() {
@@ -183,7 +195,11 @@ export function runQuiz(opts) {
   }
 
   function show() {
-    if (i >= tasks.length) return opts.onFinish(answers, start);
+    if (i >= tasks.length) {
+      document.removeEventListener("visibilitychange", onVis);
+      answers.forEach((a, k) => { if (away[k]) { a.leaves = away[k].n; a.away = Math.round(away[k].sec); } });
+      return opts.onFinish(answers, start);
+    }
     drawHead();
     const t = tasks[i];
     const view = R[t.type](t);

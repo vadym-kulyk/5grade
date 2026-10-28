@@ -4,7 +4,7 @@ import { watchAuth, teacherLogin, teacherRegister, logout, isTeacher, read, patc
 import { TEACHER_EMAIL, CLASSES, LEVELS_PER_TOPIC, TASKS_PER_LEVEL } from "./config.js";
 import { SECTIONS, TOPICS, topicById, shortTitle } from "../content/index.js";
 import { rankOf, topicPct, BADGES } from "./game.js";
-import { previewView, liveView, startTeacherLive, monitoringView } from "./teacher-extra.js";
+import { previewView, liveView, startTeacherLive, monitoringView, awayFmt, awayDetail } from "./teacher-extra.js";
 import { monWorks } from "../content/monitoring/index.js";
 
 let data = null;
@@ -153,24 +153,25 @@ function topicView() {
 }
 
 function attemptsView() {
-  const f = { student: "", topic: "", type: "", flagged: false };
+  const f = { student: "", topic: "", type: "", flagged: false, away: false };
   const box = h("div");
   const st = students();
   const ids = new Set(st.map(([id]) => id));
   const sel = (key, opts) => h("select.select", { onchange: (e) => { f[key] = e.target.value; drawT(); } }, opts.map(([v, l]) => h("option", { value: v }, l)));
   function rows() {
-    return data.attempts.filter((a) => ids.has(a.uid) && (!f.student || a.uid === f.student) && (!f.topic || a.topic === f.topic) && (!f.type || a.type === f.type) && (!f.flagged || a.flagged));
+    return data.attempts.filter((a) => ids.has(a.uid) && (!f.student || a.uid === f.student) && (!f.topic || a.topic === f.topic) && (!f.type || a.type === f.type) && (!f.flagged || a.flagged) && (!f.away || a.leaves));
   }
   function drawT() {
     const rs = rows();
     box.replaceChildren(h("p.note", `Знайдено спроб: ${rs.length}`), h("div.tablewrap", h("table.tbl",
-      h("thead", h("tr", ["Дата", "Учень", "Клас", "Що", "Спроба №", "Результат", "Тривалість", "Сер. на завдання", "Швидких", "Підказок", "Монети"].map((x) => h("th", x)))),
+      h("thead", h("tr", ["Дата", "Учень", "Клас", "Що", "Спроба №", "Результат", "Тривалість", "Сер. на завдання", "Швидких", "👀 Виходи", "Підказок", "Монети"].map((x) => h("th", x)))),
       h("tbody", rs.slice(0, 500).map((a) => h(`tr${a.flagged ? ".flag" : ""}`,
         h("td", `${fmtDate(a.end)} ${fmtTime(a.end)}`), h("td", a.name), h("td", a.cls),
         h("td", what(a)), h("td.mono.center", a.attemptNo),
         h("td", h("b", `${a.pct}%`), ` ${a.correct}/${a.total}`),
         h("td.mono", `${Math.floor(a.durSec / 60)}:${String(a.durSec % 60).padStart(2, "0")}`),
-        h("td.mono", `${num(a.avgSec)} с`), h("td.center", a.fast ? `⚡ ${a.fast}` : ""), h("td.center", a.hints || ""), h("td.mono", a.coins)))))));
+        h("td.mono", `${num(a.avgSec)} с`), h("td.center", a.fast ? `⚡ ${a.fast}` : ""),
+        h("td.center.away", { title: awayDetail(a) }, a.leaves ? `👀 ${a.leaves} · ${awayFmt(a.awaySec)}` : ""), h("td.center", a.hints || ""), h("td.mono", a.coins)))))));
   }
   const view = [
     h("div.filters.card",
@@ -178,7 +179,9 @@ function attemptsView() {
       sel("topic", [["", "Усі теми"], ...ready().map((t) => [t.id, shortTitle(t)])]),
       sel("type", [["", "Усі типи"], ["level", "Рівні тем"], ["review", "Робота над помилками"], ["monitoring", "Моніторингові"]]),
       h("label.check", h("input", { type: "checkbox", onchange: (e) => { f.flagged = e.target.checked; drawT(); } }), " Лише ⚡ швидкі"),
+      h("label.check", h("input", { type: "checkbox", onchange: (e) => { f.away = e.target.checked; drawT(); } }), " Лише 👀 з виходами"),
       h("button.btn.btn--small", { onclick: () => csv(rows()) }, "⬇ CSV")),
+    h("p.note", "👀 — скільки разів учень виходив зі сторінки під час спроби (інша вкладка, застосунок, вимкнений екран) і скільки часу був поза нею. Наведи на значення, щоб побачити, на яких питаннях. Що саме він робив, сайт не бачить."),
     h("p.note", "Повна таблиця з фільтрами й графіками також оновлюється автоматично в Google Таблиці на твоєму Диску."),
     box];
   drawT();
@@ -187,9 +190,9 @@ function attemptsView() {
 const what = (a) => (a.type === "level" ? `${shortTitle(topicById[a.topic] || { title: a.topicTitle })} · рівень ${a.level}` : a.topicTitle);
 
 function csv(rows) {
-  const head = ["Дата", "Час", "Учень", "Клас", "Тип", "Тема", "Рівень", "Спроба", "Правильно", "Усього", "%", "Тривалість, с", "Сер. на завдання, с", "Швидких", "Позначка", "Підказок", "Монети"];
+  const head = ["Дата", "Час", "Учень", "Клас", "Тип", "Тема", "Рівень", "Спроба", "Правильно", "Усього", "%", "Тривалість, с", "Сер. на завдання, с", "Швидких", "Позначка", "Підказок", "Монети", "Виходів зі сторінки", "Поза сторінкою, с"];
   const esc = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-  const lines = rows.map((a) => [fmtDate(a.end), fmtTime(a.end), a.name, a.cls, a.type, a.topicTitle, a.level, a.attemptNo, a.correct, a.total, a.pct, a.durSec, a.avgSec, a.fast, a.flagged ? "⚡" : "", a.hints, a.coins].map(esc).join(";"));
+  const lines = rows.map((a) => [fmtDate(a.end), fmtTime(a.end), a.name, a.cls, a.type, a.topicTitle, a.level, a.attemptNo, a.correct, a.total, a.pct, a.durSec, a.avgSec, a.fast, a.flagged ? "⚡" : "", a.hints, a.coins, a.leaves || 0, a.awaySec || 0].map(esc).join(";"));
   const blob = new Blob(["﻿" + [head.map(esc).join(";"), ...lines].join("\n")], { type: "text/csv;charset=utf-8" });
   const a = h("a", { href: URL.createObjectURL(blob), download: `rezultaty-${today()}.csv` });
   document.body.append(a); a.click(); a.remove();
@@ -258,10 +261,11 @@ function studentView() {
         h("div.card", h("h3", "💪 Сильні сторони"), strong.length ? h("ul", strong.map((x) => h("li", x))) : h("p.note", "Ще немає тем на 80 %+.")),
         h("div.card", h("h3", "🎯 Що повторити"), weak.length ? h("ul", weak.map((x) => h("li", x, wrongBy[topicByShort(x)] ? ` — помилок: ${wrongBy[topicByShort(x)]}` : ""))) : h("p.note", "Усі теми на 60 %+ 👏"))),
       fastTotal ? h("p.warnbox", `⚡ Занадто швидких відповідей: ${fastTotal}. Спроб із позначкою швидкості: ${at.filter((a) => a.flagged).length}.`) : null,
+      at.some((a) => a.leaves) ? h("p.warnbox", `👀 Виходив(-ла) зі сторінки під час завдань: ${at.reduce((s, a) => s + (a.leaves || 0), 0)} раз(и) у ${at.filter((a) => a.leaves).length} спробах, разом ${awayFmt(at.reduce((s, a) => s + (a.awaySec || 0), 0))}.`) : null,
       h("section", h("h2", "Значки"), h("div.badges.badges--small", BADGES.filter((b) => u.badges?.[b.id]).map((b) => h("div.badgecard.got", h("span.badgecard__i", b.icon), h("b", b.title)))), !Object.keys(u.badges || {}).length && h("p.note", "Ще немає.")),
       h("section", h("h2", "Останні спроби"), h("div.tablewrap", h("table.tbl",
-        h("thead", h("tr", ["Дата", "Що", "Результат", "Час", "Сер. на завдання", "⚡"].map((x) => h("th", x)))),
-        h("tbody", at.slice(0, 25).map((a) => h("tr", h("td", fmtDate(a.end)), h("td", what(a)), h("td", `${a.pct}% (${a.correct}/${a.total})`), h("td.mono", `${Math.round(a.durSec / 60)} хв`), h("td.mono", `${num(a.avgSec)} с`), h("td", a.flagged ? "⚡" : ""))))))),
+        h("thead", h("tr", ["Дата", "Що", "Результат", "Час", "Сер. на завдання", "⚡", "👀"].map((x) => h("th", x)))),
+        h("tbody", at.slice(0, 25).map((a) => h("tr", h("td", fmtDate(a.end)), h("td", what(a)), h("td", `${a.pct}% (${a.correct}/${a.total})`), h("td.mono", `${Math.round(a.durSec / 60)} хв`), h("td.mono", `${num(a.avgSec)} с`), h("td", a.flagged ? "⚡" : ""), h("td", { title: awayDetail(a) }, a.leaves ? `${a.leaves} · ${awayFmt(a.awaySec)}` : ""))))))),
       h("footer.report__foot", "Midgard · Українська мова 5 клас · за підручником А. Онатій, Т. Ткачук")),
   ];
 }

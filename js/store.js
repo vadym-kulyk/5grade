@@ -120,6 +120,8 @@ export async function saveSession(s) {
   const total = s.answers.length;
   const fast = s.answers.filter((a) => a.fast).length;
   const hints = s.answers.filter((a) => a.hint).length;
+  const leaves = s.answers.reduce((n, a) => n + (a.leaves || 0), 0);
+  const awaySec = s.answers.reduce((n, a) => n + (a.away || 0), 0);
   let coinsGain = s.answers.reduce((a, b) => a + (b.coins || 0), 0);
   let xpGain = 0;
   const upd = {};
@@ -195,8 +197,8 @@ export async function saveSession(s) {
     level: s.level || null, monitoringId: s.monitoringId || null,
     name: u.name, cls: u.cls, start: s.start, end, durSec, avgSec,
     correct, total, pct: Math.round((correct / total) * 100),
-    fast, flagged: fast >= 3 || fast / total >= 0.3, hints, coins: coinsGain, xp: xpGain, attemptNo,
-    answers: s.answers.map((a) => ({ id: a.id, topic: a.topic, q: a.q, ok: a.ok, sec: a.sec, fast: !!a.fast, hint: !!a.hint, given: a.given ?? null })),
+    fast, flagged: fast >= 3 || fast / total >= 0.3, hints, leaves, awaySec, coins: coinsGain, xp: xpGain, attemptNo,
+    answers: s.answers.map((a) => ({ id: a.id, topic: a.topic, q: a.q, ok: a.ok, sec: a.sec, fast: !!a.fast, hint: !!a.hint, given: a.given ?? null, ...(a.leaves ? { leaves: a.leaves, away: a.away || 0 } : {}) })),
   };
   const key = push(r(`attempts/${uid}`)).key;
   upd[`attempts/${uid}/${key}`] = attempt;

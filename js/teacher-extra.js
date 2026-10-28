@@ -5,6 +5,10 @@ import { renderTask, kindLabel } from "./quiz.js";
 import { topicById, shortTitle } from "../content/index.js";
 import { monWorks, monWork } from "../content/monitoring/index.js";
 
+// Виходи зі сторінки під час спроби
+export const awayFmt = (sec) => (sec >= 60 ? `${Math.floor(sec / 60)} хв ${sec % 60} с` : `${sec || 0} с`);
+export const awayDetail = (a) => (a.answers || []).map((x, k) => (x.leaves ? `№${k + 1}: ${x.leaves}× · ${awayFmt(x.away || 0)}${x.ok ? " · правильно" : " · помилка"}` : null)).filter(Boolean).join("\n");
+
 // ---------- 📖 Перегляд завдань ----------
 const pv = { topic: null, i: 0 };
 const topicCache = {};
@@ -130,7 +134,7 @@ export function liveView({ students, ready }) {
         return h(`label.lv__st${live.sel.has(id) ? ".on" : ""}`,
           h("input", { type: "checkbox", checked: live.sel.has(id), onchange: (e) => { e.target.checked ? live.sel.add(id) : live.sel.delete(id); drawWho(); } }),
           h(`span.lv__dot${isOnline(id) ? ".on" : ""}`), h("b", u.name), h("span.note", ` ${u.cls}`),
-          h("span.note.lv__page", isOnline(id) ? PAGES[o.page] || o.page : "не в мережі"));
+          h("span.note.lv__page", isOnline(id) ? (PAGES[o.page] || o.page) + (o.away ? " · 🙈 не на сторінці" : "") : "не в мережі"));
       }));
   }
 
@@ -187,8 +191,8 @@ export function monitoringView({ students, data, openStudent, redraw }) {
   for (const a of at) {
     const w = (works[a.monitoringId] ||= { id: a.monitoringId, title: short(a.topicTitle), list: [], by: {} });
     w.list.push(a);
-    const s = (w.by[a.uid] ||= { best: 0, n: 0, last: null, sec: 0, fast: 0 });
-    s.best = Math.max(s.best, a.pct); s.n++; s.sec += a.avgSec || 0; s.fast += a.flagged ? 1 : 0;
+    const s = (w.by[a.uid] ||= { best: 0, n: 0, last: null, sec: 0, fast: 0, leaves: 0, awaySec: 0 });
+    s.best = Math.max(s.best, a.pct); s.n++; s.sec += a.avgSec || 0; s.fast += a.flagged ? 1 : 0; s.leaves += a.leaves || 0; s.awaySec += a.awaySec || 0;
     if (!s.last || a.end > s.last.end) s.last = a;
   }
   // відкриті, але ще не написані
@@ -231,14 +235,15 @@ export function monitoringView({ students, data, openStudent, redraw }) {
     h("div.kpis",
       kpi("👩‍🎓", `${w.done}/${st.length}`, "написали"), kpi("📈", w.avg == null ? "—" : w.avg + "%", "середній найкращий"),
       kpi("🏆", w.done ? Math.max(...Object.values(w.by).map((s) => s.best)) + "%" : "—", "найкращий"),
-      kpi("🗂️", w.list.length, "спроб"), kpi("⚡", w.list.filter((a) => a.flagged).length, "спроб із ⚡")),
+      kpi("🗂️", w.list.length, "спроб"), kpi("⚡", w.list.filter((a) => a.flagged).length, "спроб із ⚡"), kpi("👀", w.list.filter((a) => a.leaves).length, "спроб із виходами")),
     h("section.card", h("h2", "Результати учнів"),
       h("div.tablewrap", h("table.tbl",
-        h("thead", h("tr", ["Учень", "Клас", "Найкращий", "Останній", "Спроб", "Сер. на завдання", "⚡", "Остання спроба"].map((x) => h("th", x)))),
+        h("thead", h("tr", ["Учень", "Клас", "Найкращий", "Останній", "Спроб", "Сер. на завдання", "⚡", "👀 Виходи", "Остання спроба"].map((x) => h("th", x)))),
         h("tbody", rows.map(({ uid, u, s }) => h(`tr${s ? "" : ".mon__none"}`,
           h("td", h("a", { href: "#/teacher", onclick: (e) => { e.preventDefault(); openStudent(uid); } }, u.name)), h("td", u.cls),
           s ? pctCell(s.best) : h("td.note", "не писав(-ла)"), s ? pctCell(s.last.pct) : h("td"),
           h("td.mono.center", s?.n || ""), h("td.mono", s ? `${num(Math.round((s.sec / s.n) * 10) / 10)} с` : ""), h("td.center", s?.fast || ""),
+          h("td.center", { title: s?.last ? awayDetail(s.last) : "" }, s?.leaves ? `${s.leaves} · ${awayFmt(s.awaySec)}` : ""),
           h("td.note", s ? `${fmtDate(s.last.end)} ${fmtTime(s.last.end)}` : ""))))))),
     h("section.card", h("h2", "🧩 Найважчі завдання"),
       hard.length ? h("div.hist", hard.map((g) => { const v = Math.round((g.ok / g.n) * 100); return h("div.hist__row",
