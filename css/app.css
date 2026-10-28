@@ -165,7 +165,8 @@ a.tcard:hover { transform: translateY(-2px); border-color: var(--lime); box-shad
 .theory { display: grid; gap: 14px; }
 .rule { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 22px; align-items: center; }
 .rule:nth-child(even) { background: var(--bg); }
-@media (max-width: 820px) { .rule { grid-template-columns: 1fr; } }
+@media (max-width: 820px) { .rule { grid-template-columns: minmax(0, 1fr); } }
+.rule__text { min-width: 0; overflow-wrap: anywhere; }
 .rule__text ul, .rule__text ol { padding-left: 1.2em; margin: .3em 0 .7em; }
 .rule__text li { margin: .2em 0; }
 .rule__fig { margin: 0; }
@@ -533,3 +534,29 @@ a.gtile:hover { border-color: var(--lime); }
 .theorymodal .rule { grid-template-columns: 1fr; }
 .rule--hl { border: 2px solid var(--violet); box-shadow: 0 0 0 4px color-mix(in srgb, var(--violet) 18%, transparent); }
 @media (max-width: 520px) { .quiz__tl { display: none; } .quiz__head { gap: 6px 8px; } }
+
+/* Теорія: блоки для запам’ятовування */
+.key, .mnemo, .trap, .algo, .self { border-radius: var(--r-sm); padding: 10px 14px; margin: .6em 0; }
+.key::before, .mnemo::before, .trap::before, .algo::before { display: block; font-weight: 800; font-size: 13px; letter-spacing: .02em; margin-bottom: 4px; }
+.key { background: color-mix(in srgb, var(--lime) 22%, white); border-left: 5px solid var(--lime); font-size: 1.04em; }
+.key::before { content: "🎯 ГОЛОВНЕ"; color: #4d6a00; }
+.mnemo { background: color-mix(in srgb, var(--violet) 12%, white); border-left: 5px solid var(--violet); }
+.mnemo::before { content: "🧠 ЗАПАМ’ЯТАЙ ЛЕГКО"; color: #6a3fb0; }
+.mnemo .big { display: block; font-family: var(--f-display); font-weight: 800; font-size: 1.08em; margin: .2em 0; }
+.mnemo .cap { color: #c2177f; font-weight: 900; }
+.trap { background: color-mix(in srgb, var(--wrong) 9%, white); border-left: 5px solid var(--wrong); }
+.trap::before { content: "⚠️ ПАСТКА — ТУТ ЧАСТО ПОМИЛЯЮТЬСЯ"; color: var(--wrong); }
+.algo { background: var(--surface, #fff); border: 1.5px solid var(--line); }
+.algo::before { content: "🪜 АЛГОРИТМ: ЯК МІРКУВАТИ"; color: var(--ink, #1e1b26); }
+.algo ol { margin: .2em 0 0; padding-left: 1.4em; } .algo li { margin: .25em 0; }
+.self { background: color-mix(in srgb, var(--yellow, #f7c915) 16%, white); border: 1.5px dashed color-mix(in srgb, var(--yellow, #f7c915) 70%, black 10%); }
+.self summary { cursor: pointer; font-weight: 800; list-style: none; }
+.self summary::-webkit-details-marker { display: none; }
+.self summary::before { content: "🤔 Перевір себе: "; }
+.self summary::after { content: " — натисни, щоб побачити відповідь"; font-weight: 500; color: var(--muted); font-size: .9em; }
+.self[open] summary::after { content: ""; }
+.self[open] > :not(summary) { margin-top: 6px; }
+.mtbl { width: 100%; border-collapse: collapse; margin: .5em 0; font-size: .95em; }
+.mtbl th, .mtbl td { border: 1px solid var(--line); padding: 5px 8px; text-align: left; vertical-align: top; }
+.mtbl th { background: color-mix(in srgb, var(--lime) 18%, white); }
+.rule__text .mtbl { display: block; overflow-x: auto; }

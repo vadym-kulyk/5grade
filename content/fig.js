@@ -101,3 +101,20 @@ export function card(big, sub, lines = [], color = "yellow") {
     ${T(200, 92, sub, { size: 14, fill: C.muted })}
     ${lines.map((l, i) => T(200, 124 + i * 26, l, { size: 15 })).join("")}`, big + " " + sub);
 }
+
+// Дерево-карта: корінь угорі, гілки з листками: tree("Звуки", [{h, leaves:[], color}], note)
+export function tree(root, branches, note = "") {
+  const n = branches.length, w = (380 - (n - 1) * 10) / n;
+  const rows = Math.max(...branches.map((b) => b.leaves.length));
+  const top = 92, H = top + 44 + rows * 24 + 16 + (note ? 22 : 0);
+  const rw = Math.min(260, 40 + root.length * 11);
+  const body = branches.map((b, i) => { const x = 10 + i * (w + 10), cx = x + w / 2, col = C[b.color || "lime"];
+    return `<path d="M200 60 C200 76 ${cx} 70 ${cx} ${top}" stroke="${col}" stroke-width="3" fill="none"/>
+      <rect x="${x}" y="${top}" width="${w}" height="${H - top - 10 - (note ? 22 : 0)}" rx="14" fill="#fff" stroke="${col}" stroke-width="2.5"/>
+      <rect x="${x}" y="${top}" width="${w}" height="34" rx="14" fill="${col}"/><rect x="${x}" y="${top + 20}" width="${w}" height="14" fill="${col}"/>
+      ${T(cx, top + 23, b.h, { size: Math.min(b.h.length > 13 ? 11.5 : 13.5, (w - 8) / (b.h.length * 0.6)), w: 800, fill: ["violet", "wrong", "right"].includes(b.color) ? "#fff" : C.ink })}
+      ${b.leaves.map((l, k) => T(cx, top + 56 + k * 24, l, { size: Math.min(l.length > 15 ? 11.5 : 13, (w - 8) / (l.length * 0.56)) })).join("")}`; }).join("");
+  return svg(H, `<rect width="400" height="${H}" rx="18" fill="${BG.ink}"/>
+    <rect x="${200 - rw / 2}" y="16" width="${rw}" height="44" rx="22" fill="${C.ink}"/>${T(200, 44, root, { size: 16, w: 800, font: D, fill: "#fff" })}
+    ${body}${note ? T(200, H - 12, note, { size: 12, fill: C.muted }) : ""}`, root + ": " + branches.map((b) => b.h + " (" + b.leaves.join(", ") + ")").join("; "));
+}
