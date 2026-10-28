@@ -446,6 +446,11 @@ body.in-world { overflow: hidden; }
 .pv__n.on { background: var(--violet); border-color: var(--violet); color: #fff; }
 .pv__card { display: grid; gap: 12px; }
 .pv__nav { justify-content: space-between; }
+.pv__top { display: grid; gap: 10px; }
+.pv__top .row { flex-wrap: nowrap; } .pv__top .select { flex: 1; min-width: 0; }
+.pv__res { display: grid; gap: 6px; max-height: 360px; overflow: auto; }
+.pv__hit { text-align: left; padding: 8px 12px; border: 1.5px solid var(--line); border-radius: 10px; background: #fff; cursor: pointer; font: inherit; }
+.pv__hit:hover { border-color: var(--violet); }
 
 /* ---------- Мобільна адаптація: нічого не розпирає сторінку ---------- */
 .page > *, .shop > *, .lv > *, .report > * { min-width: 0; }

@@ -20,7 +20,33 @@ export function previewView({ ready }) {
   const rt = ready();
   if (!pv.topic || !topicById[pv.topic]) pv.topic = rt[0]?.id;
   const grid = h("div.pv__grid"), card = h("div.pv__card.card");
-  const sel = h("select.select", { onchange: (e) => { pv.topic = e.target.value; pv.i = 0; draw(); } }, rt.map((t) => h("option", { value: t.id, selected: t.id === pv.topic }, shortTitle(t))));
+  const sel = h("select.select", { onchange: (e) => { pv.topic = e.target.value; pv.i = 0; draw(); } }, rt.map((t, k) => h("option", { value: t.id, selected: t.id === pv.topic }, `${k + 1}. ${shortTitle(t)}`)));
+  const ti = () => rt.findIndex((t) => t.id === pv.topic);
+  // Перехід на іншу тему: на її перше (end=false) або останнє (end=true) завдання
+  const goTopic = (k, end = false) => { pv.topic = rt[k].id; pv.i = end ? 1e9 : 0; sel.value = pv.topic; draw(); };
+  const found = h("div.pv__found");
+  const q = h("input.input", { type: "search", placeholder: "🔍 Пошук у всіх темах: слово з завдання або код (напр. m306)", oninput: () => search(q.value) });
+  let sq = 0;
+  async function search(text) {
+    const s = text.trim().toLowerCase(), my = ++sq;
+    if (s.length < 2) return found.replaceChildren();
+    found.replaceChildren(h("p.note", "Шукаю…"));
+    const res = [];
+    for (const t of rt) {
+      const T = await loadTopic(t.id);
+      if (my !== sq) return;
+      let n = 0;
+      for (const L of T.levels) for (const x of L.tasks) {
+        const txt = (x.id + " " + (x.q || "") + " " + JSON.stringify(x.items || x.options || x.pairs || x.text || "")).replace(/<[^>]+>/g, "").toLowerCase();
+        if (x.id.toLowerCase() === s || txt.includes(s)) res.push({ topic: t.id, i: n, id: x.id, q: (x.q || "").replace(/<[^>]+>/g, "").slice(0, 90), mon: L.mon });
+        n++;
+      }
+    }
+    res.sort((a, b) => (b.id.toLowerCase() === s) - (a.id.toLowerCase() === s));
+    found.replaceChildren(res.length ? h("div.pv__res", h("p.note", `Знайдено: ${res.length}${res.length > 40 ? " (показано 40)" : ""}`),
+      res.slice(0, 40).map((x) => h("button.pv__hit", { onclick: () => { pv.topic = x.topic; pv.i = x.i; sel.value = x.topic; q.value = ""; found.replaceChildren(); draw(); card.scrollIntoView({ block: "start" }); } },
+        h("b", shortTitle(topicById[x.topic])), h("span.note", ` · №${x.i + 1}${x.mon ? " · моніторингова" : ""} · ${x.id}`), h("div", x.q || "…")))) : h("p.note", "Нічого не знайдено."));
+  }
 
   async function draw() {
     card.replaceChildren(h("p.note", "Завантаження…"));
@@ -52,11 +78,16 @@ export function previewView({ ready }) {
         h("button.btn", { onclick: () => finish(true) }, "👁 Показати відповідь")),
       out,
       h("div.row.gap.pv__nav",
-        h("button.btn", { disabled: pv.i === 0, onclick: () => { pv.i--; draw(); } }, "← Попереднє"),
-        h("button.btn", { disabled: pv.i === tasks.length - 1, onclick: () => { pv.i++; draw(); } }, "Наступне →")));
+        pv.i > 0 ? h("button.btn", { onclick: () => { pv.i--; draw(); } }, "← Попереднє")
+          : h("button.btn", { disabled: ti() === 0, onclick: () => goTopic(ti() - 1, true) }, "← Попередня тема"),
+        pv.i < tasks.length - 1 ? h("button.btn", { onclick: () => { pv.i++; draw(); } }, "Наступне →")
+          : h("button.btn", { disabled: ti() === rt.length - 1, onclick: () => goTopic(ti() + 1) }, "Наступна тема →")));
   }
   draw();
-  return [h("div.filters.card", sel, h("span.note", "Натисни номер, щоб перейти до будь-якого завдання. Тут нічого не зараховується.")), h("section.card", grid), card];
+  return [h("div.filters.card.pv__top",
+      h("div.row.gap", h("button.btn.btn--small", { title: "Попередня тема", onclick: () => ti() > 0 && goTopic(ti() - 1) }, "◀"), sel, h("button.btn.btn--small", { title: "Наступна тема", onclick: () => ti() < rt.length - 1 && goTopic(ti() + 1) }, "▶")),
+      q, found, h("span.note", "Обери тему або знайди завдання пошуком, далі натисни номер. Тут нічого не зараховується.")),
+    h("section.card", grid), card];
 }
 
 // ---------- 🎤 Живі питання ----------
