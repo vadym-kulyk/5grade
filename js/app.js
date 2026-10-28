@@ -299,7 +299,7 @@ async function playLevel(id, n) {
   const L = T.levels[n - 1];
   if (!L) return go(`#/topic/${id}`);
   runQuiz({
-    title: shortTitle(t), subtitle: `Рівень ${n}: ${L.title}`, type: "level", rules: T.rules,
+    title: shortTitle(t), subtitle: `Рівень ${n}: ${L.title}`, type: "level", rules: T.rules, theory: loadTopic,
     tasks: shuffle(L.tasks).map((x) => ({ ...x, topic: id })),
     exit: () => go(`#/topic/${id}`),
     onFinish: async (answers, start) => {
@@ -359,7 +359,7 @@ async function review() {
     if (tk) tasks.push({ ...tk, topic: m.topic });
   }
   runQuiz({
-    title: "Робота над помилками", subtitle: `${tasks.length} завдань`, type: "review", rules, tasks: shuffle(tasks),
+    title: "Робота над помилками", subtitle: `${tasks.length} завдань`, type: "review", rules, tasks: shuffle(tasks), theory: loadTopic,
     exit: () => go("#/"),
     onFinish: async (answers, start) => {
       mount(h("div.loading", "Зберігаю…"));

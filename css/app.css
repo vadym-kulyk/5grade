@@ -189,7 +189,7 @@ a.tcard:hover { transform: translateY(-2px); border-color: var(--lime); box-shad
 
 /* Завдання */
 .quiz { min-height: 100vh; display: grid; grid-template-rows: auto 1fr; background: var(--surface); }
-.quiz__head { position: sticky; top: 0; z-index: 5; display: grid; grid-template-columns: auto 1fr auto; gap: 6px 14px; align-items: center; padding: 10px clamp(12px, 3vw, 28px); background: var(--bg); border-bottom: 1px solid var(--line); }
+.quiz__head { position: sticky; top: 0; z-index: 5; display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 6px 14px; align-items: center; padding: 10px clamp(12px, 3vw, 28px); background: var(--bg); border-bottom: 1px solid var(--line); }
 .quiz__title { display: grid; line-height: 1.25; }
 .quiz__title span { color: var(--muted); font-size: 14px; }
 .quiz__meta { display: flex; gap: 10px; align-items: center; }
@@ -520,3 +520,11 @@ a.gtile:hover { border-color: var(--lime); }
 .login__qr { justify-self: center; display: grid; justify-items: center; gap: 6px; padding: 14px 18px 10px; border-radius: 22px; background: rgba(255, 255, 255, .8); border: 1px solid rgba(255, 255, 255, .9); box-shadow: var(--shadow); }
 .login__qr img { display: block; width: 150px; height: 150px; border-radius: 10px; }
 .login__qr p { margin: 0; text-align: center; max-width: 220px; }
+
+/* Теорія під час завдань */
+.quiz__theory { white-space: nowrap; }
+.theorymodal { display: grid; gap: 14px; }
+.theorymodal h2 { margin: 0; }
+.theorymodal .rule { grid-template-columns: 1fr; }
+.rule--hl { border: 2px solid var(--violet); box-shadow: 0 0 0 4px color-mix(in srgb, var(--violet) 18%, transparent); }
+@media (max-width: 520px) { .quiz__tl { display: none; } .quiz__head { gap: 6px 8px; } }

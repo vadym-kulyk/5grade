@@ -162,8 +162,24 @@ export function runQuiz(opts) {
     head.replaceChildren(
       h("button.btn.btn--ghost.btn--small", { onclick: leave }, "← Вийти"),
       h("div.quiz__title", h("b", opts.title), opts.subtitle && h("span", opts.subtitle)),
+      opts.theory ? h("button.btn.btn--small.quiz__theory", { onclick: openTheory, title: "Переглянути теорію теми" }, "📖", h("span.quiz__tl", " Теорія")) : null,
       h("div.quiz__meta", h("span.mono", `${Math.min(i + 1, tasks.length)} / ${tasks.length}`), h("span.coinpill", "🪙 ", h("b", coins()))),
       h("div.quiz__dots", tasks.map((_, k) => h(`span.dot${k < answers.length ? (answers[k].ok ? ".dot--ok" : ".dot--bad") : k === i ? ".dot--cur" : ""}`))));
+  }
+
+  // Теорія теми поточного завдання (у моніторингових — недоступна); одразу гортаємо до потрібного правила
+  async function openTheory() {
+    const t = tasks[Math.min(i, tasks.length - 1)];
+    const T = await opts.theory(t.topic);
+    if (!T) return;
+    const block = T.rules?.[t.rule]?.block;
+    const body = h("div.theorymodal",
+      h("h2", "📖 Теорія"), h("p.note", "Перечитай правило й повертайся до завдання. Час відповіді не зупиняється."),
+      T.theory.map((b, k) => h(`article.rule.card${(b.id || k) === block ? ".rule--hl" : ""}`, { id: `tm-${b.id || k}` },
+        h("div.rule__text", h("h3", b.title), h("div", { html: b.html })),
+        b.figure && h("figure.rule__fig", { html: b.figure }))));
+    modal(body, { wide: true });
+    body.querySelector(".rule--hl")?.scrollIntoView({ block: "start" });
   }
 
   function show() {
