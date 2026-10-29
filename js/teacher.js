@@ -1,6 +1,6 @@
 // Кабінет учителя: огляд, спроби, найдовші питання, звіт учня, налаштування.
 import { h, mount, toast, pct, bar, ring, fmtDate, fmtTime, confirmBox, today, num, groupedBars } from "./ui.js";
-import { watchAuth, teacherLogin, teacherRegister, logout, isTeacher, read, patch, write, r, remove, errText } from "./fb.js";
+import { watchAuth, teacherLogin, teacherRegister, teacherResetPassword, logout, isTeacher, read, patch, write, r, remove, errText } from "./fb.js";
 import { TEACHER_EMAIL, CLASSES, LEVELS_PER_TOPIC, TASKS_PER_LEVEL } from "./config.js";
 import { SECTIONS, TOPICS, topicById, shortTitle } from "../content/index.js";
 import { rankOf, topicPct, BADGES } from "./game.js";
@@ -33,6 +33,10 @@ function loginView(u) {
     h("label.lbl", "Пошта"), email, h("label.lbl", "Пароль"), pass, err,
     h("div.row.gap", h("button.btn.btn--primary", { onclick: () => doIt(teacherLogin) }, "Увійти"),
       h("button.btn", { onclick: () => doIt(teacherRegister) }, "Перший вхід: створити пароль")),
+    h("button.btn.btn--ghost.btn--small", { onclick: async () => {
+      err.textContent = "";
+      try { await teacherResetPassword(); toast(`Лист для зміни пароля надіслано на ${TEACHER_EMAIL}. Перевір також «Спам».`, "win", 7000); } catch (e) { err.textContent = /user-not-found/.test(e.code || "") ? "Кабінет учителя ще не створено — натисни «Перший вхід: створити пароль»." : errText(e); }
+    } }, "Забули пароль?"),
     h("p.note", "Кабінет відкривається лише для пошти вчителя, вказаної в налаштуваннях сайту."),
     h("a.teacherlink", { href: "#/" }, "← На сторінку учнів"))));
   pass.addEventListener("keydown", (e) => e.key === "Enter" && doIt(teacherLogin));

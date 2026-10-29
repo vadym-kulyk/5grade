@@ -2,7 +2,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getAuth, connectAuthEmulator, onAuthStateChanged, signInWithEmailAndPassword,
-  createUserWithEmailAndPassword, signOut, updatePassword,
+  createUserWithEmailAndPassword, signOut, updatePassword, sendPasswordResetEmail,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
   getDatabase, connectDatabaseEmulator, ref, get, set, update, push, remove,
@@ -62,6 +62,10 @@ export async function changePin(uid, pin) {
 
 export async function teacherLogin(email, password) {
   return signInWithEmailAndPassword(auth, email, password);
+}
+// Лист зі скиданням пароля — лише на пошту вчителя
+export async function teacherResetPassword() {
+  return sendPasswordResetEmail(auth, TEACHER_EMAIL);
 }
 export async function teacherRegister(email, password) {
   return createUserWithEmailAndPassword(auth, email, password);
