@@ -8,16 +8,16 @@ import { renderTask, kindLabel } from "./quiz.js";
 import { state, awardBadges, onChange } from "./store.js";
 import { QUEST } from "../content/quest/halloween.js";
 
-export const ROOM = { x0: 18, x1: 30, z0: 18, z1: 30 };
-const C = { x: 24, z: 23.2 }; // котел
-const ENTRY = { x: 24, z: 27.6, ry: Math.PI }; // поява в кімнаті (обличчям до котла)
+export const ROOM = { x0: 18, x1: 50, z0: 18, z1: 50 }; // велика зала 32 × 32 м
+const C = { x: 34, z: 32 }; // котел у центрі
+const ENTRY = { x: 34, z: 46.5, ry: Math.PI }; // поява в кімнаті (обличчям до котла)
 const HALL = { x: 11.8, z: 8, ry: -Math.PI / 2 }; // поява в холі біля порталу
 const PORTAL = { x: 13.7, z: 8 };
-const EXIT = { x: 24, z: 29.7 };
+const EXIT = { x: 34, z: 49.7 };
 const REWARD = { coins: 150, xp: 60 };
 const ONE_PER = 120000; // друга скриня тому самому учневі — через 2 хв
-const TOWER = { x: 21.6, z: 19.6, y: 10 }; // Вежа графіки: скриня на висоті 10 м — дістати можна лише на мітлі
-const RANGE = 16; // дальність кидка кулі світла
+const TOWER = { x: 28, z: 21, y: 10 }; // Вежа графіки: скриня на висоті 10 м — дістати можна лише на мітлі
+const RANGE = 24; // дальність кидка кулі світла
 export const LIGHT_PACKS = [[1, 15], [5, 60], [10, 110]]; // [кулі, монети]
 
 const tex = (w, hh, draw) => { const c = document.createElement("canvas"); c.width = w; c.height = hh; draw(c.getContext("2d")); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; };
@@ -45,21 +45,38 @@ export function setupQuest({ scene, walls, uid, teleport }) {
   anim.push((t) => { disc.rotation.z = -t * 1.5; exitP.children[0].rotation.z = t * 1.5; const s = 1 + Math.sin(t * 2.5) * 0.05; portal.scale.set(s, s, s); });
 
   // ---------- Кімната ----------
-  const { x0, x1, z0, z1 } = ROOM, H = 4.2, T = 0.4, cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
+  const { x0, x1, z0, z1 } = ROOM, H = 7, T = 0.4, cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
   const floorT = tex(64, 64, (g) => { g.fillStyle = "#2b2238"; g.fillRect(0, 0, 64, 64); g.fillStyle = "#3a2d4d"; g.fillRect(0, 0, 32, 32); g.fillRect(32, 32, 32, 32); });
-  floorT.wrapS = floorT.wrapT = THREE.RepeatWrapping; floorT.repeat.set(6, 6); floorT.magFilter = THREE.NearestFilter;
+  floorT.wrapS = floorT.wrapT = THREE.RepeatWrapping; floorT.repeat.set(16, 16); floorT.magFilter = THREE.NearestFilter;
   const fl = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0, z1 - z0), new THREE.MeshLambertMaterial({ map: floorT })); fl.rotation.x = -Math.PI / 2; fl.position.set(cx, 0.02, cz); scene.add(fl);
   const stone = L("#3b3150");
   box(x1 - x0 + T * 2, H, T, cx, H / 2, z0 - T / 2, stone); box(x1 - x0 + T * 2, H, T, cx, H / 2, z1 + T / 2, stone);
   box(T, H, z1 - z0, x0 - T / 2, H / 2, cz, stone); box(T, H, z1 - z0, x1 + T / 2, H / 2, cz, stone);
-  const title = label(["Таємна кімната", "відьми Граматихи"], { w: 640, hgt: 160, font: "bold 52px Manrope, sans-serif" }); title.position.set(cx, 3.5, z0 + 0.3); title.scale.multiplyScalar(1.2); scene.add(title);
+  const title = label(["Таємна кімната", "відьми Граматихи"], { w: 640, hgt: 160, font: "bold 52px Manrope, sans-serif" }); title.position.set(cx, 5.6, z0 + 0.3); title.scale.multiplyScalar(2); scene.add(title);
   // Свічки
-  for (const [x, z] of [[x0 + 0.6, z0 + 0.6], [x1 - 0.6, z0 + 0.6], [x0 + 0.6, z1 - 0.6], [x1 - 0.6, z1 - 0.6], [x0 + 0.6, cz], [x1 - 0.6, cz]]) {
+  const candleSpots = [];
+  for (let k = 0; k <= 8; k++) { const f = x0 + 0.6 + (k * (x1 - x0 - 1.2)) / 8; candleSpots.push([f, z0 + 0.6], [f, z1 - 0.6]); }
+  for (let k = 1; k < 8; k++) { const f = z0 + 0.6 + (k * (z1 - z0 - 1.2)) / 8; candleSpots.push([x0 + 0.6, f], [x1 - 0.6, f]); }
+  for (const [x, z] of candleSpots) {
     box(0.18, 0.7, 0.18, x, 0.35, z, L("#f4ead2"), false);
     const fm = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.22, 8), B("#ffb347")); fm.position.set(x, 0.82, z); scene.add(fm);
     anim.push((t) => { fm.scale.y = 1 + Math.sin(t * 15 + x * 3) * 0.2; });
   }
-  const roomLight = new THREE.PointLight(0xffa860, 3, 14, 1.2); roomLight.position.set(cx, 3.2, cz + 2); scene.add(roomLight);
+  const roomLight = new THREE.PointLight(0xffa860, 4, 46, 1); roomLight.position.set(cx, 6, cz + 4); scene.add(roomLight);
+  for (const [x, z] of [[x0 + 2, z0 + 2], [x1 - 2, z1 - 2]]) { const tl = new THREE.PointLight(0xff8a2a, 3, 22, 1.2); tl.position.set(x, 4, z); scene.add(tl); }
+  // Прикраси великої зали: колони, надгробки, гарбузи, ширяючі свічки
+  for (const [x, z] of [[x0 + 6, z0 + 6], [x1 - 6, z0 + 6], [x0 + 6, z1 - 6], [x1 - 6, z1 - 6]]) {
+    const col = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.9, H, 10), stone); col.position.set(x, H / 2, z); scene.add(col); walls.push([x - 0.9, x + 0.9, z - 0.9, z + 0.9]);
+  }
+  const graveT = (w) => tex(128, 160, (g) => { g.fillStyle = "#6f6a7d"; g.beginPath(); g.moveTo(8, 160); g.lineTo(8, 60); g.arc(64, 60, 56, Math.PI, 0); g.lineTo(120, 160); g.fill(); g.fillStyle = "#2a2433"; g.font = "bold 22px Manrope, sans-serif"; g.textAlign = "center"; g.fillText("Тут спочиває", 64, 70); g.font = "bold 24px Manrope, sans-serif"; g.fillText(w, 64, 104); });
+  [["«ложить»", x0 + 3, cz - 4], ["«булочна»", x0 + 3, cz + 4], ["«вобщем»", x1 - 3, cz - 4], ["«прийшлось»", x1 - 3, cz + 4], ["«согласен»", cx - 6, z1 - 3], ["«на протязі»", cx + 6, z1 - 3]].forEach(([w, x, z]) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 1.75), new THREE.MeshLambertMaterial({ map: graveT(w), transparent: true, side: THREE.DoubleSide })); m.position.set(x, 0.88, z); m.lookAt(cx, 0.88, cz); scene.add(m);
+  });
+  for (const [x, z, s] of [[x0 + 2.5, z0 + 9, 0.8], [x1 - 2.5, z0 + 12, 0.7], [cx - 3, z1 - 1.5, 0.6], [cx + 3, z1 - 1.5, 0.6], [x0 + 10, z1 - 2, 0.9], [x1 - 10, z0 + 2, 0.8]]) {
+    const pk = new THREE.Mesh(new THREE.SphereGeometry(0.5 * s, 12, 10).scale(1.25, 0.9, 1.15), L("#ff7a1a", { emissive: "#4a1c00" })); pk.position.set(x, 0.45 * s, z); scene.add(pk);
+  }
+  const floatC = Array.from({ length: 14 }, (_, k) => { const g = new THREE.Group(); g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.4, 8), L("#f4ead2"))); const f = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.16, 8), B("#ffb347")); f.position.y = 0.28; g.add(f); scene.add(g); return { g, x: x0 + 3 + ((k * 7.3) % (x1 - x0 - 6)), z: z0 + 3 + ((k * 11.7) % (z1 - z0 - 6)), ph: k }; });
+  anim.push((t) => floatC.forEach((c) => c.g.position.set(c.x, 4.5 + Math.sin(t + c.ph) * 0.4, c.z)));
 
   // Котел
   const cauldron = new THREE.Group();
@@ -78,7 +95,7 @@ export function setupQuest({ scene, walls, uid, teleport }) {
   const chests = QUEST.stations.map((st, i) => {
     const a = (([150, 195, 240, 300, 345, 30][i]) * Math.PI) / 180;
     const hi = st.high ? TOWER.y : 0;
-    const x = st.high ? TOWER.x : C.x + Math.cos(a) * 4.2, z = st.high ? TOWER.z : C.z + Math.sin(a) * 4.2;
+    const x = st.high ? TOWER.x : C.x + Math.cos(a) * 8.5, z = st.high ? TOWER.z : C.z + Math.sin(a) * 8.5;
     const g = new THREE.Group();
     const wood = L("#6b4426"), gold = L("#e8c25a", { emissive: "#3a2a00" });
     const base = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.6, 0.7), wood); base.position.y = 0.3; g.add(base);
@@ -96,7 +113,7 @@ export function setupQuest({ scene, walls, uid, teleport }) {
       walls.push([x - 0.7, x + 0.7, z - 0.7, z + 0.7]);
       const tl = label(["🧹 Вежа графіки", "лише на мітлі!"], { w: 520, hgt: 140, k: 0.7 }); tl.position.set(x, 3.2, z + 0.9); scene.add(tl);
     } else walls.push([x - 0.55, x + 0.55, z - 0.55, z + 0.55]);
-    const name = label([`${st.icon} ${st.name}`, st.topic], { w: 560, hgt: 140, k: 0.65 }); name.position.set(x, hi + 1.6, z); scene.add(name);
+    const name = label([`${st.icon} ${st.name}`, st.topic], { w: 560, hgt: 140, k: 0.95 }); name.position.set(x, hi + 1.6, z); scene.add(name);
     const letter = bigLetter(st.letter.toUpperCase()); letter.position.set(x, hi + 2.5, z); letter.visible = false; scene.add(letter);
     const glow = new THREE.PointLight(0xffb347, 0, 4, 1.6); glow.position.set(x, hi + 1.2, z); scene.add(glow);
     return { st, x, z, hi, lid, name, letter, glow, solved: null };
@@ -119,12 +136,13 @@ export function setupQuest({ scene, walls, uid, teleport }) {
     for (const x of [-0.32, 0.32]) { const e = new THREE.Mesh(new THREE.SphereGeometry(0.13, 10, 8).scale(1.4, 0.7, 0.5), new THREE.MeshBasicMaterial({ color: "#ff2b4a" })); e.position.set(x, 0.15, 0.92); g.add(e); }
     const mouth = new THREE.Mesh(new THREE.TorusGeometry(0.25, 0.05, 6, 12, Math.PI), new THREE.MeshBasicMaterial({ color: "#ff2b4a" })); mouth.position.set(0, -0.25, 0.93); mouth.rotation.z = Math.PI; g.add(mouth);
     const bar = new THREE.Sprite(new THREE.SpriteMaterial({ map: hpBar(b.name, b.hp, b.hp), transparent: true, depthWrite: false })); bar.scale.set(2.6, 0.6, 1); bar.position.y = 1.9; g.add(bar);
-    g.position.set(b.x, b.y, b.z); g.scale.setScalar(1.15); scene.add(g);
-    return { ...b, g, core, dark: core.material, smoke, bar, left: b.hp, hit: 0, ph: i * 2.1 };
+    const bx = C.x + b.dx, bz = C.z + b.dz;
+    g.position.set(bx, b.y, bz); g.scale.setScalar(1.4); scene.add(g);
+    return { ...b, x: bx, z: bz, g, core, dark: core.material, smoke, bar, left: b.hp, hit: 0, ph: i * 2.1 };
   });
   anim.push((t) => bosses.forEach((b) => {
-    if (b.left <= 0) { b.g.visible = b.hit > 0; if (b.hit > 0) { b.hit -= 0.03; b.g.scale.setScalar(1.15 + (1 - b.hit) * 2); b.core.material = flashM; b.g.traverse((o) => o.material && o.material !== flashM && (o.material.transparent = true, o.material.opacity = Math.max(0, b.hit))); } return; }
-    b.g.position.set(b.x + Math.cos(t * 0.5 + b.ph) * 1.2, b.y + Math.sin(t * 1.3 + b.ph) * 0.35, b.z + Math.sin(t * 0.5 + b.ph) * 0.8);
+    if (b.left <= 0) { b.g.visible = b.hit > 0; if (b.hit > 0) { b.hit -= 0.03; b.g.scale.setScalar(1.4 + (1 - b.hit) * 2.5); b.core.material = flashM; b.g.traverse((o) => o.material && o.material !== flashM && (o.material.transparent = true, o.material.opacity = Math.max(0, b.hit))); } return; }
+    b.g.position.set(b.x + Math.cos(t * 0.35 + b.ph) * 3, b.y + Math.sin(t * 1.3 + b.ph) * 0.5, b.z + Math.sin(t * 0.35 + b.ph) * 2.2);
     b.g.rotation.y = Math.sin(t * 0.7 + b.ph) * 0.5;
     b.smoke.forEach((m, k) => { const a = t * (0.8 + k * 0.07) + k; m.position.set(Math.cos(a) * 0.9, Math.sin(a * 1.3) * 0.6, Math.sin(a) * 0.9); });
     if (b.hit > 0) { b.hit -= 0.05; b.core.material = b.hit > 0 ? flashM : b.dark; }
@@ -186,8 +204,8 @@ export function setupQuest({ scene, walls, uid, teleport }) {
       const was = c.solved; c.solved = S[c.st.id] || null;
       c.letter.visible = !!c.solved; c.glow.intensity = c.solved ? 3 : 0;
       if (!c.solved) c.lid.rotation.x = 0;
-      if (c.solved && !was) { scene.remove(c.name); c.name = label([`${c.st.icon} Літера «${c.st.letter.toUpperCase()}»`, `відкрив(-ла): ${c.solved.name}`], { w: 560, hgt: 140, k: 0.65 }); c.name.position.set(c.x, c.hi + 1.6, c.z); scene.add(c.name); }
-      if (!c.solved && was) { scene.remove(c.name); c.name = label([`${c.st.icon} ${c.st.name}`, c.st.topic], { w: 560, hgt: 140, k: 0.65 }); c.name.position.set(c.x, c.hi + 1.6, c.z); scene.add(c.name); }
+      if (c.solved && !was) { scene.remove(c.name); c.name = label([`${c.st.icon} Літера «${c.st.letter.toUpperCase()}»`, `відкрив(-ла): ${c.solved.name}`], { w: 560, hgt: 140, k: 0.95 }); c.name.position.set(c.x, c.hi + 1.6, c.z); scene.add(c.name); }
+      if (!c.solved && was) { scene.remove(c.name); c.name = label([`${c.st.icon} ${c.st.name}`, c.st.topic], { w: 560, hgt: 140, k: 0.95 }); c.name.position.set(c.x, c.hi + 1.6, c.z); scene.add(c.name); }
     });
     bosses.forEach((b) => {
       const left = b.hp - (qs.bosses?.[b.id]?.dmg || 0);
