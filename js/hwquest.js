@@ -186,7 +186,12 @@ export function setupQuest({ scene, walls, uid, teleport }) {
       if (k < 1) return requestAnimationFrame(fly);
       scene.remove(ball); shotBusy = false; target.hit = 1;
       runTransaction(r(`quest/${QUEST.id}/bosses/${target.id}/dmg`), (v) => ((v || 0) >= target.hp ? undefined : (v || 0) + 1))
-        .then(() => set(r(`quest/${QUEST.id}/players/${uid}`), true)).catch((e) => toast(errText(e), "warn"));
+        .then(() => set(r(`quest/${QUEST.id}/players/${uid}`), true))
+        .catch(async (e) => {
+          // кидок не зарахувався — повертаємо кулю
+          await update(r(`users/${uid}`), { light: lightCount() + 1 }).catch(() => {});
+          toast(/permission/i.test(e?.message || e?.code || "") ? "База ще не готова до квесту: учитель має опублікувати нові правила бази даних. Кулю світла повернено ✨" : errText(e), "warn", 7000);
+        });
     };
     fly();
   }
@@ -282,7 +287,10 @@ export function setupQuest({ scene, walls, uid, teleport }) {
         await set(r(`quest/${QUEST.id}/stations/${c.st.id}`), { uid, name: state.user.name, at: Date.now() });
         await set(r(`quest/${QUEST.id}/players/${uid}`), true);
         body.replaceChildren(h("div.center", h("div.result__big", c.st.icon), h("h2", "Скриня відкрилася!"), h("div.qbig", c.st.letter.toUpperCase()), h("p", "Це твоя літера чарівного слова. Скажи її команді! Коли всі шість скринь відкриються — складіть слово й промовте його над котлом."), h("button.btn.btn--primary", { onclick: close }, "До котла!")));
-      } catch { body.replaceChildren(h("p", "Цю скриню щойно відкрив інший учень. Спробуй іншу!"), h("button.btn", { onclick: close }, "Гаразд")); }
+      } catch (e) {
+        const perm = /permission/i.test(e?.message || e?.code || "") && !qs.stations?.[c.st.id];
+        body.replaceChildren(h("p", perm ? "База ще не готова до квесту: учитель має опублікувати нові правила бази даних. Спробуй трохи згодом!" : "Цю скриню щойно відкрив інший учень. Спробуй іншу!"), h("button.btn", { onclick: close }, "Гаразд"));
+      }
     };
     step();
   }
