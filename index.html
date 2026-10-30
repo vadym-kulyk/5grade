@@ -20,7 +20,7 @@
 <noscript>Для роботи сайту потрібен JavaScript.</noscript>
 <script type="module" src="js/app.js"></script>
 <script>
-  if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js");
+  if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js", { updateViaCache: "none" });
 </script>
 </body>
 </html>
