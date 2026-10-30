@@ -1,7 +1,7 @@
 // Кабінет учителя: огляд, спроби, найдовші питання, звіт учня, налаштування.
 import { h, mount, toast, pct, bar, ring, fmtDate, fmtTime, confirmBox, today, num, groupedBars } from "./ui.js";
 import { watchAuth, teacherLogin, teacherRegister, teacherResetPassword, logout, isTeacher, read, patch, write, r, remove, errText } from "./fb.js";
-import { TEACHER_EMAIL, CLASSES, LEVELS_PER_TOPIC, TASKS_PER_LEVEL } from "./config.js";
+import { TEACHER_EMAIL, CLASSES, LEVELS_PER_TOPIC, TASKS_PER_LEVEL, halloweenOn } from "./config.js";
 import { SECTIONS, TOPICS, topicById, shortTitle } from "../content/index.js";
 import { rankOf, topicPct, BADGES } from "./game.js";
 import { previewView, liveView, startTeacherLive, monitoringView, awayFmt, awayDetail } from "./teacher-extra.js";
@@ -283,6 +283,7 @@ function settingsView() {
   const st = students();
   return [
     h("section.card", h("h2", "💬 3D-школа і рейтинг"),
+      sw(halloweenOn(s), (v) => save("halloween", v, v ? "🎃 Геловін у 3D-школі увімкнено" : "Геловін вимкнено"), "🎃 Геловін: прикраси в 3D-школі й вкладка геловінських речей у магазині (сам вмикається 15.10–10.11)"),
       sw(s.chatEnabled === true, (v) => save("chatEnabled", v, v ? "Чат увімкнено" : "Чат вимкнено"), "Дозволити учням писати в чат у 3D-школі"),
       h("p.note", "Готові фрази й емоції працюють завжди. Вільний чат — лише коли ти дозволиш. Нецензурні слова автоматично замінюються на ***."),
       h("button.btn.btn--small", { onclick: async () => { if (await confirmBox("Очистити всю історію чату?")) { await remove(r("chat")); toast("Чат очищено"); } } }, "🧹 Очистити чат"),

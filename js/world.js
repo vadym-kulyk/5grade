@@ -6,6 +6,7 @@ import { buildAvatar, petFollower } from "./avatar.js";
 import { awardBadges } from "./store.js";
 import { SECTIONS, TOPICS, shortTitle } from "../content/index.js";
 import { rankOf } from "./game.js";
+import { halloweenOn } from "./config.js";
 
 const PHRASES = ["Привіт! 👋", "Ходімо вчитися! 📚", "Молодець! 👍", "Дякую! 🙏", "У мене 100 %! 💯", "Хто зі мною? 🙋", "До зустрічі! 👋"];
 const EMOTES = [["👋", "wave"], ["💃", "dance"], ["🦘", "jump"]];
@@ -40,15 +41,17 @@ export function openWorld(state) {
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   canvasWrap.append(renderer.domElement);
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color("#eef5ff");
-  scene.fog = new THREE.Fog("#eef5ff", 30, 75);
-  scene.add(new THREE.HemisphereLight(0xffffff, 0xcfc6dd, 1.7));
-  const sun = new THREE.DirectionalLight(0xffffff, 1.2); sun.position.set(10, 20, 8); scene.add(sun);
+  const HW = halloweenOn(state.settings);
+  scene.background = new THREE.Color(HW ? "#2a2140" : "#eef5ff");
+  scene.fog = new THREE.Fog(HW ? "#2a2140" : "#eef5ff", HW ? 22 : 30, HW ? 64 : 75);
+  scene.add(new THREE.HemisphereLight(HW ? 0xd9ccff : 0xffffff, HW ? 0x6a4a3a : 0xcfc6dd, HW ? 1.25 : 1.7));
+  const sun = new THREE.DirectionalLight(HW ? 0xffd2a0 : 0xffffff, HW ? 0.85 : 1.2); sun.position.set(10, 20, 8); scene.add(sun);
   const cam = new THREE.PerspectiveCamera(60, 1, 0.1, 200);
 
   const walls = [];   // [minX, maxX, minZ, maxZ]
   const doors = [];   // { x, z, label, topic, nx, nz }
-  buildSchool(scene, walls, doors);
+  buildSchool(scene, walls, doors, HW);
+  const hwTick = HW ? decorateHalloween(scene, doors) : null;
 
   // ---------- Мій персонаж ----------
   const me = { x: (Math.random() - 0.5) * 8, z: 6 + Math.random() * 4, ry: Math.PI, mv: 0, model: buildAvatar(u.avatar), action: null, actionT: 0 };
@@ -188,6 +191,7 @@ export function openWorld(state) {
     me.model.rotation.y = me.ry;
     me.model.userData.animate(t, me.mv);
     me.pet?.update(dt, t, me.x, me.z, me.ry);
+    hwTick?.(t, me);
 
     for (const o of others.values()) {
       o.x += (o.tx - o.x) * Math.min(1, dt * 8);
@@ -275,7 +279,7 @@ function wrapWords(s, n = 18) {
 }
 
 // ---------- Будівля ----------
-function buildSchool(scene, walls, doors) {
+function buildSchool(scene, walls, doors, hw = false) {
   const M = (c, o = {}) => new THREE.MeshLambertMaterial({ color: c, ...o });
   const wallM = M("#fbf9f4"), trimM = M("#99cc00"), floorM = M("#e9e3d6"), hallFloor = M("#f3efe6");
   const H = 4.2, T = 0.4;
@@ -314,7 +318,7 @@ function buildSchool(scene, walls, doors) {
   letter("Ї", -4, -3, "#9d6bdb"); letter("Ґ", 4, -3, "#99cc00");
   for (const [x, z] of [[-11, -11], [11, -11], [-11, 11], [11, 11]]) {
     addBox(1.6, 0.6, 1.6, x, 0.3, z, M("#c9a36b"));
-    const tree = new THREE.Mesh(new THREE.SphereGeometry(1.1, 10, 8), M("#7fb83a")); tree.position.set(x, 1.7, z); scene.add(tree);
+    const tree = new THREE.Mesh(new THREE.SphereGeometry(1.1, 10, 8), M(hw ? "#d9822b" : "#7fb83a")); tree.position.set(x, 1.7, z); scene.add(tree);
   }
   // Вивіска з логотипом над входом (південна стіна позаду старту)
   new THREE.TextureLoader().load("assets/logo-wordmark.png", (t) => {
@@ -357,7 +361,7 @@ function buildSchool(scene, walls, doors) {
     const sign = new THREE.Mesh(new THREE.PlaneGeometry(5.6, 1), new THREE.MeshBasicMaterial({ map: textCanvas(w.label, { w: 900, hgt: 160, font: "bold 64px Manrope, sans-serif", bg: "#1e1b26", fg: "#ffffff" }) }));
     const [sx, sz] = toW(-0.3, 0); sign.position.set(sx, 3.5, sz); sign.lookAt(0, 3.5, 0); scene.add(sign);
     // Лампи
-    for (let u = 4; u < L; u += 8) { const [lx, lz] = toW(u, 0); const lamp = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.12, 1.2), new THREE.MeshBasicMaterial({ color: "#fff6c9" })); lamp.position.set(lx, H - 0.1, lz); scene.add(lamp); }
+    for (let u = 4; u < L; u += 8) { const [lx, lz] = toW(u, 0); const lamp = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.12, 1.2), new THREE.MeshBasicMaterial({ color: hw ? "#ffb347" : "#fff6c9" })); lamp.position.set(lx, H - 0.1, lz); scene.add(lamp); }
 
     // Двері
     items.forEach((it, i) => {
@@ -380,4 +384,107 @@ function buildSchool(scene, walls, doors) {
       doors.push({ x: x + (cx - x) * 0.35, z: z + (cz - z) * 0.35, label: it.label, topic: it.topic });
     });
   }
+}
+
+// ---------- 🎃 Геловін: гарбузи, кажани, привиди, павутина, гірлянди, місяць ----------
+function decorateHalloween(scene, doors) {
+  const S = 14, H = 4.2;
+  const B = (c, o = {}) => new THREE.MeshBasicMaterial({ color: c, ...o });
+  const L = (c, o = {}) => new THREE.MeshLambertMaterial({ color: c, ...o });
+  const tex = (w, hh, draw) => { const c = document.createElement("canvas"); c.width = w; c.height = hh; draw(c.getContext("2d")); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; };
+  const faceT = tex(128, 128, (g) => {
+    g.fillStyle = "#ffd54a"; g.shadowColor = "#ff9d00"; g.shadowBlur = 12;
+    for (const x of [38, 90]) { g.beginPath(); g.moveTo(x - 18, 58); g.lineTo(x, 26); g.lineTo(x + 18, 58); g.fill(); }
+    g.beginPath(); g.moveTo(22, 74); for (let k = 0; k <= 8; k++) g.lineTo(22 + k * 10.5, k % 2 ? 104 : 84); g.lineTo(106, 74); g.quadraticCurveTo(64, 88, 22, 74); g.fill();
+  });
+  const anim = [];
+
+  // Гарбузи-ліхтарі: обличчя дивиться в бік холу
+  const jack = (x, z, s = 1, light = false) => {
+    const grp = new THREE.Group();
+    const o = L("#ff7a1a", { emissive: "#4a1c00" });
+    grp.add(new THREE.Mesh(new THREE.SphereGeometry(0.5, 16, 12).scale(1.25, 0.9, 1.15), o));
+    for (const a of [0, Math.PI / 3, -Math.PI / 3]) { const rib = new THREE.Mesh(new THREE.SphereGeometry(0.5, 12, 10).scale(0.35, 0.92, 1.18), L("#e8641a", { emissive: "#3a1500" })); rib.rotation.y = a; grp.add(rib); }
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.09, 0.28, 6), L("#3f7a16")); stem.position.y = 0.55; grp.add(stem);
+    const face = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.9), B("#ffffff", { map: faceT, transparent: true }));
+    face.position.set(0, 0, 0.6); grp.add(face);
+    grp.scale.setScalar(s); grp.position.set(x, 0.45 * s, z);
+    grp.lookAt(0, 0.45 * s, 0);
+    if (light) { const pl = new THREE.PointLight(0xff8a2a, 6, 9, 1.6); pl.position.set(x, 1.2 * s, z); scene.add(pl); anim.push((t) => (pl.intensity = 5 + Math.sin(t * 7 + x) * 0.8 + Math.sin(t * 13 + z) * 0.5)); }
+    scene.add(grp);
+  };
+  jack(0, -7, 1.7, true);
+  for (const [x, z] of [[-9.6, -11.4], [9.6, -11.4], [-9.6, 11.4], [9.6, 11.4]]) jack(x, z, 0.9, true);
+  for (const [x, z, s] of [[-1.8, -6.6, 0.7], [1.9, -6.8, 0.6], [-5.6, -3, 0.6], [5.6, -3, 0.6], [-12, -9.4, 0.5], [12, 9.4, 0.5]]) jack(x, z, s);
+  doors.forEach((d, i) => { if (i % 2 === 0) jack(d.x, d.z, 0.45); });
+
+  // Місяць і зорі
+  const moon = new THREE.Mesh(new THREE.SphereGeometry(5, 24, 16), B("#fff3c4", { fog: false }));
+  moon.position.set(-25, 34, -70); scene.add(moon);
+  const starsG = new THREE.BufferGeometry(); const pos = [];
+  for (let i = 0; i < 260; i++) { const a = Math.random() * Math.PI * 2, r = 60 + Math.random() * 30; pos.push(Math.cos(a) * r, 22 + Math.random() * 40, Math.sin(a) * r); }
+  starsG.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  scene.add(new THREE.Points(starsG, new THREE.PointsMaterial({ color: "#ffffff", size: 0.5, fog: false })));
+
+  // Кажани над холом
+  const batM = L("#1b1526");
+  for (let i = 0; i < 14; i++) {
+    const b = new THREE.Group();
+    b.add(new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 6), batM));
+    const wings = [-1, 1].map((sd) => { const w = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.03, 0.26), batM); w.geometry.translate(sd * 0.25, 0, 0); b.add(w); return [w, sd]; });
+    scene.add(b);
+    const r = 4 + Math.random() * 8, hgt = 5 + Math.random() * 3, sp = 0.35 + Math.random() * 0.4, ph = Math.random() * 7, dir = i % 2 ? 1 : -1;
+    anim.push((t) => {
+      const a = ph + t * sp * dir;
+      b.position.set(Math.cos(a) * r, hgt + Math.sin(t * 2 + ph) * 0.4, Math.sin(a) * r);
+      b.rotation.y = -a * dir + (dir > 0 ? 0 : Math.PI);
+      for (const [w, sd] of wings) w.rotation.z = sd * Math.sin(t * 16 + ph) * 0.7;
+    });
+  }
+
+  // Привиди: пливуть і погойдуються; підлітають ближче, коли учень поруч
+  const ghostM = L("#f4f6fb", { transparent: true, opacity: 0.8, emissive: "#3a3a48" }), eyeM = B("#1e1b26");
+  for (const [cx, cz, r] of [[0, 0, 6.5], [S + 14, 0, 5], [-S - 14, 0, 5], [0, -S - 14, 5], [0, S + 12, 4]]) {
+    const gh = new THREE.Group();
+    gh.add(new THREE.Mesh(new THREE.SphereGeometry(0.5, 16, 12), ghostM));
+    const skirt = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.62, 0.8, 16, 1, true), ghostM); skirt.position.y = -0.4; gh.add(skirt);
+    for (const x of [-0.17, 0.17]) { const e = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 6).scale(1, 1.4, 0.5), eyeM); e.position.set(x, 0.08, 0.46); gh.add(e); }
+    const mouth = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 6).scale(1, 1.3, 0.4), eyeM); mouth.position.set(0, -0.18, 0.47); gh.add(mouth);
+    scene.add(gh);
+    const ph = Math.random() * 7;
+    anim.push((t) => {
+      const a = ph + t * 0.25;
+      gh.position.set(cx + Math.cos(a) * r, 2 + Math.sin(t * 1.6 + ph) * 0.35, cz + Math.sin(a) * r);
+      gh.rotation.y = -a; gh.rotation.z = Math.sin(t * 1.3 + ph) * 0.12;
+    });
+  }
+
+  // Павутина в кутках холу
+  const webT = tex(256, 256, (g) => {
+    g.strokeStyle = "rgba(240,236,255,.85)"; g.lineWidth = 2;
+    for (let k = 0; k <= 6; k++) { const a = (k / 6) * (Math.PI / 2); g.beginPath(); g.moveTo(0, 0); g.lineTo(Math.cos(a) * 250, Math.sin(a) * 250); g.stroke(); }
+    for (let r = 40; r < 250; r += 42) { g.beginPath(); for (let k = 0; k <= 6; k++) { const a = (k / 6) * (Math.PI / 2), rr = r - (k % 2) * 8; g.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); } g.stroke(); }
+    g.fillStyle = "#1e1b26"; g.beginPath(); g.arc(150, 120, 9, 0, 7); g.fill(); g.strokeStyle = "#1e1b26"; for (const s of [-1, 1]) for (let k = 0; k < 4; k++) { g.beginPath(); g.moveTo(150, 120); g.lineTo(150 + s * 18, 108 + k * 8); g.stroke(); }
+  });
+  for (const [x, z, ry] of [[-S + 0.25, -S + 0.25, Math.PI / 4], [S - 0.25, -S + 0.25, -Math.PI / 4], [-S + 0.25, S - 0.25, (3 * Math.PI) / 4], [S - 0.25, S - 0.25, (-3 * Math.PI) / 4]]) {
+    const w = new THREE.Mesh(new THREE.PlaneGeometry(3, 3), B("#ffffff", { map: webT, transparent: true, side: THREE.DoubleSide }));
+    w.position.set(x, H - 1.4, z); w.rotation.y = ry; w.rotation.z = Math.PI; scene.add(w);
+  }
+
+  // Гірлянди вздовж стін холу: помаранчеві й фіолетові вогники, що мерехтять
+  const bulbs = [];
+  const bulbG = new THREE.SphereGeometry(0.09, 8, 6);
+  const line = (x1, z1, x2, z2) => { const n = Math.round(Math.hypot(x2 - x1, z2 - z1) / 0.7); for (let k = 0; k <= n; k++) { const f = k / n; const m = B(k % 2 ? "#ff8a1a" : "#b06bff"); const b = new THREE.Mesh(bulbG, m); b.position.set(x1 + (x2 - x1) * f, H - 0.35 - Math.sin(f * Math.PI * 3) ** 2 * 0.35, z1 + (z2 - z1) * f); scene.add(b); bulbs.push(m); } };
+  for (const s of [-1, 1]) { line(-S + 0.5, s * (S - 0.3), -3.4, s * (S - 0.3)); line(3.4, s * (S - 0.3), S - 0.5, s * (S - 0.3)); line(s * (S - 0.3), -S + 0.5, s * (S - 0.3), -3.4); line(s * (S - 0.3), 3.4, s * (S - 0.3), S - 0.5); }
+  anim.push((t) => bulbs.forEach((m, i) => m.color.setStyle(Math.sin(t * 3 + i * 0.7) > 0 ? (i % 2 ? "#ff8a1a" : "#b06bff") : (i % 2 ? "#7a3a10" : "#4a2a70"))));
+
+  // Банери
+  const banner = (lines, x, z, ry, bg, fg) => {
+    const t = tex(800, 220, (g) => { g.fillStyle = bg; g.beginPath(); g.roundRect(0, 0, 800, 220, 36); g.fill(); g.fillStyle = fg; g.textAlign = "center"; g.font = "bold 64px Manrope, sans-serif"; lines.forEach((l, i) => g.fillText(l, 400, 92 + i * 80)); });
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 1.76), B("#ffffff", { map: t, transparent: true })); m.position.set(x, 2.8, z); m.rotation.y = ry; scene.add(m);
+  };
+  banner(["Щасливого Геловіну!", "Моторошно цікавої мови"], -8.5, -S + 0.25, 0, "#ff7a1a", "#1e1b26");
+  banner(["Не бійся помилок —", "бійся не вчитися!"], 8.5, -S + 0.25, 0, "#2a1f3d", "#ffb347");
+
+  return (t) => anim.forEach((f) => f(t));
 }

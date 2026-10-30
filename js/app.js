@@ -1,7 +1,7 @@
 // Головний модуль: маршрути та сторінки учня.
 import { h, $, mount, toast, modal, shuffle, pct, ring, bar, fmtDate, fmtTime, say, today, num, groupedBars } from "./ui.js";
 import { watchAuth, logout, studentLogin, studentRegister, changePin, isTeacher, read, errText } from "./fb.js";
-import { CLASSES, ECONOMY, LEVELS_PER_TOPIC, TASKS_PER_LEVEL } from "./config.js";
+import { CLASSES, ECONOMY, LEVELS_PER_TOPIC, TASKS_PER_LEVEL, halloweenOn } from "./config.js";
 import { state, onChange, bindStudent, unbind, saveSession, loadAttempts, buyItem, owns, saveAvatar, awardBadges, settleAvatar } from "./store.js";
 import { RANKS, rankOf, BADGES, badgeById, topicPct, overall } from "./game.js";
 import { SECTIONS, TOPICS, topicById, sectionById, shortTitle, loadTopic, BOOK } from "../content/index.js";
@@ -438,7 +438,7 @@ async function topicMonitoring(wid) {
 // ---------- Персонаж і магазин ----------
 function shop() {
   const u = state.user;
-  let cat = "top";
+  let cat = halloweenOn(state.settings) ? "hw" : "top";
   let draft = fullAvatar(u.avatar);
   const prev = h("div.shop__prev");
   const grid = h("div.shop__grid");
@@ -474,8 +474,8 @@ function shop() {
   function draw() {
     const owned = state.user.owned || {};
     info.textContent = `Монет: ${state.user.coins || 0} 🪙. Речей: ${Object.keys(owned).length}. Деякі речі відкриваються лише з певним званням.`;
-    tabs.replaceChildren(...CATEGORIES.map((c) => h(`button.chipbtn${c.id === cat ? ".on" : ""}`, { onclick: () => { cat = c.id; draw(); } }, c.icon, " ", c.title)));
-    grid.replaceChildren(...ITEMS.filter((i) => i.cat === cat).map((it) => {
+    tabs.replaceChildren(...[{ id: "hw", icon: "🎃", title: "Геловін" }, ...CATEGORIES].map((c) => h(`button.chipbtn${c.id === cat ? ".on" : ""}`, { onclick: () => { cat = c.id; draw(); } }, c.icon, " ", c.title)));
+    grid.replaceChildren(...ITEMS.filter((i) => (cat === "hw" ? i.hw : i.cat === cat)).map((it) => {
       const own = isFree(it) || owns(it.id);
       const locked = it.rank > rkLevel;
       const on = draft[cat] === it.id;

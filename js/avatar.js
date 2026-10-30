@@ -128,6 +128,23 @@ export const ITEMS = [
   ...[["mega", "Довжелезні", 300], ["mega-color", "Довжелезні рожеві", 400]].map(([id, n, p]) => C("lashes", id, n, p, { style: id })),
   ...[["huge", "Величезні губи", "#ff2b8a", 300], ["huge-red", "Величезні червоні губи", "#d1102e", 300], ["huge-neon", "Величезні ядерно-рожеві", "#ff1fa9", 400]]
     .map(([id, n, c, p]) => C("lips", id, n, p, { color: c, big: true, gloss: true })),
+  // ---------- 🎃 Геловін (позначка hw — окрема вкладка в магазині) ----------
+  ...[
+    C("skin", "zombie", "Зомбі", 400, { color: "#9db58f" }), C("skin", "ghost", "Блідий привид", 300, { color: "#eef0f6" }),
+    C("eyes", "glow", "Сяючі гарбузові очі", 250, { style: "glow" }), C("mouth", "fangs", "Ікла вампіра", 200, { style: "fangs" }),
+    C("facedeco", "skull", "Грим черепа", 300, { style: "skull" }), C("facedeco", "web", "Павутинка на щоці", 150, { style: "web" }), C("facedeco", "scar", "Шрам Франкенштейна", 200, { style: "scar" }),
+    C("hat", "pumpkin-head", "Гарбузова голова", 700, { style: "pumpkin-head" }), C("hat", "witch", "Капелюх відьми", 450, { style: "witch" }), C("hat", "pumpkin", "Гарбузик на голові", 250, { style: "pumpkin" }),
+    C("hairAcc", "horns", "Ріжки чортика", 200, { style: "horns" }), C("hairAcc", "bat-band", "Обідок із кажанчиком", 180, { style: "bat-band" }),
+    C("top", "skeleton", "Костюм скелета", 500, { pattern: "skeleton", color: "#1e1b26" }), C("top", "jack-tee", "Футболка з гарбузом", 200, { pattern: "jack", color: "#1e1b26" }),
+    C("top", "vampire", "Костюм вампіра", 550, { pattern: "vampire", color: "#1e1b26" }), C("top", "mummy", "Костюм мумії", 450, { pattern: "mummy", color: "#e8dcc0" }),
+    C("top", "web-tee", "Футболка з павутиною", 220, { pattern: "web", color: "#4a2a6b" }), C("top", "witch-dress", "Сукня відьми", 700, { pattern: "witch", color: "#3a2a6b", dress: 2 }),
+    C("bottom", "pumpkin-skirt", "Гарбузова пухнаста спідниця", 350, { color: "#ff7a1a", kind: 5 }), C("bottom", "bone-shorts", "Шорти з кісточками", 250, { color: "#1e1b26", kind: 6, print: "skull" }),
+    C("tights", "hw-stripes", "Гарбузові в смужку", 150, { color: "#ff7a1a", stripe: "#1e1b26" }), C("tights", "violet-black", "Фіолетово-чорні в смужку", 150, { color: "#7d4fc4", stripe: "#1e1b26" }),
+    C("shoes", "witch-boots", "Черевики відьми", 200, { color: "#3a2a6b" }),
+    C("back", "vampire-cape", "Плащ вампіра", 600, { style: "vampire-cape" }), C("back", "bat-wings", "Крила кажана", 900, { style: "bat-wings" }), C("back", "broom", "Мітла відьми", 650, { style: "broom" }),
+    C("pet", "blackcat", "Чорний кіт", 600, { style: "blackcat" }), C("pet", "bat", "Кажанчик", 700, { style: "bat" }), C("pet", "ghost", "Привидик", 800, { style: "ghost" }), C("pet", "pumpkin", "Гарбузик-джек", 600, { style: "pumpkin" }),
+    C("aura", "halloween", "Моторошне сяйво", 1200, { color: "halloween" }),
+  ].map((it) => ({ ...it, hw: true })),
 ];
 export const itemById = Object.fromEntries(ITEMS.map((i) => [i.id, i]));
 
@@ -175,6 +192,7 @@ function faceTexture(skin, eyes, mouth, f = {}) {
         case "star": star(g, x, 27, 7, "#f7c915"); break;
         case "heart": heart(g, x, 27, "#e2445c"); break;
         case "robot": g.fillStyle = "#58f0e0"; g.fillRect(x - 6, 23, 12, 7); g.fillStyle = iris; break;
+        case "glow": g.fillStyle = "#ff7a1a"; g.beginPath(); g.moveTo(x - 6, 31); g.lineTo(x, 21); g.lineTo(x + 6, 31); g.closePath(); g.fill(); g.fillStyle = "#ffd54a"; g.beginPath(); g.arc(x, 28, 1.8, 0, 7); g.fill(); g.fillStyle = iris; break;
         default: g.fillRect(x - 3, 24, 6, 6);
       }
     };
@@ -188,6 +206,7 @@ function faceTexture(skin, eyes, mouth, f = {}) {
       case "o": g.beginPath(); g.arc(32, 45, 4, 0, 7); g.fill(); break;
       case "tongue": g.beginPath(); g.arc(32, 41, 8, 0.1 * Math.PI, 0.9 * Math.PI); g.stroke(); g.fillStyle = "#e2445c"; g.fillRect(29, 46, 7, 6); break;
       case "cat": g.beginPath(); g.moveTo(24, 44); g.quadraticCurveTo(28, 49, 32, 44); g.quadraticCurveTo(36, 49, 40, 44); g.stroke(); break;
+      case "fangs": g.beginPath(); g.arc(32, 38, 9, 0.2 * Math.PI, 0.8 * Math.PI); g.stroke(); g.fillStyle = "#fff"; g.strokeStyle = "#1e1b26"; g.lineWidth = 0.8; for (const x of [26, 38]) { g.beginPath(); g.moveTo(x - 3.5, 44); g.lineTo(x + 3.5, 44); g.lineTo(x, 53); g.closePath(); g.fill(); g.stroke(); } break;
       case "teeth": g.beginPath(); g.arc(32, 40, 10, 0.15 * Math.PI, 0.85 * Math.PI); g.fill(); g.fillStyle = "#fff"; g.fillRect(25, 43, 14, 3); break;
       default: g.beginPath(); g.arc(32, 38, 9, 0.2 * Math.PI, 0.8 * Math.PI); g.stroke();
     }
@@ -252,6 +271,9 @@ function drawDeco(g, style) {
     case "whiskers": g.strokeStyle = "#1e1b26"; g.lineWidth = 1; for (const [x, s] of [[12, -1], [52, 1]]) for (const dy of [-2, 1, 4]) { g.beginPath(); g.moveTo(x - 3 * s, 39); g.lineTo(x + 5 * s, 39 + dy); g.stroke(); } break;
     case "sparkle": blush(0.3); for (const [x, y, r] of [[9, 20, 2.5], [55, 20, 2.5], [12, 46, 1.8], [52, 46, 1.8], [8, 33, 1.6], [56, 33, 1.6]]) star(g, x, y, r, "#f7c915"); break;
     case "flag": blush(0.25); g.fillStyle = "#0057b7"; g.fillRect(46, 36, 9, 3); g.fillStyle = "#ffd700"; g.fillRect(46, 39, 9, 3); break;
+    case "skull": g.fillStyle = "rgba(255,255,255,.75)"; g.fillRect(4, 8, 56, 50); g.fillStyle = "#1e1b26"; for (const x of [20, 44]) { g.beginPath(); g.arc(x, 27, 9, 0, 7); g.fill(); } g.beginPath(); g.moveTo(32, 33); g.lineTo(29, 39); g.lineTo(35, 39); g.closePath(); g.fill(); g.lineWidth = 1; g.strokeStyle = "#1e1b26"; for (let x = 22; x <= 42; x += 4) { g.beginPath(); g.moveTo(x, 40); g.lineTo(x, 48); g.stroke(); } break;
+    case "web": g.strokeStyle = "rgba(30,27,38,.8)"; g.lineWidth = 0.7; for (let k = 0; k < 6; k++) { const a = Math.PI / 2 + (k / 5) * (Math.PI / 2); g.beginPath(); g.moveTo(58, 52); g.lineTo(58 + Math.cos(a) * 16, 52 - Math.sin(a) * 16); g.stroke(); } for (const r of [5, 10, 15]) { g.beginPath(); g.arc(58, 52, r, Math.PI, 1.5 * Math.PI); g.stroke(); } break;
+    case "scar": blush(0.15); g.strokeStyle = "#5a3a2a"; g.lineWidth = 1.2; g.beginPath(); g.moveTo(8, 14); g.lineTo(26, 18); g.stroke(); for (let x = 10; x <= 24; x += 4) { g.beginPath(); g.moveTo(x, 12.5); g.lineTo(x + 1, 19.5); g.stroke(); } break;
     case "rainbow": blush(0.25); ["#e2445c", "#f7a51a", "#f7c915", "#99cc00", "#58b4f0", "#9d6bdb"].forEach((c, i) => { g.strokeStyle = c; g.lineWidth = 1.1; g.beginPath(); g.arc(51, 44, 7 - i * 1.1, Math.PI, 2 * Math.PI); g.stroke(); }); break;
   }
   g.restore();
@@ -321,6 +343,12 @@ function topTexture(pattern, color) {
       case "ua": g.fillStyle = "#0057b7"; g.fillRect(12, 18, 40, 14); g.fillStyle = "#ffd700"; g.fillRect(12, 32, 40, 14); heart(g, 32, 54, "#e2445c"); break;
       case "rainbow": ["#e2445c", "#f7a51a", "#f7c915", "#99cc00", "#58b4f0", "#9d6bdb"].forEach((c, i) => { g.strokeStyle = c; g.lineWidth = 3; g.beginPath(); g.arc(32, 46, 22 - i * 3, Math.PI, 2 * Math.PI); g.stroke(); }); break;
       case "leopard": g.fillStyle = "#3a2a1a"; for (let y = 4; y < 64; y += 12) for (let x = (y / 12) % 2 ? 2 : 8; x < 64; x += 12) { g.beginPath(); g.ellipse(x, y, 3.5, 2.5, 0.6, 0, 7); g.fill(); } break;
+      case "skeleton": g.fillStyle = "#f4f1f9"; g.fillRect(30, 4, 4, 52); for (let y = 12; y < 44; y += 7) { g.fillRect(14, y, 36, 3); } g.beginPath(); g.ellipse(32, 52, 10, 5, 0, 0, 7); g.fill(); break;
+      case "jack": { g.fillStyle = "#ff7a1a"; g.beginPath(); g.ellipse(32, 34, 20, 17, 0, 0, 7); g.fill(); g.fillStyle = "#3f7a16"; g.fillRect(30, 13, 4, 6); g.fillStyle = "#1e1b26"; for (const x of [24, 40]) { g.beginPath(); g.moveTo(x - 4, 32); g.lineTo(x, 25); g.lineTo(x + 4, 32); g.fill(); } g.beginPath(); g.moveTo(20, 38); for (let k = 0; k <= 6; k++) g.lineTo(20 + k * 4, k % 2 ? 46 : 40); g.lineTo(44, 38); g.fill(); break; }
+      case "vampire": g.fillStyle = "#f4f1f9"; g.beginPath(); g.moveTo(22, 0); g.lineTo(32, 30); g.lineTo(42, 0); g.fill(); g.fillStyle = "#c8102e"; g.beginPath(); g.moveTo(10, 0); g.lineTo(22, 0); g.lineTo(28, 22); g.fill(); g.beginPath(); g.moveTo(54, 0); g.lineTo(42, 0); g.lineTo(36, 22); g.fill(); g.fillStyle = "#c8102e"; g.beginPath(); g.arc(32, 8, 3, 0, 7); g.fill(); break;
+      case "mummy": g.strokeStyle = "#b8a882"; g.lineWidth = 3; for (let y = -10; y < 80; y += 9) { g.beginPath(); g.moveTo(0, y); g.lineTo(64, y + 14); g.stroke(); } break;
+      case "web": g.strokeStyle = "#e8e4f4"; g.lineWidth = 1.2; for (let k = 0; k < 8; k++) { const a = (k / 8) * Math.PI * 2; g.beginPath(); g.moveTo(32, 32); g.lineTo(32 + Math.cos(a) * 40, 32 + Math.sin(a) * 40); g.stroke(); } for (const r of [7, 14, 21, 28]) { g.beginPath(); for (let k = 0; k <= 8; k++) { const a = (k / 8) * Math.PI * 2; g.lineTo(32 + Math.cos(a) * r, 32 + Math.sin(a) * r); } g.stroke(); } g.fillStyle = "#1e1b26"; g.beginPath(); g.arc(44, 40, 3.5, 0, 7); g.fill(); break;
+      case "witch": g.fillStyle = "#1e1b26"; g.fillRect(0, 0, 64, 8); for (const [x, y, r] of [[16, 24, 4], [44, 34, 5], [24, 50, 3], [50, 14, 3]]) star(g, x, y, r, "#f7c915"); g.fillStyle = "#ff7a1a"; g.fillRect(0, 56, 64, 8); break;
       case "robe": g.fillStyle = "#99cc00"; g.fillRect(0, 0, 64, 6); g.fillRect(29, 0, 6, 64); star(g, 16, 30, 6, "#f7c915"); star(g, 48, 40, 5, "#f7c915"); break;
     }
   });
@@ -411,7 +439,8 @@ export function buildAvatar(cfg) {
       legs.children[0].rotation.x = sw; legs.children[1].rotation.x = -sw;
       arms[0].rotation.x = -sw; arms[1].rotation.x = sw;
       head.position.y = 1.7 + Math.sin(t * 2) * 0.012;
-      if (pet && g.userData.pet === pet) { pet.position.y = 0.05 + Math.abs(Math.sin(t * 4)) * 0.08; pet.rotation.y = Math.sin(t) * 0.3; }
+      if (pet) pet.userData.wings?.forEach(([w, s]) => (w.rotation.z = s * Math.sin(t * 14) * 0.6));
+      if (pet && g.userData.pet === pet) { pet.position.y = pet.userData.fly ? 0.05 + pet.userData.fly + Math.sin(t * 2) * 0.05 : 0.05 + Math.abs(Math.sin(t * 4)) * 0.08; pet.rotation.y = Math.sin(t) * 0.3; }
       if (aura) aura.rotation.y = t * 0.8;
     },
   };
@@ -463,6 +492,15 @@ function addHat(head, style) {
     case "kozak": add(new THREE.Mesh(new THREE.CylinderGeometry(0.33, 0.33, 0.32, 12), mat("#2a2420")), 0, 0.42, 0); { const t = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.3, 8), mat("#b8323a")); t.rotation.z = 1.2; add(t, -0.25, 0.55, 0); } break;
     case "wizard": add(new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.48, 0.04, 16), mat("#3a2a6b")), 0, 0.3, 0); add(new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.7, 12), mat("#3a2a6b")), 0, 0.66, 0); add(box(0.1, 0.1, 0.02, mat("#f7c915")), 0.05, 0.55, 0.22); break;
     case "helmet": add(box(0.66, 0.66, 0.66, mat("#b9bcc7")), 0, 0.03, 0); add(box(0.5, 0.06, 0.02, mat("#1e1b26")), 0, 0.05, 0.34); add(box(0.08, 0.3, 0.3, mat("#c13f2c")), 0, 0.45, -0.05); break;
+    case "pumpkin-head": {
+      const t = canvasTex(64, 64, (c) => { c.fillStyle = "#ff7a1a"; c.fillRect(0, 0, 64, 64); c.fillStyle = "#ffd54a"; for (const x of [18, 46]) { c.beginPath(); c.moveTo(x - 9, 30); c.lineTo(x, 15); c.lineTo(x + 9, 30); c.fill(); } c.beginPath(); c.moveTo(12, 40); for (let k = 0; k <= 8; k++) c.lineTo(12 + k * 5, k % 2 ? 54 : 44); c.lineTo(52, 40); c.fill(); });
+      const o = mat("#ff7a1a"), face = new THREE.MeshLambertMaterial({ map: t, emissive: "#3a1500" });
+      add(box(0.7, 0.66, 0.7, [o, o, o, o, face, o]), 0, 0.02, 0);
+      for (const x of [-0.2, 0.2]) add(box(0.04, 0.62, 0.72, mat("#e0661a")), x, 0.02, 0);
+      add(box(0.08, 0.16, 0.08, mat("#3f7a16")), 0, 0.42, 0); break;
+    }
+    case "pumpkin": add(new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 8).scale(1.2, 0.8, 1.2), mat("#ff7a1a")), 0.08, 0.38, 0); add(box(0.04, 0.1, 0.04, mat("#3f7a16")), 0.08, 0.53, 0); break;
+    case "witch": add(new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.52, 0.04, 18), mat("#2a1f3d")), 0, 0.3, 0); add(new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.08, 14), mat("#ff7a1a")), 0, 0.36, 0); { const c = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.8, 14), mat("#2a1f3d")); c.rotation.z = 0.25; add(c, 0.08, 0.76, 0); } break;
     case "crown": {
       const m = mat("#f7c915", { emissive: "#6b5300" });
       add(new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.14, 10, 1, true), m), 0, 0.36, 0);
@@ -505,6 +543,9 @@ function addBack(g, style) {
     case "bag": add(box(0.18, 0.16, 0.08, mat("#f08fc0")), 0.38, 0.78, 0.06); { const st = box(0.03, 0.8, 0.03, mat("#9d6bdb")); st.rotation.z = 0.55; add(st, 0.1, 1.08, 0.18); } break;
     case "unicorn-bag": add(box(0.46, 0.5, 0.18, mat("#fbe3ef")), 0, 1.05, -0.26); add(box(0.3, 0.06, 0.04, mat("#c3a6ef")), 0, 1.2, -0.36); { const h = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.24, 8), mat("#f7c915", { emissive: "#5a4500" })); add(h, 0, 1.42, -0.3); } add(box(0.08, 0.3, 0.06, mat("#c3a6ef")), 0.22, 1.18, -0.3); break;
     case "butterfly": for (const s of [-1, 1]) { const top = box(0.44, 0.38, 0.03, mat(s < 0 ? "#f08fc0" : "#c3a6ef", { transparent: true, opacity: 0.9 })); top.position.set(s * 0.32, 1.3, -0.22); top.rotation.z = s * 0.3; g.add(top); const low = box(0.3, 0.26, 0.03, mat("#8fe3c8", { transparent: true, opacity: 0.9 })); low.position.set(s * 0.26, 0.98, -0.22); low.rotation.z = s * -0.3; g.add(low); } break;
+    case "vampire-cape": add(box(0.66, 1.25, 0.04, mat("#1e1b26")), 0, 0.78, -0.2); add(box(0.6, 1.15, 0.02, mat("#8a1020")), 0, 0.8, -0.17); for (const s of [-1, 1]) { const c = box(0.22, 0.3, 0.04, mat("#1e1b26")); c.rotation.z = s * 0.5; add(c, s * 0.3, 1.5, -0.12); } break;
+    case "bat-wings": for (const s of [-1, 1]) { const w = new THREE.Group(); for (let k = 0; k < 3; k++) { const f = box(0.36, 0.18, 0.03, mat("#2a2440")); f.position.set(s * (0.2 + k * 0.18), -k * 0.1, 0); f.rotation.z = s * (0.5 - k * 0.35); w.add(f); } w.position.set(s * 0.12, 1.35, -0.24); g.add(w); } break;
+    case "broom": { const b = new THREE.Group(); b.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.4, 8), mat("#6b4426")), 0, 0, 0)); b.add(at(new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.4, 10), mat("#e8b84a")), 0, -0.8, 0)); b.rotation.z = 0.7; b.position.set(0, 1.0, -0.28); g.add(b); break; }
     case "jetpack": for (const x of [-0.13, 0.13]) { add(new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.5, 10), mat("#b9bcc7")), x, 1.05, -0.28); add(new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.2, 8).rotateX(Math.PI), mat("#ff7a2e", { emissive: "#c13f2c" })), x, 0.7, -0.28); } break;
   }
 }
@@ -513,13 +554,37 @@ function addPet(g, style) {
   if (style === "none") return null;
   const p = new THREE.Group();
   const add = (mesh, x, y, z) => p.add(at(mesh, x, y, z));
-  const body = { cat: "#e08a3c", dog: "#c9a36b", hedgehog: "#6b4426", owl: "#8a6a4a", fox: "#e0662a", bunny: "#f4f1f9", dragon: "#99cc00", hamster: "#e8b47a", panda: "#f4f1f9", unicorn: "#fbfaf5" }[style];
+  if (["bat", "ghost", "pumpkin"].includes(style)) {
+    if (style === "pumpkin") {
+      const m = mat("#ff7a1a", { emissive: "#401800" });
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.26, 14, 10).scale(1.2, 0.85, 1.2), m), 0, 0.24, 0);
+      add(box(0.05, 0.12, 0.05, mat("#3f7a16")), 0, 0.5, 0);
+      for (const x of [-0.08, 0.08]) add(new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.06, 3), mat("#ffd54a", { emissive: "#806000" })), x, 0.28, 0.3);
+      add(box(0.18, 0.04, 0.02, mat("#ffd54a", { emissive: "#806000" })), 0, 0.16, 0.31);
+    } else if (style === "ghost") {
+      const m = mat("#f4f6fb", { transparent: true, opacity: 0.88, emissive: "#30303a" });
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.22, 14, 10), m), 0, 0.42, 0);
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.27, 0.34, 14, 1, true), m), 0, 0.26, 0);
+      for (const x of [-0.07, 0.07]) add(box(0.06, 0.09, 0.02, mat("#1e1b26")), x, 0.46, 0.21);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.035), mat("#1e1b26")), 0, 0.36, 0.21);
+      p.userData.fly = 0.35;
+    } else {
+      const m = mat("#2a2440");
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.13, 10, 8), m), 0, 0.3, 0);
+      for (const x of [-0.07, 0.07]) { add(new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.1, 4), m), x, 0.44, 0); add(box(0.035, 0.035, 0.02, mat("#ffd54a", { emissive: "#806000" })), x * 0.8, 0.33, 0.12); }
+      for (const s of [-1, 1]) { const w = box(0.3, 0.14, 0.02, m); w.position.set(s * 0.25, 0.32, 0); p.add(w); (p.userData.wings ||= []).push([w, s]); }
+      p.userData.fly = 0.9;
+    }
+    p.position.set(0.85, 0.05 + (p.userData.fly || 0), 0.25); p.scale.setScalar(0.9); g.add(p); return p;
+  }
+  const body = { blackcat: "#1e1b26", cat: "#e08a3c", dog: "#c9a36b", hedgehog: "#6b4426", owl: "#8a6a4a", fox: "#e0662a", bunny: "#f4f1f9", dragon: "#99cc00", hamster: "#e8b47a", panda: "#f4f1f9", unicorn: "#fbfaf5" }[style];
   const m = mat(body), eye = mat("#1e1b26");
   add(box(0.34, 0.24, 0.44, m), 0, 0.2, 0);
   add(box(0.28, 0.26, 0.26, m), 0, 0.42, 0.22);
   add(box(0.05, 0.05, 0.02, eye), -0.07, 0.46, 0.36); add(box(0.05, 0.05, 0.02, eye), 0.07, 0.46, 0.36);
   for (const [x, z] of [[-0.11, 0.14], [0.11, 0.14], [-0.11, -0.14], [0.11, -0.14]]) add(box(0.08, 0.1, 0.08, m), x, 0.04, z);
-  if (["cat", "fox", "dog"].includes(style)) { add(box(0.07, 0.1, 0.05, m), -0.09, 0.59, 0.2); add(box(0.07, 0.1, 0.05, m), 0.09, 0.59, 0.2); add(box(0.06, 0.06, 0.3, style === "fox" ? mat("#fff") : m), 0, 0.3, -0.32); }
+  if (style === "blackcat") { add(box(0.07, 0.07, 0.02, mat("#ffd54a", { emissive: "#806000" })), -0.07, 0.46, 0.365); add(box(0.07, 0.07, 0.02, mat("#ffd54a", { emissive: "#806000" })), 0.07, 0.46, 0.365); }
+  if (["cat", "fox", "dog", "blackcat"].includes(style)) { add(box(0.07, 0.1, 0.05, m), -0.09, 0.59, 0.2); add(box(0.07, 0.1, 0.05, m), 0.09, 0.59, 0.2); add(box(0.06, 0.06, 0.3, style === "fox" ? mat("#fff") : m), 0, 0.3, -0.32); }
   if (style === "bunny") { add(box(0.06, 0.24, 0.05, m), -0.07, 0.66, 0.2); add(box(0.06, 0.24, 0.05, m), 0.07, 0.66, 0.2); }
   if (style === "hedgehog") for (let i = 0; i < 6; i++) { const c = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.14, 4), mat("#3a2a1a")); c.rotation.x = -0.6; add(c, (i % 3 - 1) * 0.1, 0.36, -0.05 - Math.floor(i / 3) * 0.14); }
   if (style === "owl") { add(box(0.1, 0.1, 0.02, mat("#f7c915")), -0.07, 0.46, 0.36); add(box(0.1, 0.1, 0.02, mat("#f7c915")), 0.07, 0.46, 0.36); }
@@ -557,6 +622,8 @@ function addHairAcc(head, style) {
     case "bunnyears": band("#f4f1f9"); for (const x of [-0.12, 0.12]) { add(box(0.09, 0.34, 0.05, mat("#f4f1f9")), x, 0.58, 0.02); add(box(0.04, 0.24, 0.02, mat("#f08fc0")), x, 0.58, 0.05); } break;
     case "ribbons": bow("#f7c915", 0, 0.2, -0.33); add(box(0.05, 0.7, 0.02, mat("#0057b7")), -0.05, -0.18, -0.34); add(box(0.05, 0.7, 0.02, mat("#ffd700")), 0.05, -0.18, -0.34); break;
     case "tiara": { const m = mat("#f7c915", { emissive: "#6b5300" }); add(box(0.5, 0.04, 0.04, m), 0, 0.4, 0.18); for (const [x, h] of [[-0.16, 0.08], [0, 0.14], [0.16, 0.08]]) add(new THREE.Mesh(new THREE.ConeGeometry(0.04, h, 4), m), x, 0.44 + h / 2, 0.18); add(sph(0.035, "#e2445c"), 0, 0.46, 0.21); break; }
+    case "horns": band("#8a1020"); for (const x of [-0.18, 0.18]) { const c = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.2, 8), mat("#d1102e")); c.rotation.z = -x * 1.5; add(c, x, 0.5, 0.08); } break;
+    case "bat-band": band("#1e1b26"); add(box(0.08, 0.08, 0.06, mat("#1e1b26")), 0, 0.46, 0.08); for (const k of [-1, 1]) { const w = box(0.16, 0.07, 0.03, mat("#2a2440")); w.rotation.z = k * 0.3; add(w, k * 0.12, 0.48, 0.08); } break;
     case "unicorn": band("#c3a6ef"); { const h = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.32, 8), mat("#f7c915", { emissive: "#5a4500" })); h.rotation.x = 0.35; add(h, 0, 0.56, 0.14); } add(sph(0.05, "#f08fc0"), -0.12, 0.42, 0.12); add(sph(0.05, "#8fe3c8"), 0.12, 0.42, 0.12); break;
   }
 }
@@ -598,7 +665,7 @@ function addAura(g, color) {
   const rainbow = ["#e2445c", "#f7c915", "#99cc00", "#58b4f0", "#9d6bdb"];
   for (let i = 0; i < 18; i++) {
     const ang = (i / 18) * Math.PI * 2;
-    const c = color === "rainbow" ? rainbow[i % rainbow.length] : color;
+    const c = color === "rainbow" ? rainbow[i % rainbow.length] : color === "halloween" ? ["#ff7a1a", "#9d6bdb", "#1e1b26"][i % 3] : color;
     const s = new THREE.Mesh(new THREE.OctahedronGeometry(0.05), new THREE.MeshBasicMaterial({ color: c }));
     s.position.set(Math.cos(ang) * 0.7, 0.3 + ((i * 7) % 18) / 10, Math.sin(ang) * 0.7);
     grp.add(s);
@@ -660,7 +727,8 @@ export function petFollower(model, scene) {
       const want = moving ? Math.atan2(dx, dz) : ory;
       let a = (want - f.ry) % (Math.PI * 2); if (a > Math.PI) a -= Math.PI * 2; if (a < -Math.PI) a += Math.PI * 2;
       f.ry += a * Math.min(1, dt * 8);
-      p.position.set(f.x, oy + 0.05 + (moving ? Math.abs(Math.sin(t * 12)) * 0.12 : Math.abs(Math.sin(t * 3)) * 0.04), f.z);
+      p.userData.wings?.forEach(([w, s]) => (w.rotation.z = s * Math.sin(t * 14) * 0.6));
+      p.position.set(f.x, oy + 0.05 + (p.userData.fly ? p.userData.fly + Math.sin(t * 2) * 0.08 : moving ? Math.abs(Math.sin(t * 12)) * 0.12 : Math.abs(Math.sin(t * 3)) * 0.04), f.z);
       p.rotation.set(0, f.ry, moving ? Math.sin(t * 12) * 0.08 : 0);
     },
     dispose() { scene.remove(p); },

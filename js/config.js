@@ -43,3 +43,7 @@ export const SPEED = {
 
 export const LEVELS_PER_TOPIC = 5;
 export const TASKS_PER_LEVEL = 10;
+
+// 🎃 Геловін: автоматично з 15 жовтня до 10 листопада; учитель може ввімкнути/вимкнути вручну (settings/halloween)
+export const hwSeason = (d = new Date()) => (d.getMonth() === 9 && d.getDate() >= 15) || (d.getMonth() === 10 && d.getDate() <= 10);
+export const halloweenOn = (settings) => settings?.halloween ?? hwSeason();
