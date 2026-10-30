@@ -4,6 +4,7 @@ import { watchAuth, teacherLogin, teacherRegister, teacherResetPassword, logout,
 import { TEACHER_EMAIL, CLASSES, LEVELS_PER_TOPIC, TASKS_PER_LEVEL, halloweenOn } from "./config.js";
 import { SECTIONS, TOPICS, topicById, shortTitle } from "../content/index.js";
 import { rankOf, topicPct, BADGES } from "./game.js";
+import { QUEST } from "../content/quest/halloween.js";
 import { previewView, liveView, startTeacherLive, monitoringView, awayFmt, awayDetail } from "./teacher-extra.js";
 import { monWorks } from "../content/monitoring/index.js";
 
@@ -276,6 +277,23 @@ function studentView() {
 const topicByShort = (s) => ready().find((t) => shortTitle(t) === s)?.id;
 
 // ---------- Налаштування ----------
+// 🎃 Квест «Таємна кімната»: хто відкрив скрині, скидання
+function questCard() {
+  const box = h("div", h("p.note", "Завантаження…"));
+  const fill = async () => {
+    const q = (await read(`quest/${QUEST.id}`)) || {}, S = q.stations || {};
+    box.replaceChildren(
+      h("p", q.done ? `✅ Квест виконано: заклинання промовив(-ла) ${q.done.name} (${fmtDate(q.done.at)} ${fmtTime(q.done.at)}).` : `Відкрито скринь: ${Object.keys(S).length} з 6.`),
+      h("ul", QUEST.stations.map((st) => h("li", `${st.icon} ${st.name} (${st.topic}) — літера «${st.letter.toUpperCase()}»: `, S[st.id] ? h("b", S[st.id].name) : h("span.note", "ще закрита")))),
+      h("div.row.gap", h("button.btn.btn--small", { onclick: fill }, "↻ Оновити"),
+        h("button.btn.btn--small", { onclick: async () => { if (await confirmBox("Скинути квест? Усі скрині знову закриються, і клас зможе пройти його заново (нагороду отримають ще раз).")) { await remove(r(`quest/${QUEST.id}`)); toast("Квест скинуто"); fill(); } } }, "🔄 Скинути квест")));
+  };
+  fill();
+  return h("section.card", h("h2", "🎃 Квест «Таємна кімната» (3D-школа)"),
+    h("p.note", `Вхід — світний портал на правій стіні холу (лише коли ввімкнено Геловін). ${QUEST.intro} Чарівне слово: «${QUEST.word.toUpperCase()}». Нагорода кожному учаснику: 150 🪙 і значок «Таємна кімната».`),
+    box);
+}
+
 function settingsView() {
   const s = data.settings;
   const save = async (path, val, msg = "Збережено") => { try { await write(`settings/${path}`, val); await load(); draw(); toast(msg); } catch (e) { toast(errText(e), "warn"); } };
@@ -288,6 +306,7 @@ function settingsView() {
       h("p.note", "Готові фрази й емоції працюють завжди. Вільний чат — лише коли ти дозволиш. Нецензурні слова автоматично замінюються на ***."),
       h("button.btn.btn--small", { onclick: async () => { if (await confirmBox("Очистити всю історію чату?")) { await remove(r("chat")); toast("Чат очищено"); } } }, "🧹 Очистити чат"),
       sw(s.leaderboard === true, (v) => save("leaderboard", v), "Показувати рейтинг класу (п’ятірка лідерів, інші бачать лише своє місце)")),
+    questCard(),
     h("section.card", h("h2", "📋 Моніторингові роботи"),
       h("p.note", "Відкрий роботу — учні побачать її на головній. Завдання беруться з усіх готових тем розділу (до 25 штук)."),
       sw(s.monitoring?.diag?.open === true, (v) => save("monitoring/diag/open", v), "Вхідна діагностика (з усіх готових тем)"),

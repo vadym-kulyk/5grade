@@ -76,6 +76,23 @@
         }
       }
     },
+    "quest": {
+      ".read": "auth != null",
+      ".write": "auth != null && auth.token.email === 'badim1aaa@gmail.com'",
+      "$q": {
+        "stations": {
+          "$s": {
+            ".write": "auth != null && !data.exists()",
+            ".validate": "newData.hasChildren(['uid', 'name', 'at']) && newData.child('uid').val() === auth.uid"
+          }
+        },
+        "players": { "$uid": { ".write": "auth != null && auth.uid === $uid" } },
+        "done": {
+          ".write": "auth != null && !data.exists() && root.child('quest/' + $q + '/stations').hasChildren(['s1', 's2', 's3', 's4', 's5', 's6'])",
+          ".validate": "newData.hasChildren(['uid', 'name', 'at']) && newData.child('uid').val() === auth.uid"
+        }
+      }
+    },
     "chat": {
       ".read": "auth != null",
       ".write": "auth != null && auth.token.email === 'badim1aaa@gmail.com'",

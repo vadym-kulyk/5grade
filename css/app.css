@@ -560,3 +560,24 @@ a.gtile:hover { border-color: var(--lime); }
 .mtbl th, .mtbl td { border: 1px solid var(--line); padding: 5px 8px; text-align: left; vertical-align: top; }
 .mtbl th { background: color-mix(in srgb, var(--lime) 18%, white); }
 .rule__text .mtbl { display: block; overflow-x: auto; }
+
+/* 🎃 Політ і квест у 3D-школі */
+.flybtn { background: #2a1f3d; color: #ffd9a0; border-color: #2a1f3d; }
+.flypad { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); display: none; gap: 10px; }
+.flypad.on { display: grid; }
+.flypad__b { width: 58px; height: 58px; border-radius: 50%; border: 2px solid #b06bff; background: rgba(42, 31, 61, .85); font-size: 24px; touch-action: none; user-select: none; }
+.qpanel { position: absolute; left: 12px; top: 64px; width: min(340px, calc(100% - 24px)); background: rgba(30, 22, 48, .92); color: #f3ecff; border: 2px solid #b06bff; border-radius: var(--r); padding: 12px 14px; display: none; gap: 8px; box-shadow: var(--shadow); }
+.qpanel.on { display: grid; }
+.qpanel .note { color: #cbbbe6; margin: 0; font-size: 13px; }
+.qpanel__head { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+.qpanel__win { margin: 0; color: #ffd54a; font-weight: 700; }
+.qpanel__letters { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.qletter { display: grid; justify-items: center; gap: 2px; padding: 6px 2px; border-radius: 10px; background: rgba(255, 255, 255, .06); border: 1px dashed rgba(255, 255, 255, .25); min-width: 0; }
+.qletter b { font-family: var(--f-display); font-size: 20px; color: #8a7aa8; }
+.qletter small { font-size: 10px; color: #cbbbe6; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qletter.on { background: rgba(255, 179, 71, .18); border: 1px solid #ffb347; }
+.qletter.on b { color: #ffd54a; }
+.qst { display: grid; gap: 12px; }
+.qst__head { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.qbig { font-family: var(--f-display); font-size: 44px; font-weight: 800; color: #ff7a1a; letter-spacing: .08em; margin: 8px 0; }
+@media (max-width: 600px) { .qpanel { top: 58px; padding: 10px; } .qpanel__letters { gap: 4px; } .qletter b { font-size: 16px; } .flypad { right: 10px; top: 42%; } }

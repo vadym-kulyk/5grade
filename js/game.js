@@ -41,6 +41,7 @@ export const BADGES = [
   { id: "shopper", icon: "🛍️", title: "Перша обновка", text: "Купити першу річ для персонажа" },
   { id: "stylist", icon: "👗", title: "Стиліст", text: "Мати 15 речей" },
   { id: "explorer", icon: "🏫", title: "Дослідник школи", text: "Зайти в 3D-школу" },
+  { id: "hwQuest", icon: "🎃", title: "Таємна кімната", text: "Разом із класом пройти геловінський квест" },
 ];
 export const badgeById = Object.fromEntries(BADGES.map((b) => [b.id, b]));
 
@@ -91,6 +92,7 @@ export function newBadges(user, progress, extra = {}) {
   give("shopper", Object.keys(user.owned || {}).length >= 1);
   give("stylist", Object.keys(user.owned || {}).length >= 15);
   give("explorer", extra.explorer);
+  give("hwQuest", extra.hwQuest);
   return got;
 }
 

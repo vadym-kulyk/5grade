@@ -7,6 +7,9 @@ import { awardBadges } from "./store.js";
 import { SECTIONS, TOPICS, shortTitle } from "../content/index.js";
 import { rankOf } from "./game.js";
 import { halloweenOn } from "./config.js";
+import { setupQuest } from "./hwquest.js";
+
+const FLY_ITEMS = ["back.broom", "back.bat-wings", "back.vampire-cape"];
 
 const PHRASES = ["Привіт! 👋", "Ходімо вчитися! 📚", "Молодець! 👍", "Дякую! 🙏", "У мене 100 %! 💯", "Хто зі мною? 🙋", "До зустрічі! 👋"];
 const EMOTES = [["👋", "wave"], ["💃", "dance"], ["🦘", "jump"]];
@@ -22,11 +25,18 @@ export function openWorld(state) {
   const chatBox = h("div.chat", chatLog, h("form.chat__form", { onsubmit: (e) => { e.preventDefault(); sendChat(); } }, chatInput, h("button.btn.btn--primary.btn--small", "→")));
   const online = h("div.world__online");
   const stick = h("div.stick", h("div.stick__knob"));
+  const canFly = FLY_ITEMS.includes(u.avatar?.back);
+  const flyIcon = { "back.broom": "🧹", "back.bat-wings": "🦇", "back.vampire-cape": "🧛" }[u.avatar?.back] || "🪽";
+  const flyBtn = canFly ? h("button.btn.btn--small.flybtn", { onclick: () => toggleFly() }, `${flyIcon} Летіти`) : null;
+  const pad = { up: false, down: false };
+  const padBtn = (txt, k) => h("button.flypad__b", { onpointerdown: (e) => { e.preventDefault(); pad[k] = true; }, onpointerup: () => (pad[k] = false), onpointerleave: () => (pad[k] = false) }, txt);
+  const flyPad = h("div.flypad", padBtn("⬆️", "up"), padBtn("⬇️", "down"));
   mount(h("div.world",
     canvasWrap,
     h("div.world__top",
       h("a.btn.btn--small", { href: "#/" }, "← Вийти зі школи"),
-      online),
+      flyBtn, online),
+    flyPad,
     prompt,
     h("div.world__bottom",
       h("div.phrases", PHRASES.map((p) => h("button.chipbtn", { onclick: () => emote(p) }, p)),
@@ -52,9 +62,12 @@ export function openWorld(state) {
   const doors = [];   // { x, z, label, topic, nx, nz }
   buildSchool(scene, walls, doors, HW);
   const hwTick = HW ? decorateHalloween(scene, doors) : null;
+  // Таємна кімната з квестом (лише в геловінський час)
+  const quest = HW ? setupQuest({ scene, walls, uid, teleport: (p) => { me.x = p.x; me.z = p.z; me.ry = p.ry; camYaw = p.ry + Math.PI; sendPresence(true); } }) : null;
+  if (quest) document.querySelector(".world")?.append(quest.panel);
 
   // ---------- Мій персонаж ----------
-  const me = { x: (Math.random() - 0.5) * 8, z: 6 + Math.random() * 4, ry: Math.PI, mv: 0, model: buildAvatar(u.avatar), action: null, actionT: 0 };
+  const me = { x: (Math.random() - 0.5) * 8, z: 6 + Math.random() * 4, ry: Math.PI, mv: 0, y: 0, fly: false, model: buildAvatar(u.avatar), action: null, actionT: 0 };
   scene.add(me.model);
   me.pet = petFollower(me.model, scene);
   me.model.add(nameSprite(u.name, rankOf(u.xp).icon));
@@ -74,14 +87,14 @@ export function openWorld(state) {
       const avKey = JSON.stringify(p.av || {});
       if (!o || o.avKey !== avKey) {
         if (o) { scene.remove(o.model); o.pet?.dispose(); }
-        o = { model: buildAvatar(p.av), avKey, x: p.x, z: p.z, ry: p.ry, tx: p.x, tz: p.z, tr: p.ry };
+        o = { model: buildAvatar(p.av), avKey, x: p.x, z: p.z, ry: p.ry, tx: p.x, tz: p.z, tr: p.ry, y: p.y || 0 };
         o.model.add(nameSprite(p.name, p.rk || ""));
         o.model.position.set(p.x, 0, p.z);
         scene.add(o.model);
         o.pet = petFollower(o.model, scene);
         others.set(id, o);
       }
-      Object.assign(o, { tx: p.x, tz: p.z, tr: p.ry, mv: p.mv, name: p.name });
+      Object.assign(o, { tx: p.x, tz: p.z, tr: p.ry, mv: p.mv, name: p.name, ty: p.y || 0, fly: !!p.fl });
       if (p.e && p.e.t !== o.eT) { o.eT = p.e.t; if (now - p.e.t < 5000) { if (p.e.text) bubble(o.model, p.e.text); if (p.e.a) { o.action = p.e.a; o.actionT = 0; } } }
     }
     for (const [id, o] of others) if (!all[id] || now - (all[id].t || 0) > 60000) { scene.remove(o.model); o.pet?.dispose(); others.delete(id); }
@@ -91,10 +104,10 @@ export function openWorld(state) {
   let lastSent = 0, lastKey = "";
   function sendPresence(force) {
     const now = Date.now();
-    const key = `${me.x.toFixed(2)},${me.z.toFixed(2)},${me.ry.toFixed(2)},${me.mv}`;
+    const key = `${me.x.toFixed(2)},${me.z.toFixed(2)},${me.ry.toFixed(2)},${me.mv},${me.y.toFixed(1)}`;
     if (!force && (now - lastSent < 120 || (key === lastKey && now - lastSent < 4000))) return;
     lastSent = now; lastKey = key;
-    set(myRef, { name: u.name, cls: u.cls, rk: rankOf(u.xp).icon, av: u.avatar || null, x: +me.x.toFixed(2), z: +me.z.toFixed(2), ry: +me.ry.toFixed(2), mv: me.mv, t: now, e: me.e || null });
+    set(myRef, { name: u.name, cls: u.cls, rk: rankOf(u.xp).icon, av: u.avatar || null, x: +me.x.toFixed(2), z: +me.z.toFixed(2), ry: +me.ry.toFixed(2), mv: me.mv, y: +me.y.toFixed(2), fl: me.fly || null, t: now, e: me.e || null });
   }
   function emote(text, action) {
     me.e = { text: text || null, a: action || null, t: Date.now() };
@@ -122,7 +135,14 @@ export function openWorld(state) {
 
   // ---------- Керування ----------
   const keys = new Set();
-  const kd = (e) => { if (e.target.tagName === "INPUT") return; keys.add(e.code); if (e.code === "KeyE" || e.code === "Enter") useDoor(); };
+  const kd = (e) => { if (e.target.tagName === "INPUT") return; keys.add(e.code); if (e.code === "KeyE" || e.code === "Enter") useDoor(); if (e.code === "KeyF" && canFly) toggleFly(); if (e.code === "Space" && me.fly) e.preventDefault(); };
+  function toggleFly() {
+    me.fly = !me.fly;
+    flyBtn.textContent = me.fly ? "🛬 Приземлитися" : `${flyIcon} Летіти`;
+    flyPad.classList.toggle("on", me.fly);
+    if (me.fly) { me.y = Math.max(me.y, 1.2); toast("Пробіл / ⬆️ — вгору, C / ⬇️ — вниз, F — приземлитися", "info", 3500); }
+    sendPresence(true);
+  }
   const ku = (e) => keys.delete(e.code);
   addEventListener("keydown", kd); addEventListener("keyup", ku);
   let drag = null;
@@ -146,6 +166,7 @@ export function openWorld(state) {
   let nearDoor = null;
   function useDoor() {
     if (!nearDoor) return;
+    if (nearDoor.act) return nearDoor.act();
     if (nearDoor.topic?.ready) location.hash = `#/topic/${nearDoor.topic.id}`;
     else toast("🚧 Тут з’явиться 3D-гра з цієї теми. Незабаром!", "info", 3000);
   }
@@ -186,34 +207,48 @@ export function openWorld(state) {
       const target = Math.atan2(wx, wz);
       me.ry += angDiff(me.ry, target) * Math.min(1, dt * 12);
     }
+    // Політ: висота від 0 до 7 м
+    if (me.fly) {
+      const vy = (keys.has("Space") || pad.up ? 1 : 0) - (keys.has("KeyC") || keys.has("ShiftLeft") || pad.down ? 1 : 0);
+      me.y = Math.max(0.6, Math.min(7, me.y + vy * 3.2 * dt));
+    } else me.y = Math.max(0, me.y - 5 * dt);
     applyAction(me, dt);
-    me.model.position.set(me.x, me.model.position.y, me.z);
+    me.model.position.set(me.x, me.action ? me.model.position.y : me.y + (me.fly ? Math.sin(t * 2) * 0.08 : 0), me.z);
     me.model.rotation.y = me.ry;
-    me.model.userData.animate(t, me.mv);
-    me.pet?.update(dt, t, me.x, me.z, me.ry);
+    me.model.userData.animate(t, me.fly ? 0 : me.mv);
+    flyPose(me.model, me.fly || me.y > 0.05, t);
+    me.pet?.update(dt, t, me.x, me.z, me.ry, me.y * 0.85);
     hwTick?.(t, me);
+    quest?.tick(t);
 
     for (const o of others.values()) {
       o.x += (o.tx - o.x) * Math.min(1, dt * 8);
       o.z += (o.tz - o.z) * Math.min(1, dt * 8);
       o.ry += angDiff(o.ry, o.tr) * Math.min(1, dt * 8);
+      o.y += ((o.ty || 0) - o.y) * Math.min(1, dt * 8);
       applyAction(o, dt);
-      o.model.position.set(o.x, o.model.position.y, o.z);
+      o.model.position.set(o.x, o.action ? o.model.position.y : o.y + (o.fly ? Math.sin(t * 2 + o.x) * 0.08 : 0), o.z);
       o.model.rotation.y = o.ry;
-      o.model.userData.animate(t, o.mv || 0);
-      o.pet?.update(dt, t, o.x, o.z, o.ry);
+      o.model.userData.animate(t, o.fly ? 0 : o.mv || 0);
+      flyPose(o.model, o.fly || o.y > 0.05, t);
+      o.pet?.update(dt, t, o.x, o.z, o.ry, o.y * 0.85);
     }
 
     // камера позаду персонажа
     const dist = 6.5;
-    cam.position.set(me.x + Math.sin(camYaw) * dist * Math.cos(camPitch), 1.6 + Math.sin(camPitch) * dist, me.z + Math.cos(camYaw) * dist * Math.cos(camPitch));
-    cam.lookAt(me.x, 1.5, me.z);
+    cam.position.set(me.x + Math.sin(camYaw) * dist * Math.cos(camPitch), me.y + 1.6 + Math.sin(camPitch) * dist, me.z + Math.cos(camYaw) * dist * Math.cos(camPitch));
+    if (quest?.inRoom(me)) quest.clampCam(cam);
+    cam.lookAt(me.x, me.y + 1.5, me.z);
 
     // двері поруч?
     nearDoor = null;
     for (const d of doors) if (Math.hypot(d.x - me.x, d.z - me.z) < 2.2) { nearDoor = d; break; }
+    const qi = quest && me.y < 2.5 ? quest.interacts(me) : null;
+    if (qi) nearDoor = qi;
+    quest?.panel.classList.toggle("on", quest.inRoom(me));
     prompt.classList.toggle("on", !!nearDoor);
-    if (nearDoor) prompt.replaceChildren(h("b", nearDoor.label), h("span", nearDoor.topic?.ready ? "Натисни E або сюди — відкрити тему" : "🚧 3D-гра незабаром"));
+    if (qi) prompt.replaceChildren(h("b", qi.label), h("span", qi.sub));
+    else if (nearDoor) prompt.replaceChildren(h("b", nearDoor.label), h("span", nearDoor.topic?.ready ? "Натисни E або сюди — відкрити тему" : "🚧 3D-гра незабаром"));
 
     sendPresence();
     renderer.render(scene, cam);
@@ -231,6 +266,7 @@ export function openWorld(state) {
     removeEventListener("pointermove", pm); removeEventListener("pointerup", pu);
     removeEventListener("resize", resize);
     off(presRef); off(setsRef); off(r("chat"));
+    quest?.dispose();
     remove(myRef);
     renderer.dispose();
   };
@@ -245,6 +281,14 @@ function applyAction(o, dt) {
   if (o.action === "dance") { o.model.rotation.y += Math.sin(k * 8) * 0.3; ud.arms[0].rotation.z = Math.sin(k * 10) * 1.5; ud.arms[1].rotation.z = -Math.sin(k * 10) * 1.5; }
   if (o.action === "jump") o.model.position.y = Math.max(0, Math.sin(k * 6) * 1.2);
   if (k > 2) { o.action = null; ud.arms.forEach((a) => (a.rotation.z = 0)); o.model.position.y = 0; }
+}
+// Поза в польоті: мітла під персонажем, крила махають, плащ розвівається
+function flyPose(model, on, t) {
+  const broom = model.getObjectByName("broom");
+  if (broom) { if (on) { broom.rotation.set(Math.PI / 2, 0, 0); broom.position.set(0, 0.62, 0.05); } else { broom.rotation.set(0, 0, 0.7); broom.position.set(0, 1.0, -0.28); } }
+  for (const [n, s] of [["wingL", -1], ["wingR", 1]]) { const w = model.getObjectByName(n); if (w) w.rotation.y = on ? s * Math.sin(t * 10) * 0.6 : 0; }
+  const cape = model.getObjectByName("cape");
+  if (cape) cape.rotation.x = on ? -0.6 - Math.sin(t * 8) * 0.12 : 0;
 }
 const angDiff = (a, b) => { let d = (b - a) % (Math.PI * 2); if (d > Math.PI) d -= Math.PI * 2; if (d < -Math.PI) d += Math.PI * 2; return d; };
 
