@@ -9,7 +9,8 @@ import { rankOf } from "./game.js";
 import { halloweenOn } from "./config.js";
 import { setupQuest } from "./hwquest.js";
 
-const FLY_ITEMS = ["back.broom", "back.bat-wings", "back.vampire-cape"];
+// Політ: мітла — найвище й найшвидше; крила й плащ — нижче. Пішки — 5,5 м/с.
+const FLY = { "back.broom": { maxY: 14, speed: 10.5 }, "back.bat-wings": { maxY: 6, speed: 9 }, "back.vampire-cape": { maxY: 6, speed: 8.5 } };
 
 const PHRASES = ["Привіт! 👋", "Ходімо вчитися! 📚", "Молодець! 👍", "Дякую! 🙏", "У мене 100 %! 💯", "Хто зі мною? 🙋", "До зустрічі! 👋"];
 const EMOTES = [["👋", "wave"], ["💃", "dance"], ["🦘", "jump"]];
@@ -25,7 +26,8 @@ export function openWorld(state) {
   const chatBox = h("div.chat", chatLog, h("form.chat__form", { onsubmit: (e) => { e.preventDefault(); sendChat(); } }, chatInput, h("button.btn.btn--primary.btn--small", "→")));
   const online = h("div.world__online");
   const stick = h("div.stick", h("div.stick__knob"));
-  const canFly = FLY_ITEMS.includes(u.avatar?.back);
+  const flyCfg = FLY[u.avatar?.back];
+  const canFly = !!flyCfg;
   const flyIcon = { "back.broom": "🧹", "back.bat-wings": "🦇", "back.vampire-cape": "🧛" }[u.avatar?.back] || "🪽";
   const flyBtn = canFly ? h("button.btn.btn--small.flybtn", { onclick: () => toggleFly() }, `${flyIcon} Летіти`) : null;
   const pad = { up: false, down: false };
@@ -64,7 +66,7 @@ export function openWorld(state) {
   const hwTick = HW ? decorateHalloween(scene, doors) : null;
   // Таємна кімната з квестом (лише в геловінський час)
   const quest = HW ? setupQuest({ scene, walls, uid, teleport: (p) => { me.x = p.x; me.z = p.z; me.ry = p.ry; camYaw = p.ry + Math.PI; sendPresence(true); } }) : null;
-  if (quest) document.querySelector(".world")?.append(quest.panel);
+  if (quest) { document.querySelector(".world")?.append(quest.panel); document.querySelector(".world__bottom")?.prepend(quest.lightUi); quest.setMe(() => ({ x: me.x, y: me.y, z: me.z, broom: me.fly && u.avatar?.back === "back.broom" })); }
 
   // ---------- Мій персонаж ----------
   const me = { x: (Math.random() - 0.5) * 8, z: 6 + Math.random() * 4, ry: Math.PI, mv: 0, y: 0, fly: false, model: buildAvatar(u.avatar), action: null, actionT: 0 };
@@ -135,12 +137,12 @@ export function openWorld(state) {
 
   // ---------- Керування ----------
   const keys = new Set();
-  const kd = (e) => { if (e.target.tagName === "INPUT") return; keys.add(e.code); if (e.code === "KeyE" || e.code === "Enter") useDoor(); if (e.code === "KeyF" && canFly) toggleFly(); if (e.code === "Space" && me.fly) e.preventDefault(); };
+  const kd = (e) => { if (e.target.tagName === "INPUT") return; keys.add(e.code); if (e.code === "KeyE" || e.code === "Enter") useDoor(); if (e.code === "KeyF" && canFly) toggleFly(); if (e.code === "KeyG") quest?.throwLight(); if (e.code === "Space" && me.fly) e.preventDefault(); };
   function toggleFly() {
     me.fly = !me.fly;
     flyBtn.textContent = me.fly ? "🛬 Приземлитися" : `${flyIcon} Летіти`;
     flyPad.classList.toggle("on", me.fly);
-    if (me.fly) { me.y = Math.max(me.y, 1.2); toast("Пробіл / ⬆️ — вгору, C / ⬇️ — вниз, F — приземлитися", "info", 3500); }
+    if (me.fly) { me.y = Math.max(me.y, 1.2); toast(`Пробіл / ⬆️ — вгору, C / ⬇️ — вниз, WASD — у будь-який бік, F — приземлитися. Висота до ${flyCfg.maxY} м${u.avatar?.back === "back.broom" ? " — на мітлі найвище!" : ""}`, "info", 4500); }
     sendPresence(true);
   }
   const ku = (e) => keys.delete(e.code);
@@ -200,7 +202,7 @@ export function openWorld(state) {
       fx /= Math.max(1, len); fz /= Math.max(1, len);
       const sin = Math.sin(camYaw), cos = Math.cos(camYaw);
       const wx = fx * cos + fz * sin, wz = -fx * sin + fz * cos;
-      const sp = 5.5 * dt;
+      const sp = (me.fly ? flyCfg.speed : 5.5) * dt;
       const nx = me.x + wx * sp, nz = me.z + wz * sp;
       if (!collide(nx, me.z)) me.x = nx;
       if (!collide(me.x, nz)) me.z = nz;
@@ -210,7 +212,7 @@ export function openWorld(state) {
     // Політ: висота від 0 до 7 м
     if (me.fly) {
       const vy = (keys.has("Space") || pad.up ? 1 : 0) - (keys.has("KeyC") || keys.has("ShiftLeft") || pad.down ? 1 : 0);
-      me.y = Math.max(0.6, Math.min(7, me.y + vy * 3.2 * dt));
+      me.y = Math.max(0.6, Math.min(flyCfg.maxY, me.y + vy * 4 * dt));
     } else me.y = Math.max(0, me.y - 5 * dt);
     applyAction(me, dt);
     me.model.position.set(me.x, me.action ? me.model.position.y : me.y + (me.fly ? Math.sin(t * 2) * 0.08 : 0), me.z);
@@ -243,7 +245,7 @@ export function openWorld(state) {
     // двері поруч?
     nearDoor = null;
     for (const d of doors) if (Math.hypot(d.x - me.x, d.z - me.z) < 2.2) { nearDoor = d; break; }
-    const qi = quest && me.y < 2.5 ? quest.interacts(me) : null;
+    const qi = quest ? quest.interacts(me) : null;
     if (qi) nearDoor = qi;
     quest?.panel.classList.toggle("on", quest.inRoom(me));
     prompt.classList.toggle("on", !!nearDoor);
@@ -285,7 +287,12 @@ function applyAction(o, dt) {
 // Поза в польоті: мітла під персонажем, крила махають, плащ розвівається
 function flyPose(model, on, t) {
   const broom = model.getObjectByName("broom");
-  if (broom) { if (on) { broom.rotation.set(Math.PI / 2, 0, 0); broom.position.set(0, 0.62, 0.05); } else { broom.rotation.set(0, 0, 0.7); broom.position.set(0, 1.0, -0.28); } }
+  if (broom) {
+    if (on) { broom.rotation.set(Math.PI / 2, 0, 0); broom.position.set(0, 0.62, 0.15); } else { broom.rotation.set(0, 0, 0.7); broom.position.set(0, 1.0, -0.28); }
+    // сидимо верхи: ноги обертаємо від стегна вперед уздовж держака, руки тримають мітлу
+    for (const leg of model.userData.legs) { if (on) { leg.rotation.x = -1.4; leg.position.y = 0.58; leg.position.z = 0.69; } else { leg.position.y = 0; leg.position.z = 0; } }
+    if (on) model.userData.arms.forEach((a) => (a.rotation.x = -0.9));
+  }
   for (const [n, s] of [["wingL", -1], ["wingR", 1]]) { const w = model.getObjectByName(n); if (w) w.rotation.y = on ? s * Math.sin(t * 10) * 0.6 : 0; }
   const cape = model.getObjectByName("cape");
   if (cape) cape.rotation.x = on ? -0.6 - Math.sin(t * 8) * 0.12 : 0;

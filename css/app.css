@@ -581,3 +581,11 @@ a.gtile:hover { border-color: var(--lime); }
 .qst__head { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 .qbig { font-family: var(--f-display); font-size: 44px; font-weight: 800; color: #ff7a1a; letter-spacing: .08em; margin: 8px 0; }
 @media (max-width: 600px) { .qpanel { top: 58px; padding: 10px; } .qpanel__letters { gap: 4px; } .qletter b { font-size: 16px; } .flypad { right: 10px; top: 42%; } }
+.lightui { display: flex; gap: 6px; justify-content: flex-end; }
+.lightbtn { background: #2a1f3d; color: #ffd54a; border-color: #ffb347; font-weight: 800; }
+.qpanel__bosses { display: grid; gap: 5px; }
+.qboss { display: grid; grid-template-columns: minmax(0, 1fr) 90px auto; gap: 8px; align-items: center; font-size: 12.5px; }
+.qboss span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qboss i { height: 8px; background: #3a2a4d; border-radius: 99px; overflow: hidden; display: block; }
+.qboss em { display: block; height: 100%; background: #ff3b5c; }
+.qboss.off { color: #ffd54a; } .qboss.off em { background: #ffd54a; }

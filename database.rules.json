@@ -87,6 +87,14 @@
           }
         },
         "players": { "$uid": { ".write": "auth != null && auth.uid === $uid" } },
+        "bosses": {
+          "$b": {
+            "dmg": {
+              ".write": "auth != null",
+              ".validate": "newData.isNumber() && newData.val() === (data.exists() ? data.val() : 0) + 1 && newData.val() <= 50"
+            }
+          }
+        },
         "done": {
           ".write": "auth != null && !data.exists() && root.child('quest/' + $q + '/stations').hasChildren(['s1', 's2', 's3', 's4', 's5', 's6'])",
           ".validate": "newData.hasChildren(['uid', 'name', 'at']) && newData.child('uid').val() === auth.uid"
