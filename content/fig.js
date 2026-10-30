@@ -5,8 +5,12 @@ export const C = { lime: "#99cc00", violet: "#9d6bdb", yellow: "#f7c915", ink: "
 const BG = { lime: "#f3fae0", violet: "#f6f1fd", yellow: "#fffdf2", ink: "#faf8fc" };
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
 const svg = (h, body, label) => `<svg viewBox="0 0 400 ${h}" role="img" aria-label="${esc(label)}">${body}</svg>`;
+const supT = (s, size) => { const up = Math.round(size * 0.42); let lift = 0;
+  return String(s).split(/(<sup>.*?<\/sup>)/).filter(Boolean).map((p) => { const m = p.match(/^<sup>(.*)<\/sup>$/);
+    const dy = m ? -up - lift : -lift; lift = m ? -up : 0;
+    return `<tspan${dy ? ` dy="${dy}"` : ""}${m ? ` font-size="${Math.round(size * 0.68)}"` : ""}>${esc(m ? m[1] : p)}</tspan>`; }).join(""); };
 const T = (x, y, s, { size = 15, w = 700, fill = C.ink, anchor = "middle", font = F } = {}) =>
-  `<text x="${x}" y="${y}" text-anchor="${anchor}" ${font} font-size="${size}" font-weight="${w}" fill="${fill}">${esc(s)}</text>`;
+  `<text x="${x}" y="${y}" text-anchor="${anchor}" ${font} font-size="${size}" font-weight="${w}" fill="${fill}">${String(s).includes("<sup>") ? supT(s, size) : esc(s)}</text>`;
 
 // Центральне поняття і до 6 «пелюсток»
 export function mind(center, items, color = "lime", note = "") {

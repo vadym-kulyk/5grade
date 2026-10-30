@@ -28,7 +28,7 @@ R.choice = (t) => {
   const idx = t.options.map((o, i) => i);
   const order = t.noShuffle ? idx : shuffle(idx);
   let sel = null;
-  const btns = order.map((i) => h("button.opt", { onclick: () => { sel = i; btns.forEach((b) => b.classList.toggle("on", b === btnByIdx[i])); onPick(); } }, t.options[i]));
+  const btns = order.map((i) => h("button.opt", { onclick: () => { sel = i; btns.forEach((b) => b.classList.toggle("on", b === btnByIdx[i])); onPick(); } }, rich(t.options[i])));
   const btnByIdx = Object.fromEntries(order.map((i, k) => [i, btns[k]]));
   let onPick = () => {};
   return {
@@ -38,13 +38,17 @@ R.choice = (t) => {
     reveal: () => { btnByIdx[t.answer].classList.add("right"); if (sel !== t.answer) btnByIdx[sel]?.classList.add("wrong"); },
   };
 };
+// Транскрипції з наближенням звука: [ве<sup>и</sup>сна] — показуємо верхній індекс
+const rich = (s) => (typeof s === "string" && s.includes("<sup>") ? h("span", { html: s }) : s);
+export const plain = (s) => String(s).replace(/<\/?sup>/g, "");
+
 R.tf = (t) => R.choice({ ...t, options: ["Правильно", "Неправильно"], answer: t.answer ? 0 : 1, noShuffle: true });
 
 R.multi = (t) => {
   const order = shuffle(t.options.map((o, i) => i));
   const sel = new Set();
   const btns = {};
-  order.forEach((i) => (btns[i] = h("button.opt.opt--multi", { onclick: () => { sel.has(i) ? sel.delete(i) : sel.add(i); btns[i].classList.toggle("on"); } }, t.options[i])));
+  order.forEach((i) => (btns[i] = h("button.opt.opt--multi", { onclick: () => { sel.has(i) ? sel.delete(i) : sel.add(i); btns[i].classList.toggle("on"); } }, rich(t.options[i]))));
   const ans = new Set(t.answer);
   return {
     el: h("div", h("p.note", "Обери всі правильні варіанти"), h("div.opts", order.map((i) => btns[i]))),
@@ -88,7 +92,7 @@ R.match = (t) => {
   const rights = shuffle([...t.pairs.map((p) => p[1]), ...(t.extra || [])]);
   const sels = t.pairs.map(([l]) => h("select.select", h("option", { value: "" }, "— обери —"), rights.map((x) => h("option", { value: x }, x))));
   return {
-    el: h("div.match", t.pairs.map(([l], i) => h("div.match__row", h("div.match__l", l), sels[i]))),
+    el: h("div.match", t.pairs.map(([l], i) => h("div.match__row", h("div.match__l", rich(l)), sels[i]))),
     ready: () => sels.every((s) => s.value), value: () => sels.map((s, i) => `${t.pairs[i][0]} → ${s.value}`).join("; "),
     check: () => sels.every((s, i) => s.value === t.pairs[i][1]),
     reveal: () => sels.forEach((s, i) => { const ok = s.value === t.pairs[i][1]; s.classList.add(ok ? "right" : "wrong"); s.disabled = true; if (!ok) s.after(h("div.match__fix", "✓ " + t.pairs[i][1])); }),
@@ -103,7 +107,7 @@ R.sort = (t) => {
   items.forEach((i) => {
     const [txt] = t.items[i];
     const bs = t.groups.map((g, gi) => h("button.chipbtn", { onclick: () => { pick[i] = gi; bs.forEach((b, k) => b.classList.toggle("on", k === gi)); } }, g));
-    rows[i] = h("div.sort__row", h("div.sort__w", txt), h("div.sort__g", bs));
+    rows[i] = h("div.sort__row", h("div.sort__w", rich(txt)), h("div.sort__g", bs));
     rows[i]._bs = bs;
   });
   return {
@@ -133,8 +137,8 @@ R.order = (t) => {
   const seq = [];
   const out = h("div.order__out");
   const btns = {};
-  const draw = () => out.replaceChildren(...(seq.length ? seq.map((i) => h("button.chipbtn.on", { onclick: () => { seq.splice(seq.indexOf(i), 1); btns[i].disabled = false; draw(); } }, t.items[i])) : [h("span.note", "Натискай у правильному порядку…")]));
-  pool.forEach((i) => (btns[i] = h("button.chipbtn", { onclick: () => { seq.push(i); btns[i].disabled = true; draw(); } }, t.items[i])));
+  const draw = () => out.replaceChildren(...(seq.length ? seq.map((i) => h("button.chipbtn.on", { onclick: () => { seq.splice(seq.indexOf(i), 1); btns[i].disabled = false; draw(); } }, rich(t.items[i]))) : [h("span.note", "Натискай у правильному порядку…")]));
+  pool.forEach((i) => (btns[i] = h("button.chipbtn", { onclick: () => { seq.push(i); btns[i].disabled = true; draw(); } }, rich(t.items[i]))));
   draw();
   return {
     el: h("div.order", out, h("div.order__pool", pool.map((i) => btns[i]))),
@@ -245,7 +249,7 @@ export function runQuiz(opts) {
         toast(fastStreak >= SPEED.pauseAfter ? "Стоп! Ти відповідаєш занадто швидко." : `⚡ Занадто швидко (${num(sec)} с)! Читай завдання уважно — за поспіх монети не нараховуються.`, "warn", 3800);
       } else fastStreak = 0;
       const earned = ok && !hintUsed ? coinsFor(t.topic, t.id, { fast, review: opts.type === "review" }) : 0;
-      answers.push({ id: t.id, topic: t.topic, q: taskLabel(t), ok, sec, fast, hint: hintUsed, coins: earned, given: String(view.value()).slice(0, 120) });
+      answers.push({ id: t.id, topic: t.topic, q: taskLabel(t), ok, sec, fast, hint: hintUsed, coins: earned, given: plain(view.value()).slice(0, 120) });
       hintBtn.remove(); check.remove();
       const next = h("button.btn.btn--primary.btn--big", { onclick: goNext }, i + 1 < tasks.length ? "Далі →" : "Завершити");
       card.append(h(`div.verdict.verdict--${ok ? "ok" : "bad"}`,

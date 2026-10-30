@@ -143,7 +143,7 @@ export function liveView({ students, ready }) {
     lib.replaceChildren(sel, h("p.note", "Завантаження…"));
     const qs = await loadOral(live.topic);
     lib.replaceChildren(sel, ...(qs ? qs.map((x, k) => h("div.lv__q",
-      h("div", h("b", x.q), h("details", h("summary.note", "Ключ відповіді"), h("p.note", x.a))),
+      h("div", h("b", x.q), h("details", h("summary.note", "Ключ відповіді"), h("p.note", { html: x.a }))),
       h("button.btn.btn--primary.btn--small", { onclick: () => send(x.q, live.topic, k) }, "Надіслати"))) : [h("p.note", "Для цієї теми бібліотеки ще немає — напиши своє питання нижче.")]),
       h("div.lv__custom", custom, h("button.btn.btn--primary", { onclick: async () => { const q = custom.value.trim(); if (q.length < 5) return toast("Напиши питання", "info"); await send(q); custom.value = ""; } }, "Надіслати своє питання")));
   }
