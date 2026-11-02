@@ -589,3 +589,12 @@ a.gtile:hover { border-color: var(--lime); }
 .qboss i { height: 8px; background: #3a2a4d; border-radius: 99px; overflow: hidden; display: block; }
 .qboss em { display: block; height: 100%; background: #ff3b5c; }
 .qboss.off { color: #ffd54a; } .qboss.off em { background: #ffd54a; }
+.qpanel__head { all: unset; cursor: pointer; display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+.qpanel__tg { font-size: 12px; color: #cbbbe6; white-space: nowrap; }
+.qpanel.min { width: auto; padding: 8px 12px; }
+.qpanel.min .qpanel__head { gap: 10px; }
+@media (max-width: 600px) {
+  .world__top { gap: 6px; }
+  .world__top .btn, .world__online { font-size: 12px; padding: 5px 9px; white-space: nowrap; }
+  .lightui .btn { font-size: 12px; padding: 5px 9px; white-space: nowrap; }
+}

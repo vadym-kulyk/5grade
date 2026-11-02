@@ -202,6 +202,10 @@ export function setupQuest({ scene, walls, uid, teleport }) {
   let qs = {};
   const qRef = r(`quest/${QID}`);
   const panel = h("div.qpanel");
+  // Панель можна згорнути до одного рядка; на телефоні — згорнута одразу. Вибір запам’ятовуємо.
+  let mini = matchMedia("(max-width: 700px)").matches;
+  try { const v = localStorage.getItem("qpanelMini"); if (v !== null) mini = v === "1"; } catch {}
+  const toggleMini = () => { mini = !mini; try { localStorage.setItem("qpanelMini", mini ? "1" : "0"); } catch {} drawPanel(); };
   onValue(qRef, (s) => { qs = s.val() || {}; sync(); });
 
   function sync() {
@@ -229,8 +233,12 @@ export function setupQuest({ scene, walls, uid, teleport }) {
 
   function drawPanel() {
     const S = qs.stations || {}, n = Object.keys(S).length;
+    panel.classList.toggle("min", mini);
+    const head = h("button.qpanel__head", { onclick: toggleMini, title: mini ? "Показати квест" : "Сховати квест" },
+      h("b", "🔮 Квест"), h("span.mono", qs.done ? "✅ виконано" : `🗝️ ${n}/6 · 👁️ ${bosses.filter((b) => b.left > 0).length}`), h("span.qpanel__tg", mini ? "▸ показати" : "▾ сховати"));
+    if (mini) return panel.replaceChildren(head);
     panel.replaceChildren(
-      h("div.qpanel__head", h("b", "🔮 Квест: зілля Граматихи"), h("span.mono", qs.done ? "✅ виконано" : `${n} / 6`)),
+      head,
       qs.done ? h("p.qpanel__win", `🎉 Заклинання «${QUEST.word.toUpperCase()}» промовив(-ла) ${qs.done.name}! Кожен учасник отримав +${REWARD.coins} 🪙.`)
         : h("p.note", n < 6 ? "Кожен відкриває свою скриню: 3 завдання поспіль без помилки. Скриня на Вежі — лише для того, хто на мітлі! Розкажіть одне одному, яку літеру отримали." : !bossesDown() ? "Усі літери зібрано! Тепер розвійте Темряву кулями світла." : "Усі літери зібрано й Темряву розвіяно! Складіть слово (порядок інший!) і промовте його над котлом."),
       h("div.qpanel__bosses", bosses.map((b) => h(`div.qboss${b.left <= 0 ? ".off" : ""}`, h("span", b.left > 0 ? `👁️ ${b.name}` : `✨ ${b.name}`), h("i", h("em", { style: { width: `${(Math.max(0, b.left) / b.hp) * 100}%` } })), h("small.mono", `${Math.max(0, b.left)}/${b.hp}`)))),
