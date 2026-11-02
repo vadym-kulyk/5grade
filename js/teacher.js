@@ -4,7 +4,7 @@ import { watchAuth, teacherLogin, teacherRegister, teacherResetPassword, logout,
 import { TEACHER_EMAIL, CLASSES, LEVELS_PER_TOPIC, TASKS_PER_LEVEL, halloweenOn } from "./config.js";
 import { SECTIONS, TOPICS, topicById, shortTitle } from "../content/index.js";
 import { rankOf, topicPct, BADGES } from "./game.js";
-import { QUEST } from "../content/quest/halloween.js";
+import { QUEST, questId } from "../content/quest/halloween.js";
 import { previewView, liveView, startTeacherLive, monitoringView, awayFmt, awayDetail } from "./teacher-extra.js";
 import { monWorks } from "../content/monitoring/index.js";
 
@@ -279,19 +279,25 @@ const topicByShort = (s) => ready().find((t) => shortTitle(t) === s)?.id;
 // ---------- Налаштування ----------
 // 🎃 Квест «Таємна кімната»: хто відкрив скрині, скидання
 function questCard() {
+  return h("section.card", h("h2", "🎃 Квест «Таємна кімната» (3D-школа)"),
+    h("p.note", `Вхід — світний портал на правій стіні холу (лише коли ввімкнено Геловін). У кожного класу свій квест. ${QUEST.intro} Чарівне слово: «${QUEST.word.toUpperCase()}». Нагорода кожному учаснику: 150 🪙 і значок «Таємна кімната».`),
+    CLASSES.map((cls) => questClassBox(cls)));
+}
+function questClassBox(cls) {
+  const QID = questId(cls);
   const box = h("div", h("p.note", "Завантаження…"));
   const fill = async () => {
-    const q = (await read(`quest/${QUEST.id}`)) || {}, S = q.stations || {};
+    const q = (await read(`quest/${QID}`)) || {}, S = q.stations || {}, D = q.bosses || {};
     box.replaceChildren(
+      h("h3", `Клас ${cls}`),
       h("p", q.done ? `✅ Квест виконано: заклинання промовив(-ла) ${q.done.name} (${fmtDate(q.done.at)} ${fmtTime(q.done.at)}).` : `Відкрито скринь: ${Object.keys(S).length} з 6.`),
       h("ul", QUEST.stations.map((st) => h("li", `${st.icon} ${st.name} (${st.topic}) — літера «${st.letter.toUpperCase()}»: `, S[st.id] ? h("b", S[st.id].name) : h("span.note", "ще закрита")))),
+      h("p.note", "Боси Темряви: " + QUEST.bosses.map((b) => `${b.name} — ${Math.max(0, b.hp - (D[b.id]?.dmg || 0))}/${b.hp}`).join(" · ")),
       h("div.row.gap", h("button.btn.btn--small", { onclick: fill }, "↻ Оновити"),
-        h("button.btn.btn--small", { onclick: async () => { if (await confirmBox("Скинути квест? Усі скрині знову закриються, і клас зможе пройти його заново (нагороду отримають ще раз).")) { await remove(r(`quest/${QUEST.id}`)); toast("Квест скинуто"); fill(); } } }, "🔄 Скинути квест")));
+        h("button.btn.btn--small", { onclick: async () => { if (await confirmBox(`Перезапустити квест для класу ${cls}? Усі скрині знову закриються, боси відновлять здоров’я, і клас зможе пройти квест заново (нагороду отримають ще раз).`)) { await remove(r(`quest/${QID}`)); toast(`Квест для ${cls} перезапущено`); fill(); } } }, `🔄 Перезапустити квест для ${cls}`)));
   };
   fill();
-  return h("section.card", h("h2", "🎃 Квест «Таємна кімната» (3D-школа)"),
-    h("p.note", `Вхід — світний портал на правій стіні холу (лише коли ввімкнено Геловін). ${QUEST.intro} Чарівне слово: «${QUEST.word.toUpperCase()}». Нагорода кожному учаснику: 150 🪙 і значок «Таємна кімната».`),
-    box);
+  return box;
 }
 
 function settingsView() {

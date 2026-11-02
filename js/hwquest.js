@@ -6,7 +6,7 @@ import { h, toast, modal, shuffle } from "./ui.js";
 import { r, ref, db, onValue, off, set, update, runTransaction, errText } from "./fb.js";
 import { renderTask, kindLabel } from "./quiz.js";
 import { state, awardBadges, onChange } from "./store.js";
-import { QUEST } from "../content/quest/halloween.js";
+import { QUEST, questId } from "../content/quest/halloween.js";
 
 export const ROOM = { x0: 18, x1: 50, z0: 18, z1: 50 }; // велика зала 32 × 32 м
 const C = { x: 34, z: 32 }; // котел у центрі
@@ -29,6 +29,7 @@ const bigLetter = (ch) => { const t = tex(128, 128, (g) => { g.shadowColor = "#f
   const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false })); s.scale.set(1.1, 1.1, 1); return s; };
 
 export function setupQuest({ scene, walls, uid, teleport }) {
+  const QID = questId(state.user?.cls); // свій квест у кожного класу
   const L = (c, o = {}) => new THREE.MeshLambertMaterial({ color: c, ...o });
   const B = (c, o = {}) => new THREE.MeshBasicMaterial({ color: c, ...o });
   const anim = [];
@@ -185,8 +186,8 @@ export function setupQuest({ scene, walls, uid, teleport }) {
       ball.position.lerpVectors(from, to, k); ball.position.y += Math.sin(k * Math.PI) * 0.8;
       if (k < 1) return requestAnimationFrame(fly);
       scene.remove(ball); shotBusy = false; target.hit = 1;
-      runTransaction(r(`quest/${QUEST.id}/bosses/${target.id}/dmg`), (v) => ((v || 0) >= target.hp ? undefined : (v || 0) + 1))
-        .then(() => set(r(`quest/${QUEST.id}/players/${uid}`), true))
+      runTransaction(r(`quest/${QID}/bosses/${target.id}/dmg`), (v) => ((v || 0) >= target.hp ? undefined : (v || 0) + 1))
+        .then(() => set(r(`quest/${QID}/players/${uid}`), true))
         .catch(async (e) => {
           // кидок не зарахувався — повертаємо кулю
           await update(r(`users/${uid}`), { light: lightCount() + 1 }).catch(() => {});
@@ -199,7 +200,7 @@ export function setupQuest({ scene, walls, uid, teleport }) {
 
   // ---------- Стан квесту (спільний для всього класу) ----------
   let qs = {};
-  const qRef = r(`quest/${QUEST.id}`);
+  const qRef = r(`quest/${QID}`);
   const panel = h("div.qpanel");
   onValue(qRef, (s) => { qs = s.val() || {}; sync(); });
 
@@ -241,7 +242,7 @@ export function setupQuest({ scene, walls, uid, teleport }) {
   async function claim() {
     const u = state.user;
     if (!qs.done || !qs.players?.[uid] || !u || claiming) return;
-    const key = `${QUEST.id}_${qs.done.at}`;
+    const key = `${QID}_${qs.done.at}`;
     if (u.quests?.[key]) return;
     claiming = true;
     try {
@@ -284,8 +285,8 @@ export function setupQuest({ scene, walls, uid, teleport }) {
     };
     const win = async () => {
       try {
-        await set(r(`quest/${QUEST.id}/stations/${c.st.id}`), { uid, name: state.user.name, at: Date.now() });
-        await set(r(`quest/${QUEST.id}/players/${uid}`), true);
+        await set(r(`quest/${QID}/stations/${c.st.id}`), { uid, name: state.user.name, at: Date.now() });
+        await set(r(`quest/${QID}/players/${uid}`), true);
         body.replaceChildren(h("div.center", h("div.result__big", c.st.icon), h("h2", "Скриня відкрилася!"), h("div.qbig", c.st.letter.toUpperCase()), h("p", "Це твоя літера чарівного слова. Скажи її команді! Коли всі шість скринь відкриються — складіть слово й промовте його над котлом."), h("button.btn.btn--primary", { onclick: close }, "До котла!")));
       } catch (e) {
         const perm = /permission/i.test(e?.message || e?.code || "") && !qs.stations?.[c.st.id];
@@ -309,7 +310,7 @@ export function setupQuest({ scene, walls, uid, teleport }) {
       inp, err,
       h("button.btn.btn--primary", { onclick: async () => {
         if (inp.value.trim().toLowerCase().replace(/ґ/g, "г") !== QUEST.word) { err.textContent = "Котел забулькотів… але нічого не сталося. Порадьтеся разом і спробуйте ще!"; return; }
-        try { await set(r(`quest/${QUEST.id}/players/${uid}`), true); await set(r(`quest/${QUEST.id}/done`), { uid, name: state.user.name, at: Date.now() }); close(); toast("✨ Котел засяяв золотом!", "win", 4000); } catch (e) { err.textContent = errText(e); }
+        try { await set(r(`quest/${QID}/players/${uid}`), true); await set(r(`quest/${QID}/done`), { uid, name: state.user.name, at: Date.now() }); close(); toast("✨ Котел засяяв золотом!", "win", 4000); } catch (e) { err.textContent = errText(e); }
       } }, "✨ Промовити")));
     inp.focus();
   }
