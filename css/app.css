@@ -456,6 +456,13 @@ body.in-world { overflow: hidden; }
 /* ---------- Мобільна адаптація: нічого не розпирає сторінку ---------- */
 .page > *, .shop > *, .lv > *, .report > * { min-width: 0; }
 .shop__ctl { display: grid; gap: 10px; justify-items: center; }
+.slots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; width: 100%; }
+.slots__t { grid-column: 1 / -1; font-size: 14px; text-align: center; }
+.slot { display: flex; gap: 3px; min-width: 0; }
+.slot__use { flex: 1; min-width: 0; padding-inline: 6px; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.slot .btn { padding-inline: 6px; }
+.shop__tip { grid-column: 1 / -1; margin: 0 0 4px; padding: 8px 12px; background: #fff3f3; border-radius: 12px; }
+@media (max-width: 820px) { .slots__t { display: none; } .slot__use { font-size: 12px; } .slot .btn { padding: 4px 5px; } }
 @media (max-width: 820px) {
   .shop { grid-template-columns: minmax(0, 1fr); gap: 12px; }
   .shop__left { position: sticky; top: var(--tbh, 0px); z-index: 6; grid-template-columns: 150px minmax(0, 1fr); align-items: center; justify-items: stretch; padding: 8px 12px; box-shadow: 0 8px 20px -14px rgba(30, 27, 38, .45); }

@@ -1,8 +1,8 @@
 // Головний модуль: маршрути та сторінки учня.
 import { h, $, mount, toast, modal, shuffle, pct, ring, bar, fmtDate, fmtTime, say, today, num, groupedBars } from "./ui.js";
 import { watchAuth, logout, studentLogin, studentRegister, changePin, isTeacher, read, errText } from "./fb.js";
-import { CLASSES, ECONOMY, LEVELS_PER_TOPIC, TASKS_PER_LEVEL, halloweenOn } from "./config.js";
-import { state, onChange, bindStudent, unbind, saveSession, loadAttempts, buyItem, owns, saveAvatar, awardBadges, settleAvatar } from "./store.js";
+import { CLASSES, ECONOMY, LEVELS_PER_TOPIC, TASKS_PER_LEVEL, halloweenOn, christmasOn } from "./config.js";
+import { state, onChange, bindStudent, unbind, saveSession, loadAttempts, buyItem, owns, saveAvatar, savePreset, awardBadges, settleAvatar } from "./store.js";
 import { RANKS, rankOf, BADGES, badgeById, topicPct, overall } from "./game.js";
 import { SECTIONS, TOPICS, topicById, sectionById, shortTitle, loadTopic, BOOK } from "../content/index.js";
 import { runQuiz } from "./quiz.js";
@@ -438,19 +438,50 @@ async function topicMonitoring(wid) {
 // ---------- Персонаж і магазин ----------
 function shop() {
   const u = state.user;
-  let cat = halloweenOn(state.settings) ? "hw" : "top";
+  const HW = halloweenOn(state.settings), XM = christmasOn(state.settings);
+  let cat = XM ? "xm" : HW ? "hw" : "top";
   let draft = fullAvatar(u.avatar);
+  // Улюбленці: до трьох — pet (перший) + pets (решта)
+  const MAXPETS = 3;
+  const petsOf = (d) => [d.pet, ...(Array.isArray(d.pets) ? d.pets : [])].filter((id, i, a) => id && id !== "pet.none" && a.indexOf(id) === i);
+  const setPets = (d, list) => { d.pet = list[0] || "pet.none"; d.pets = list.slice(1); };
+  // Різдвяні речі видно, коли ввімкнено Різдво (або якщо річ уже твоя)
+  const visible = (i) => !i.xm || XM || owns(i.id);
   const prev = h("div.shop__prev");
   const grid = h("div.shop__grid");
   const tabs = h("div.shop__tabs");
   const rkLevel = rankOf(u.xp).level;
   const info = h("p.note");
+  const slots = h("div.slots");
+  // Слоти образів: зберегти поточний образ і швидко перевдягнутися
+  function drawSlots() {
+    const P = state.user.presets || {};
+    slots.replaceChildren(h("b.slots__t", "👗 Мої образи"), ...[0, 1, 2].map((i) => h("div.slot",
+      h("button.btn.btn--small.slot__use", { disabled: !P[i], title: P[i] ? "Вдягти цей образ" : "Слот порожній", onclick: () => usePreset(i) }, P[i] ? `👕 ${i + 1}` : `○ ${i + 1}`),
+      h("button.btn.btn--small", { title: "Записати сюди поточний образ", onclick: () => storePreset(i) }, "💾"))));
+  }
+  async function storePreset(i) {
+    const [clean, dropped] = wearable(draft);
+    await savePreset(i, clean);
+    toast(dropped ? `Образ ${i + 1} збережено без некуплених речей` : `Образ ${i + 1} збережено ✨`, "win");
+    drawSlots();
+  }
+  async function usePreset(i) {
+    const P = state.user.presets || {};
+    if (!P[i]) return;
+    draft = fullAvatar(P[i]); view.set(draft);
+    if (!(await save())) toast(`Вдягнено образ ${i + 1} ✨`, "win");
+    draw();
+  }
   // Зберігаємо лише куплені або безкоштовні речі; примірене без оплати повертаємо назад
   const wearable = (d, bought) => {
     const ok = (id) => { const it = itemById[id]; return !it || isFree(it) || id === bought || owns(id); };
     const saved = fullAvatar(state.user.avatar);
     const out = { ...d }; let dropped = 0;
-    for (const c of Object.keys(out)) if (!ok(out[c])) { out[c] = ok(saved[c]) ? saved[c] : fullAvatar({})[c]; dropped++; }
+    for (const c of Object.keys(out)) if (c !== "pets" && !ok(out[c])) { out[c] = ok(saved[c]) ? saved[c] : fullAvatar({})[c]; dropped++; }
+    const pets = petsOf(d), okPets = pets.filter(ok);
+    dropped += pets.length - okPets.length - (ok(d.pet) ? 0 : 1);
+    setPets(out, okPets);
     return [out, dropped];
   };
   async function save(bought) {
@@ -464,7 +495,7 @@ function shop() {
       h("div.shop__ctl",
         h("div.note.center.shop__hint", "Покрути персонажа пальцем або мишкою"),
         h("button.btn.btn--primary", { onclick: async () => { if (!(await save())) toast("Образ збережено ✨", "win"); draw(); } }, "💾 Зберегти образ"),
-        info)),
+        slots, info)),
     h("div.shop__right", tabs, grid)));
   const small = innerWidth < 820;
   const view = avatarPreview(prev, draft, { size: small ? 150 : Math.min(320, innerWidth - 64) });
@@ -474,28 +505,44 @@ function shop() {
   function draw() {
     const owned = state.user.owned || {};
     info.textContent = `Монет: ${state.user.coins || 0} 🪙. Речей: ${Object.keys(owned).length}. Деякі речі відкриваються лише з певним званням.`;
-    tabs.replaceChildren(...[{ id: "hw", icon: "🎃", title: "Геловін" }, ...CATEGORIES].map((c) => h(`button.chipbtn${c.id === cat ? ".on" : ""}`, { onclick: () => { cat = c.id; draw(); } }, c.icon, " ", c.title)));
-    grid.replaceChildren(...ITEMS.filter((i) => (cat === "hw" ? i.hw : i.cat === cat)).map((it) => {
+    const T = [XM && { id: "xm", icon: "🎄", title: "Різдво" }, { id: "hw", icon: "🎃", title: "Геловін" },
+      ...CATEGORIES.filter((c) => c.id !== "ride" || XM || owns("ride.sleigh"))].filter(Boolean);
+    tabs.replaceChildren(...T.map((c) => h(`button.chipbtn${c.id === cat ? ".on" : ""}`, { onclick: () => { cat = c.id; draw(); } }, c.icon, " ", c.title)));
+    const pets = petsOf(draft);
+    const note = cat === "xm" || cat === "ride" ? h("p.note.shop__tip", "🛷 Вдягни шапку й костюм Санти, купи обох оленів (Комету й Рудольфа) та сани — і літай у 3D-школі на санях з оленями! 🦌🦌") : null;
+    if (cat === "pet") info.textContent += ` Улюбленців можна взяти до ${MAXPETS}: натисни, щоб додати або прибрати.`;
+    grid.replaceChildren(...[note, ...ITEMS.filter((i) => (cat === "hw" ? i.hw : cat === "xm" ? i.xm : i.cat === cat && visible(i))).map((it) => {
       const own = isFree(it) || owns(it.id);
       const locked = it.rank > rkLevel;
-      const on = draft[cat] === it.id;
-      const swatch = it.data.color && it.data.color !== "rainbow" ? h("span.swatch", { style: { background: it.data.color } }) : null;
+      const on = it.cat === "pet" ? (it.id === "pet.none" ? !pets.length : pets.includes(it.id)) : draft[it.cat] === it.id;
+      const swatch = it.data.color && !["rainbow", "halloween", "snow"].includes(it.data.color) ? h("span.swatch", { style: { background: it.data.color } }) : null;
       return h(`button.item${on ? ".on" : ""}${own ? ".own" : ""}${locked ? ".locked" : ""}`, { onclick: () => pick(it, own, locked) },
         swatch, h("b", it.name),
         h("span.item__p", own ? (on ? "✓ одягнено" : "твоє") : locked ? `🔒 ${RANKS[it.rank - 1].title}` : `${it.price} 🪙`));
-    }));
+    })].filter(Boolean));
+    drawSlots();
+  }
+  // Улюбленця додаємо до компанії (до трьох) або прибираємо; «Без улюбленця» — прибрати всіх
+  function wear(it) {
+    if (it.cat !== "pet") { draft[it.cat] = it.id; return true; }
+    if (it.id === "pet.none") { setPets(draft, []); return true; }
+    const list = petsOf(draft);
+    if (list.includes(it.id)) { setPets(draft, list.filter((x) => x !== it.id)); return true; }
+    if (list.length >= MAXPETS) { toast(`Можна взяти до ${MAXPETS} улюбленців. Спершу прибери когось 🙂`, "warn"); return false; }
+    setPets(draft, [...list, it.id]); return true;
   }
   async function pick(it, own, locked) {
     if (!own) {
       if (locked) return toast(`Ця річ відкривається зі званням «${RANKS[it.rank - 1].title}»`, "warn");
-      draft[it.cat] = it.id; view.set(draft); // примірка
+      if (!(it.cat === "pet" && petsOf(draft).includes(it.id))) { if (!wear(it)) return; view.set(draft); } // примірка
       if ((state.user.coins || 0) < it.price) { draw(); return toast(`Примірка 👀 Потрібно ${it.price} 🪙, у тебе ${state.user.coins || 0}.`, "info", 3000); }
       const close = modal(h("div.center", h("h2", it.name), h("p", `Купити за ${it.price} 🪙?`),
         h("div.row.gap.center", h("button.btn.btn--primary", { onclick: async () => { close(); if (await buyItem(it)) { toast(`Куплено! −${it.price} 🪙`, "win"); await save(it.id); } draw(); } }, "Купити"),
           h("button.btn", { onclick: () => { close(); draw(); } }, "Лише приміряти"))));
       return;
     }
-    draft[it.cat] = it.id; view.set(draft); draw();
+    if (wear(it)) view.set(draft);
+    draw();
   }
   draw();
 }

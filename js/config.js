@@ -47,3 +47,6 @@ export const TASKS_PER_LEVEL = 10;
 // 🎃 Геловін: автоматично з 15 жовтня до 10 листопада; учитель може ввімкнути/вимкнути вручну (settings/halloween)
 export const hwSeason = (d = new Date()) => (d.getMonth() === 9 && d.getDate() >= 15) || (d.getMonth() === 10 && d.getDate() <= 10);
 export const halloweenOn = (settings) => settings?.halloween ?? hwSeason();
+// 🎄 Різдво: автоматично з 1 грудня до 20 січня; учитель може ввімкнути/вимкнути вручну (settings/christmas)
+export const xmSeason = (d = new Date()) => d.getMonth() === 11 || (d.getMonth() === 0 && d.getDate() <= 20);
+export const christmasOn = (settings) => settings?.christmas ?? xmSeason();

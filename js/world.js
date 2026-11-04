@@ -2,14 +2,15 @@
 import * as THREE from "three";
 import { h, mount, toast } from "./ui.js";
 import { r, set, push, onValue, off, onDisconnect, remove, query, limitToLast } from "./fb.js";
-import { buildAvatar, petFollower } from "./avatar.js";
-import { awardBadges } from "./store.js";
+import { buildAvatar, petFollower, buildSleigh, santaDressed, SLEIGH_NEEDS } from "./avatar.js";
+import { awardBadges, owns } from "./store.js";
 import { SECTIONS, TOPICS, shortTitle } from "../content/index.js";
 import { rankOf } from "./game.js";
 import { halloweenOn } from "./config.js";
 import { setupQuest } from "./hwquest.js";
 
 // Політ: мітла — найвище й найшвидше; крила й плащ — нижче. Пішки — 5,5 м/с.
+const SLEIGH_FLY = { maxY: 16, speed: 12 };
 const FLY = { "back.broom": { maxY: 14, speed: 10.5 }, "back.bat-wings": { maxY: 6, speed: 9 }, "back.vampire-cape": { maxY: 6, speed: 8.5 } };
 
 const PHRASES = ["Привіт! 👋", "Ходімо вчитися! 📚", "Молодець! 👍", "Дякую! 🙏", "У мене 100 %! 💯", "Хто зі мною? 🙋", "До зустрічі! 👋"];
@@ -26,10 +27,12 @@ export function openWorld(state) {
   const chatBox = h("div.chat", chatLog, h("form.chat__form", { onsubmit: (e) => { e.preventDefault(); sendChat(); } }, chatInput, h("button.btn.btn--primary.btn--small", "→")));
   const online = h("div.world__online");
   const stick = h("div.stick", h("div.stick__knob"));
-  const flyCfg = FLY[u.avatar?.back];
+  // Сани Санти: у костюмі й шапці Санти, якщо куплено обох оленів і сани
+  const SLEIGH = santaDressed(u.avatar) && SLEIGH_NEEDS.every(owns);
+  const flyCfg = SLEIGH ? SLEIGH_FLY : FLY[u.avatar?.back];
   const canFly = !!flyCfg;
-  const flyIcon = { "back.broom": "🧹", "back.bat-wings": "🦇", "back.vampire-cape": "🧛" }[u.avatar?.back] || "🪽";
-  const flyBtn = canFly ? h("button.btn.btn--small.flybtn", { onclick: () => toggleFly() }, `${flyIcon} Летіти`) : null;
+  const flyIcon = SLEIGH ? "🛷" : { "back.broom": "🧹", "back.bat-wings": "🦇", "back.vampire-cape": "🧛" }[u.avatar?.back] || "🪽";
+  const flyBtn = canFly ? h("button.btn.btn--small.flybtn", { onclick: () => toggleFly() }, SLEIGH ? "🛷 Сани з оленями" : `${flyIcon} Летіти`) : null;
   const pad = { up: false, down: false };
   const padBtn = (txt, k) => h("button.flypad__b", { onpointerdown: (e) => { e.preventDefault(); pad[k] = true; }, onpointerup: () => (pad[k] = false), onpointerleave: () => (pad[k] = false) }, txt);
   const flyPad = h("div.flypad", padBtn("⬆️", "up"), padBtn("⬇️", "down"));
@@ -96,7 +99,7 @@ export function openWorld(state) {
         o.pet = petFollower(o.model, scene);
         others.set(id, o);
       }
-      Object.assign(o, { tx: p.x, tz: p.z, tr: p.ry, mv: p.mv, name: p.name, ty: p.y || 0, fly: !!p.fl });
+      Object.assign(o, { tx: p.x, tz: p.z, tr: p.ry, mv: p.mv, name: p.name, ty: p.y || 0, fly: !!p.fl, sl: p.fl === "s" });
       if (p.e && p.e.t !== o.eT) { o.eT = p.e.t; if (now - p.e.t < 5000) { if (p.e.text) bubble(o.model, p.e.text); if (p.e.a) { o.action = p.e.a; o.actionT = 0; } } }
     }
     for (const [id, o] of others) if (!all[id] || now - (all[id].t || 0) > 60000) { scene.remove(o.model); o.pet?.dispose(); others.delete(id); }
@@ -109,7 +112,7 @@ export function openWorld(state) {
     const key = `${me.x.toFixed(2)},${me.z.toFixed(2)},${me.ry.toFixed(2)},${me.mv},${me.y.toFixed(1)}`;
     if (!force && (now - lastSent < 120 || (key === lastKey && now - lastSent < 4000))) return;
     lastSent = now; lastKey = key;
-    set(myRef, { name: u.name, cls: u.cls, rk: rankOf(u.xp).icon, av: u.avatar || null, x: +me.x.toFixed(2), z: +me.z.toFixed(2), ry: +me.ry.toFixed(2), mv: me.mv, y: +me.y.toFixed(2), fl: me.fly || null, t: now, e: me.e || null });
+    set(myRef, { name: u.name, cls: u.cls, rk: rankOf(u.xp).icon, av: u.avatar || null, x: +me.x.toFixed(2), z: +me.z.toFixed(2), ry: +me.ry.toFixed(2), mv: me.mv, y: +me.y.toFixed(2), fl: me.fly ? (SLEIGH ? "s" : true) : null, t: now, e: me.e || null });
   }
   function emote(text, action) {
     me.e = { text: text || null, a: action || null, t: Date.now() };
@@ -218,7 +221,7 @@ export function openWorld(state) {
     me.model.position.set(me.x, me.action ? me.model.position.y : me.y + (me.fly ? Math.sin(t * 2) * 0.08 : 0), me.z);
     me.model.rotation.y = me.ry;
     me.model.userData.animate(t, me.fly ? 0 : me.mv);
-    flyPose(me.model, me.fly || me.y > 0.05, t);
+    flyPose(me.model, me.fly || me.y > 0.05, t, SLEIGH && (me.fly || me.y > 0.05));
     me.pet?.update(dt, t, me.x, me.z, me.ry, me.y * 0.85);
     hwTick?.(t, me);
     quest?.tick(t);
@@ -232,7 +235,7 @@ export function openWorld(state) {
       o.model.position.set(o.x, o.action ? o.model.position.y : o.y + (o.fly ? Math.sin(t * 2 + o.x) * 0.08 : 0), o.z);
       o.model.rotation.y = o.ry;
       o.model.userData.animate(t, o.fly ? 0 : o.mv || 0);
-      flyPose(o.model, o.fly || o.y > 0.05, t);
+      flyPose(o.model, o.fly || o.y > 0.05, t, o.sl && (o.fly || o.y > 0.05));
       o.pet?.update(dt, t, o.x, o.z, o.ry, o.y * 0.85);
     }
 
@@ -285,7 +288,9 @@ function applyAction(o, dt) {
   if (k > 2) { o.action = null; ud.arms.forEach((a) => (a.rotation.z = 0)); o.model.position.y = 0; }
 }
 // Поза в польоті: мітла під персонажем, крила махають, плащ розвівається
-function flyPose(model, on, t) {
+function flyPose(model, on, t, sleigh = false) {
+  sleighPose(model, sleigh, t);
+  if (sleigh) return;
   const broom = model.getObjectByName("broom");
   if (broom) {
     if (on) { broom.rotation.set(Math.PI / 2, 0, 0); broom.position.set(0, 0.62, 0.15); } else { broom.rotation.set(0, 0, 0.7); broom.position.set(0, 1.0, -0.28); }
@@ -296,6 +301,18 @@ function flyPose(model, on, t) {
   for (const [n, s] of [["wingL", -1], ["wingR", 1]]) { const w = model.getObjectByName(n); if (w) w.rotation.y = on ? s * Math.sin(t * 10) * 0.6 : 0; }
   const cape = model.getObjectByName("cape");
   if (cape) cape.rotation.x = on ? -0.6 - Math.sin(t * 8) * 0.12 : 0;
+}
+// Сани з оленями: персонаж сидить у санях, олені «скачуть» у повітрі; олені-улюбленці на цей час запряжені
+function sleighPose(model, on, t) {
+  let rig = model.getObjectByName("sleighrig");
+  if (!rig && !on) return;
+  if (!rig) { rig = buildSleigh(); rig.position.set(0, 0.02, 0.2); model.add(rig); }
+  rig.visible = on;
+  for (const p of model.userData.pets || []) if (p.userData.petId === "pet.reindeer" || p.userData.petId === "pet.rudolf") p.visible = !on;
+  for (const leg of model.userData.legs) { if (on) { leg.rotation.x = -1.4; leg.position.y = 0.5; leg.position.z = 0.6; } else if (!model.getObjectByName("broom")) { leg.position.y = 0; leg.position.z = 0; } }
+  if (!on) return;
+  model.userData.arms.forEach((a) => (a.rotation.x = -1.0));
+  rig.userData.deer.forEach((d, k) => { d.position.y = 0.1 + Math.sin(t * 6 + k) * 0.12; d.rotation.x = Math.sin(t * 6 + k) * 0.12; });
 }
 const angDiff = (a, b) => { let d = (b - a) % (Math.PI * 2); if (d > Math.PI) d -= Math.PI * 2; if (d < -Math.PI) d += Math.PI * 2; return d; };
 

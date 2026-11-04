@@ -92,6 +92,11 @@ export async function buyItem(item) {
   return true;
 }
 
+// Слоти образів: users/{uid}/presets/{0..2}
+export async function savePreset(i, avatar) {
+  await update(ref(db), { [`users/${state.uid}/presets/${i}`]: avatar });
+}
+
 export async function saveAvatar(avatar) {
   await update(ref(db), { [`users/${state.uid}/avatar`]: avatar, [`public/${state.uid}/avatar`]: avatar });
 }

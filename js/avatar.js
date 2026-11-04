@@ -28,6 +28,7 @@ export const CATEGORIES = [
   { id: "back", title: "За спиною", icon: "🎒" },
   { id: "pet", title: "Улюбленець", icon: "🐾" },
   { id: "aura", title: "Сяйво", icon: "✨" },
+  { id: "ride", title: "Транспорт", icon: "🛷" },
 ];
 
 export const ITEMS = [
@@ -146,6 +147,33 @@ export const ITEMS = [
     C("aura", "halloween", "Моторошне сяйво", 1200, { color: "halloween" }),
   ].map((it) => ({ ...it, hw: true })),
 ];
+// ---------- 🎄 Різдво (xm: показуємо в магазині, коли ввімкнено Різдво) ----------
+ITEMS.push(...[
+  C("ride", "none", "Без транспорту", 0, { style: "none" }),
+  C("skin", "grinch", "Грінч", 2000, { color: "#7fb83d", grinch: true }),
+  C("hat", "santa", "Шапка Санти", 400, { style: "santa" }), C("hat", "elf", "Ковпак ельфа", 250, { style: "elf" }), C("hat", "tophat", "Циліндр сніговика", 300, { style: "tophat" }), C("hat", "earmuffs", "Хутряні навушники", 150, { style: "earmuffs" }),
+  C("hairAcc", "antlers", "Оленячі ріжки", 200, { style: "antlers" }), C("hairAcc", "snowclip", "Заколка-сніжинка", 120, { style: "snowclip" }),
+  C("facedeco", "beard", "Борода Санти", 300, { style: "beard" }), C("facedeco", "frost", "Морозні щічки", 150, { style: "frost" }),
+  C("top", "santa", "Костюм Санти", 600, { pattern: "santa", color: "#c8102e" }), C("top", "elf", "Костюм ельфа", 400, { pattern: "elf", color: "#2e8b3a" }),
+  C("top", "xmas-sweater", "Різдвяний светр", 300, { pattern: "xmas", color: "#c8102e" }), C("top", "snowman", "Костюм сніговика", 350, { pattern: "snowman", color: "#f4f6fb" }),
+  C("top", "gingerbread", "Пряничний костюм", 350, { pattern: "ginger", color: "#b8743a" }), C("top", "furcoat", "Біла шубка", 500, { pattern: "fur", color: "#f2f0f6" }),
+  C("top", "snowflake-dress", "Сукня «Сніжинка»", 700, { pattern: "flakes", color: "#5aa9e6", dress: 2 }),
+  C("bottom", "santa-pants", "Штани Санти", 250, { color: "#c8102e", kind: 0 }), C("bottom", "elf-shorts", "Шорти ельфа", 150, { color: "#2e8b3a", kind: 1 }),
+  C("tights", "candycane", "Льодяникові в смужку", 150, { color: "#ffffff", stripe: "#c8102e" }), C("tights", "elf-stripes", "Ельфійські в смужку", 150, { color: "#2e8b3a", stripe: "#c8102e" }),
+  C("shoes", "santa-boots", "Чоботи Санти", 200, { color: "#1e1b26" }), C("shoes", "elf-shoes", "Черевички ельфа", 150, { color: "#2e8b3a" }), C("shoes", "valenki", "Валянки", 200, { color: "#9a9aa8" }),
+  C("neck", "bell", "Бубонець", 150, { style: "bell" }), C("neck", "garland", "Намисто-гірлянда", 250, { style: "garland" }), C("neck", "xmas-scarf", "Шарф у смужку", 180, { style: "xmasscarf" }),
+  C("back", "giftsack", "Мішок із подарунками", 500, { style: "giftsack" }), C("back", "candycane", "Льодяникова палиця", 300, { style: "candycane" }), C("back", "angel", "Крила ангела", 900, { style: "angel" }),
+  C("pet", "reindeer", "Олень Комета", 900, { style: "reindeer" }), C("pet", "rudolf", "Олень Рудольф", 1200, { style: "rudolf" }),
+  C("pet", "snowman", "Сніговичок", 600, { style: "snowman" }), C("pet", "penguin", "Пінгвін", 700, { style: "penguin" }),
+  C("pet", "gingerbread", "Пряничок", 500, { style: "gingerbread" }), C("pet", "polarbear", "Білий ведмедик", 800, { style: "polarbear" }),
+  C("ride", "sleigh", "Сани Санти", 1500, { style: "sleigh" }),
+  C("aura", "snow", "Снігопад", 1000, { color: "snow" }),
+].map((it) => (it.id === "ride.none" ? it : { ...it, xm: true })));
+
+// Сани Санти: костюм Санти (шапка + костюм) + обидва олені + сани
+export const SLEIGH_NEEDS = ["pet.reindeer", "pet.rudolf", "ride.sleigh"];
+export const santaDressed = (a) => a?.hat === "hat.santa" && a?.top === "top.santa";
+
 export const itemById = Object.fromEntries(ITEMS.map((i) => [i.id, i]));
 
 export const DEFAULT_AVATAR = {
@@ -153,7 +181,7 @@ export const DEFAULT_AVATAR = {
   top: "top.tee-lime", bottom: "bottom.jeans", shoes: "shoes.sneakers", hat: "hat.none", glasses: "glasses.none",
   back: "back.none", pet: "pet.none", aura: "aura.none",
   eyeColor: "eyeColor.black", lashes: "lashes.none", brows: "brows.natural", lips: "lips.natural", facedeco: "facedeco.blush",
-  hairAcc: "hairAcc.none", earrings: "earrings.none", neck: "neck.none", tights: "tights.none",
+  hairAcc: "hairAcc.none", earrings: "earrings.none", neck: "neck.none", tights: "tights.none", ride: "ride.none",
 };
 export const isFree = (it) => it.price === 0 && !it.rank;
 export const fullAvatar = (a) => ({ ...DEFAULT_AVATAR, ...(a || {}) });
@@ -198,6 +226,7 @@ function faceTexture(skin, eyes, mouth, f = {}) {
     };
     if (eyes === "wink") { g.beginPath(); g.arc(20, 27, 5, 0, 7); g.fill(); g.beginPath(); g.moveTo(39, 28); g.lineTo(49, 28); g.stroke(); }
     else { E(20); E(44); }
+    if (f.grinch) { grinchFace(g); return; }
     drawLashes(g, f.lashes || "none", eyes);
     g.fillStyle = lip; g.strokeStyle = lip;
     if (f.big) { bigLips(g, lip); if (f.gloss) { g.fillStyle = "rgba(255,255,255,.8)"; g.fillRect(21, 40, 6, 2.5); g.fillRect(34, 52, 6, 2); } return; }
@@ -211,7 +240,28 @@ function faceTexture(skin, eyes, mouth, f = {}) {
       default: g.beginPath(); g.arc(32, 38, 9, 0.2 * Math.PI, 0.8 * Math.PI); g.stroke();
     }
     if (f.gloss) { g.fillStyle = "rgba(255,255,255,.85)"; g.fillRect(28, 45, 3, 1.5); g.fillRect(34, 44, 2, 1.5); }
+    if (f.deco === "beard") santaBeard(g);
   });
+}
+
+// Грінч: жовті очі, хитра широка усмішка, насуплені брови
+function grinchFace(g) {
+  g.save();
+  g.fillStyle = "#f7e21b"; for (const x of [20, 44]) { g.beginPath(); g.ellipse(x, 27, 6, 4.5, 0, 0, 7); g.fill(); }
+  g.fillStyle = "#c8102e"; for (const x of [21, 45]) { g.beginPath(); g.arc(x, 27, 2.2, 0, 7); g.fill(); }
+  g.strokeStyle = "#3f5a1a"; g.lineWidth = 3; g.lineCap = "round";
+  g.beginPath(); g.moveTo(12, 17); g.lineTo(27, 22); g.moveTo(52, 17); g.lineTo(37, 22); g.stroke();
+  g.strokeStyle = "#2a3a12"; g.lineWidth = 2.2; g.beginPath(); g.moveTo(12, 40); g.quadraticCurveTo(32, 54, 54, 36); g.stroke();
+  g.fillStyle = "#e9edc0"; g.beginPath(); g.moveTo(16, 42); g.quadraticCurveTo(32, 52, 50, 39); g.quadraticCurveTo(32, 47, 16, 42); g.fill();
+  g.restore();
+}
+// Борода Санти поверх обличчя
+function santaBeard(g) {
+  g.save(); g.fillStyle = "#fbfbfd";
+  g.beginPath(); g.moveTo(6, 36); g.quadraticCurveTo(8, 64, 32, 66); g.quadraticCurveTo(56, 64, 58, 36); g.quadraticCurveTo(46, 44, 32, 44); g.quadraticCurveTo(18, 44, 6, 36); g.fill();
+  g.beginPath(); g.ellipse(24, 40, 9, 4, -0.2, 0, 7); g.ellipse(40, 40, 9, 4, 0.2, 0, 7); g.fill();
+  g.fillStyle = "#e86a6a"; g.beginPath(); g.ellipse(32, 47, 5, 2.2, 0, 0, 7); g.fill();
+  g.restore();
 }
 
 // Величезні губи: верхня «пташка» й пухка нижня
@@ -274,6 +324,8 @@ function drawDeco(g, style) {
     case "skull": g.fillStyle = "rgba(255,255,255,.75)"; g.fillRect(4, 8, 56, 50); g.fillStyle = "#1e1b26"; for (const x of [20, 44]) { g.beginPath(); g.arc(x, 27, 9, 0, 7); g.fill(); } g.beginPath(); g.moveTo(32, 33); g.lineTo(29, 39); g.lineTo(35, 39); g.closePath(); g.fill(); g.lineWidth = 1; g.strokeStyle = "#1e1b26"; for (let x = 22; x <= 42; x += 4) { g.beginPath(); g.moveTo(x, 40); g.lineTo(x, 48); g.stroke(); } break;
     case "web": g.strokeStyle = "rgba(30,27,38,.8)"; g.lineWidth = 0.7; for (let k = 0; k < 6; k++) { const a = Math.PI / 2 + (k / 5) * (Math.PI / 2); g.beginPath(); g.moveTo(58, 52); g.lineTo(58 + Math.cos(a) * 16, 52 - Math.sin(a) * 16); g.stroke(); } for (const r of [5, 10, 15]) { g.beginPath(); g.arc(58, 52, r, Math.PI, 1.5 * Math.PI); g.stroke(); } break;
     case "scar": blush(0.15); g.strokeStyle = "#5a3a2a"; g.lineWidth = 1.2; g.beginPath(); g.moveTo(8, 14); g.lineTo(26, 18); g.stroke(); for (let x = 10; x <= 24; x += 4) { g.beginPath(); g.moveTo(x, 12.5); g.lineTo(x + 1, 19.5); g.stroke(); } break;
+    case "frost": g.fillStyle = "rgba(120,180,255,.45)"; for (const x of [14, 50]) { g.beginPath(); g.ellipse(x, 38, 5, 2.6, 0, 0, 7); g.fill(); } star(g, 52, 46, 3.5, "#bfe3ff"); star(g, 10, 20, 2.5, "#bfe3ff"); break;
+    case "beard": blush(0.3); break;
     case "rainbow": blush(0.25); ["#e2445c", "#f7a51a", "#f7c915", "#99cc00", "#58b4f0", "#9d6bdb"].forEach((c, i) => { g.strokeStyle = c; g.lineWidth = 1.1; g.beginPath(); g.arc(51, 44, 7 - i * 1.1, Math.PI, 2 * Math.PI); g.stroke(); }); break;
   }
   g.restore();
@@ -349,6 +401,13 @@ function topTexture(pattern, color) {
       case "mummy": g.strokeStyle = "#b8a882"; g.lineWidth = 3; for (let y = -10; y < 80; y += 9) { g.beginPath(); g.moveTo(0, y); g.lineTo(64, y + 14); g.stroke(); } break;
       case "web": g.strokeStyle = "#e8e4f4"; g.lineWidth = 1.2; for (let k = 0; k < 8; k++) { const a = (k / 8) * Math.PI * 2; g.beginPath(); g.moveTo(32, 32); g.lineTo(32 + Math.cos(a) * 40, 32 + Math.sin(a) * 40); g.stroke(); } for (const r of [7, 14, 21, 28]) { g.beginPath(); for (let k = 0; k <= 8; k++) { const a = (k / 8) * Math.PI * 2; g.lineTo(32 + Math.cos(a) * r, 32 + Math.sin(a) * r); } g.stroke(); } g.fillStyle = "#1e1b26"; g.beginPath(); g.arc(44, 40, 3.5, 0, 7); g.fill(); break;
       case "witch": g.fillStyle = "#1e1b26"; g.fillRect(0, 0, 64, 8); for (const [x, y, r] of [[16, 24, 4], [44, 34, 5], [24, 50, 3], [50, 14, 3]]) star(g, x, y, r, "#f7c915"); g.fillStyle = "#ff7a1a"; g.fillRect(0, 56, 64, 8); break;
+      case "santa": g.fillStyle = "#fbfbfd"; g.fillRect(27, 0, 10, 64); g.fillRect(0, 0, 64, 6); g.fillStyle = "#1e1b26"; g.fillRect(0, 38, 64, 8); g.fillStyle = "#f7c915"; g.fillRect(27, 37, 10, 10); g.fillStyle = "#1e1b26"; g.fillRect(30, 40, 4, 4); break;
+      case "elf": g.fillStyle = "#c8102e"; g.beginPath(); g.moveTo(8, 0); for (let k = 0; k <= 8; k++) g.lineTo(8 + k * 6, k % 2 ? 14 : 4); g.lineTo(56, 0); g.fill(); g.fillStyle = "#f7c915"; for (const y of [24, 36, 48]) { g.beginPath(); g.arc(32, y, 2.8, 0, 7); g.fill(); } g.fillStyle = "#1e1b26"; g.fillRect(0, 54, 64, 5); break;
+      case "xmas": g.fillStyle = "#2e8b3a"; g.beginPath(); g.moveTo(32, 12); g.lineTo(46, 46); g.lineTo(18, 46); g.fill(); g.fillStyle = "#6b4426"; g.fillRect(29, 46, 6, 6); star(g, 32, 11, 5, "#f7c915"); g.fillStyle = "#fff"; for (const [x, y] of [[8, 10], [56, 14], [10, 50], [54, 48], [18, 28], [48, 30]]) { g.fillRect(x - 3, y, 6, 1); g.fillRect(x, y - 3, 1, 6); } g.fillStyle = "#fff"; for (let x = 2; x < 64; x += 8) g.fillRect(x, 58, 4, 4); break;
+      case "snowman": g.fillStyle = "#1e1b26"; for (const y of [18, 32, 46]) { g.beginPath(); g.arc(32, y, 3.4, 0, 7); g.fill(); } g.fillStyle = "#c8102e"; g.fillRect(0, 0, 64, 8); g.fillRect(40, 8, 8, 18); break;
+      case "ginger": g.strokeStyle = "#fff"; g.lineWidth = 2.5; for (const y of [10, 56]) { g.beginPath(); for (let x = 0; x <= 64; x += 4) g.lineTo(x, y + (x % 8 ? 3 : -3)); g.stroke(); } for (const [y, c] of [[22, "#e2445c"], [32, "#2e8b3a"], [42, "#f7c915"]]) { g.fillStyle = c; g.beginPath(); g.arc(32, y, 3.2, 0, 7); g.fill(); } break;
+      case "fur": g.fillStyle = "rgba(0,0,0,.06)"; for (let y = 4; y < 64; y += 6) for (let x = (y % 12) / 2; x < 64; x += 6) { g.beginPath(); g.arc(x, y, 2.5, 0, 7); g.fill(); } g.fillStyle = "#e9d7c0"; g.fillRect(0, 0, 64, 7); g.fillRect(29, 0, 6, 64); break;
+      case "flakes": g.strokeStyle = "#fff"; g.lineWidth = 1.4; for (const [x, y, r] of [[14, 14, 6], [46, 20, 7], [24, 40, 6], [50, 50, 5], [8, 54, 4]]) for (let k = 0; k < 3; k++) { const a = (k * Math.PI) / 3; g.beginPath(); g.moveTo(x - Math.cos(a) * r, y - Math.sin(a) * r); g.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r); g.stroke(); } break;
       case "robe": g.fillStyle = "#99cc00"; g.fillRect(0, 0, 64, 6); g.fillRect(29, 0, 6, 64); star(g, 16, 30, 6, "#f7c915"); star(g, 48, 40, 5, "#f7c915"); break;
     }
   });
@@ -415,7 +474,7 @@ export function buildAvatar(cfg) {
   // Голова з обличчям
   const fTex = faceTexture(skin, get("eyes").style, get("mouth").style, {
     iris: get("eyeColor").color, lashes: get("lashes").style, brows: get("brows").style, browColor: shade(hairC, -0.25),
-    lips: get("lips").color, gloss: get("lips").gloss, big: get("lips").big, deco: get("facedeco").style,
+    lips: get("lips").color, gloss: get("lips").gloss, big: get("lips").big, grinch: get("skin").grinch, deco: get("facedeco").style,
   });
   const mFace = new THREE.MeshLambertMaterial({ map: fTex });
   const head = new THREE.Group();
@@ -429,18 +488,24 @@ export function buildAvatar(cfg) {
   addHat(head, get("hat").style);
   addGlasses(head, get("glasses").style);
   addBack(g, get("back").style);
-  const pet = addPet(g, get("pet").style);
+  // До трьох улюбленців: основний (pet) + додаткові (pets)
+  const petIds = [a.pet, ...(Array.isArray(a.pets) ? a.pets : [])].filter((id, i, arr) => id && id !== "pet.none" && itemById[id]?.cat === "pet" && arr.indexOf(id) === i).slice(0, 3);
+  const PET_POS = [[0.85, 0.25], [-0.85, 0.25], [0, -0.95]];
+  const pets = petIds.map((id, i) => { const pp = addPet(g, itemById[id].data.style); if (pp) { pp.position.x = PET_POS[i][0]; pp.position.z = PET_POS[i][1]; pp.userData.petId = id; } return pp; }).filter(Boolean);
+  const pet = pets[0] || null;
   const aura = addAura(g, get("aura").color);
 
   g.userData = {
-    arms, legs: legs.children, head, pet,
+    arms, legs: legs.children, head, pet, pets,
     animate(t, moving = 0) {
       const sw = Math.sin(t * 9) * 0.6 * moving;
       legs.children[0].rotation.x = sw; legs.children[1].rotation.x = -sw;
       arms[0].rotation.x = -sw; arms[1].rotation.x = sw;
       head.position.y = 1.7 + Math.sin(t * 2) * 0.012;
-      if (pet) pet.userData.wings?.forEach(([w, s]) => (w.rotation.z = s * Math.sin(t * 14) * 0.6));
-      if (pet && g.userData.pet === pet) { pet.position.y = pet.userData.fly ? 0.05 + pet.userData.fly + Math.sin(t * 2) * 0.05 : 0.05 + Math.abs(Math.sin(t * 4)) * 0.08; pet.rotation.y = Math.sin(t) * 0.3; }
+      pets.forEach((pp, k) => {
+        pp.userData.wings?.forEach(([w, s]) => (w.rotation.z = s * Math.sin(t * 14) * 0.6));
+        if (pp.parent === g) { pp.position.y = pp.userData.fly ? 0.05 + pp.userData.fly + Math.sin(t * 2 + k) * 0.05 : 0.05 + Math.abs(Math.sin(t * 4 + k)) * 0.08; pp.rotation.y = Math.sin(t + k) * 0.3; }
+      });
       if (aura) aura.rotation.y = t * 0.8;
     },
   };
@@ -501,6 +566,14 @@ function addHat(head, style) {
     }
     case "pumpkin": add(new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 8).scale(1.2, 0.8, 1.2), mat("#ff7a1a")), 0.08, 0.38, 0); add(box(0.04, 0.1, 0.04, mat("#3f7a16")), 0.08, 0.53, 0); break;
     case "witch": add(new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.52, 0.04, 18), mat("#2a1f3d")), 0, 0.3, 0); add(new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.08, 14), mat("#ff7a1a")), 0, 0.36, 0); { const c = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.8, 14), mat("#2a1f3d")); c.rotation.z = 0.25; add(c, 0.08, 0.76, 0); } break;
+    case "santa": case "elf": {
+      const col = style === "santa" ? "#c8102e" : "#2e8b3a", trim = style === "santa" ? "#fbfbfd" : "#c8102e";
+      add(new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.12, 16), mat(trim)), 0, 0.31, 0);
+      const c = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.6, 14), mat(col)); c.rotation.z = 0.5; add(c, 0.12, 0.58, -0.04);
+      add(new THREE.Mesh(new THREE.SphereGeometry(0.08, 10, 8), mat(style === "santa" ? "#fbfbfd" : "#f7c915", { emissive: style === "santa" ? "#000" : "#5a4500" })), 0.36, 0.72, -0.04); break;
+    }
+    case "tophat": add(new THREE.Mesh(new THREE.CylinderGeometry(0.44, 0.44, 0.04, 18), mat("#1e1b26")), 0, 0.3, 0); add(new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.42, 16), mat("#1e1b26")), 0, 0.53, 0); add(new THREE.Mesh(new THREE.CylinderGeometry(0.265, 0.265, 0.07, 16), mat("#c8102e")), 0, 0.38, 0); break;
+    case "earmuffs": add(box(0.66, 0.05, 0.08, mat("#c8102e")), 0, 0.34, 0); for (const x of [-0.33, 0.33]) add(new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 10), mat("#fbfbfd")), x, 0.04, 0); break;
     case "crown": {
       const m = mat("#f7c915", { emissive: "#6b5300" });
       add(new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.14, 10, 1, true), m), 0, 0.36, 0);
@@ -546,6 +619,9 @@ function addBack(g, style) {
     case "vampire-cape": { const cape = new THREE.Group(); cape.name = "cape"; cape.position.set(0, 1.4, -0.2); cape.add(at(box(0.66, 1.25, 0.04, mat("#1e1b26")), 0, -0.62, 0)); cape.add(at(box(0.6, 1.15, 0.02, mat("#8a1020")), 0, -0.6, 0.03)); g.add(cape); } for (const s of [-1, 1]) { const c = box(0.22, 0.3, 0.04, mat("#1e1b26")); c.rotation.z = s * 0.5; add(c, s * 0.3, 1.5, -0.12); } break;
     case "bat-wings": for (const s of [-1, 1]) { const w = new THREE.Group(); for (let k = 0; k < 3; k++) { const f = box(0.36, 0.18, 0.03, mat("#2a2440")); f.position.set(s * (0.2 + k * 0.18), -k * 0.1, 0); f.rotation.z = s * (0.5 - k * 0.35); w.add(f); } w.name = s < 0 ? "wingL" : "wingR"; w.position.set(s * 0.12, 1.35, -0.24); g.add(w); } break;
     case "broom": { const b = new THREE.Group(); b.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.4, 8), mat("#6b4426")), 0, 0, 0)); b.add(at(new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.4, 10), mat("#e8b84a")), 0, -0.8, 0)); b.name = "broom"; b.rotation.z = 0.7; b.position.set(0, 1.0, -0.28); g.add(b); break; }
+    case "giftsack": add(new THREE.Mesh(new THREE.SphereGeometry(0.3, 14, 10).scale(1, 1.15, 0.8), mat("#8a5a3c")), 0, 1.05, -0.36); for (const [x, c] of [[-0.1, "#e2445c"], [0.1, "#58b4f0"]]) { add(box(0.14, 0.14, 0.14, mat(c)), x, 1.42, -0.36); add(box(0.15, 0.03, 0.15, mat("#f7c915")), x, 1.42, -0.36); } break;
+    case "candycane": { const cg = new THREE.Group(); for (let k = 0; k < 8; k++) cg.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.12, 8), mat(k % 2 ? "#c8102e" : "#fbfbfd")), 0, -0.42 + k * 0.12, 0)); const hook = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.04, 8, 12, Math.PI), mat("#c8102e")); hook.position.set(0.1, 0.54, 0); cg.add(hook); cg.rotation.z = 0.5; cg.position.set(0.05, 1.0, -0.28); g.add(cg); break; }
+    case "angel": for (const s of [-1, 1]) { const w = new THREE.Mesh(new THREE.SphereGeometry(0.3, 12, 10).scale(1.3, 0.8, 0.15), mat("#fbfbfd", { emissive: "#3a3a46" })); w.position.set(s * 0.42, 1.28, -0.26); w.rotation.z = s * 0.35; g.add(w); } add(new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.03, 8, 20).rotateX(Math.PI / 2), mat("#f7c915", { emissive: "#6b5300" })), 0, 2.1, 0); break;
     case "jetpack": for (const x of [-0.13, 0.13]) { add(new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.5, 10), mat("#b9bcc7")), x, 1.05, -0.28); add(new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.2, 8).rotateX(Math.PI), mat("#ff7a2e", { emissive: "#c13f2c" })), x, 0.7, -0.28); } break;
   }
 }
@@ -554,6 +630,12 @@ function addPet(g, style) {
   if (style === "none") return null;
   const p = new THREE.Group();
   const add = (mesh, x, y, z) => p.add(at(mesh, x, y, z));
+  if (["snowman", "penguin", "gingerbread"].includes(style)) {
+    if (style === "snowman") { const w = mat("#fbfbfd"); add(new THREE.Mesh(new THREE.SphereGeometry(0.22, 14, 10), w), 0, 0.2, 0); add(new THREE.Mesh(new THREE.SphereGeometry(0.16, 14, 10), w), 0, 0.5, 0); for (const x of [-0.05, 0.05]) add(new THREE.Mesh(new THREE.SphereGeometry(0.025), mat("#1e1b26")), x, 0.54, 0.15); const n = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.14, 8), mat("#ff7a1a")); n.rotation.x = Math.PI / 2; add(n, 0, 0.5, 0.2); add(new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.14, 12), mat("#1e1b26")), 0, 0.72, 0); add(box(0.3, 0.05, 0.18, mat("#c8102e")), 0, 0.38, 0.02); }
+    else if (style === "penguin") { add(new THREE.Mesh(new THREE.SphereGeometry(0.2, 14, 10).scale(1, 1.4, 0.9), mat("#1e1b26")), 0, 0.3, 0); add(new THREE.Mesh(new THREE.SphereGeometry(0.15, 14, 10).scale(1, 1.3, 0.6), mat("#fbfbfd")), 0, 0.27, 0.08); for (const x of [-0.06, 0.06]) add(new THREE.Mesh(new THREE.SphereGeometry(0.025), mat("#fbfbfd")), x, 0.5, 0.15); add(new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.1, 6).rotateX(Math.PI / 2), mat("#ff9d1a")), 0, 0.45, 0.2); for (const x of [-0.08, 0.08]) add(box(0.08, 0.03, 0.12, mat("#ff9d1a")), x, 0.02, 0.05); }
+    else { const m = mat("#b8743a"); add(box(0.3, 0.32, 0.1, m), 0, 0.28, 0); add(new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.1, 16).rotateX(Math.PI / 2), m), 0, 0.56, 0); for (const x of [-0.24, 0.24]) add(box(0.14, 0.08, 0.1, m), x, 0.34, 0); for (const x of [-0.08, 0.08]) add(box(0.09, 0.16, 0.1, m), x, 0.06, 0); for (const [y, c] of [[0.32, "#e2445c"], [0.22, "#2e8b3a"]]) add(new THREE.Mesh(new THREE.SphereGeometry(0.025), mat(c)), 0, y, 0.06); for (const x of [-0.05, 0.05]) add(new THREE.Mesh(new THREE.SphereGeometry(0.02), mat("#fbfbfd")), x, 0.58, 0.06); }
+    p.position.set(0.85, 0.05, 0.25); p.scale.setScalar(0.9); g.add(p); return p;
+  }
   if (["bat", "ghost", "pumpkin"].includes(style)) {
     if (style === "pumpkin") {
       const m = mat("#ff7a1a", { emissive: "#401800" });
@@ -577,12 +659,14 @@ function addPet(g, style) {
     }
     p.position.set(0.85, 0.05 + (p.userData.fly || 0), 0.25); p.scale.setScalar(0.9); g.add(p); return p;
   }
-  const body = { blackcat: "#1e1b26", cat: "#e08a3c", dog: "#c9a36b", hedgehog: "#6b4426", owl: "#8a6a4a", fox: "#e0662a", bunny: "#f4f1f9", dragon: "#99cc00", hamster: "#e8b47a", panda: "#f4f1f9", unicorn: "#fbfaf5" }[style];
+  const body = { reindeer: "#8a5a3c", rudolf: "#7a4a2c", polarbear: "#f4f6fb", blackcat: "#1e1b26", cat: "#e08a3c", dog: "#c9a36b", hedgehog: "#6b4426", owl: "#8a6a4a", fox: "#e0662a", bunny: "#f4f1f9", dragon: "#99cc00", hamster: "#e8b47a", panda: "#f4f1f9", unicorn: "#fbfaf5" }[style];
   const m = mat(body), eye = mat("#1e1b26");
   add(box(0.34, 0.24, 0.44, m), 0, 0.2, 0);
   add(box(0.28, 0.26, 0.26, m), 0, 0.42, 0.22);
   add(box(0.05, 0.05, 0.02, eye), -0.07, 0.46, 0.36); add(box(0.05, 0.05, 0.02, eye), 0.07, 0.46, 0.36);
   for (const [x, z] of [[-0.11, 0.14], [0.11, 0.14], [-0.11, -0.14], [0.11, -0.14]]) add(box(0.08, 0.1, 0.08, m), x, 0.04, z);
+  if (style === "reindeer" || style === "rudolf") { const am = mat("#d9c7a8"); for (const k of [-1, 1]) { const a = box(0.03, 0.2, 0.03, am); a.rotation.z = -k * 0.3; add(a, k * 0.1, 0.64, 0.18); const b = box(0.03, 0.1, 0.03, am); b.rotation.z = -k * 1.0; add(b, k * 0.15, 0.68, 0.18); } add(new THREE.Mesh(new THREE.SphereGeometry(0.05), style === "rudolf" ? new THREE.MeshBasicMaterial({ color: "#ff2b2b" }) : mat("#1e1b26")), 0, 0.4, 0.37); add(box(0.06, 0.06, 0.12, m), 0, 0.3, -0.27); }
+  if (style === "polarbear") { for (const x of [-0.11, 0.11]) add(new THREE.Mesh(new THREE.SphereGeometry(0.05), m), x, 0.56, 0.2); add(new THREE.Mesh(new THREE.SphereGeometry(0.04), mat("#1e1b26")), 0, 0.42, 0.37); }
   if (style === "blackcat") { add(box(0.07, 0.07, 0.02, mat("#ffd54a", { emissive: "#806000" })), -0.07, 0.46, 0.365); add(box(0.07, 0.07, 0.02, mat("#ffd54a", { emissive: "#806000" })), 0.07, 0.46, 0.365); }
   if (["cat", "fox", "dog", "blackcat"].includes(style)) { add(box(0.07, 0.1, 0.05, m), -0.09, 0.59, 0.2); add(box(0.07, 0.1, 0.05, m), 0.09, 0.59, 0.2); add(box(0.06, 0.06, 0.3, style === "fox" ? mat("#fff") : m), 0, 0.3, -0.32); }
   if (style === "bunny") { add(box(0.06, 0.24, 0.05, m), -0.07, 0.66, 0.2); add(box(0.06, 0.24, 0.05, m), 0.07, 0.66, 0.2); }
@@ -624,6 +708,8 @@ function addHairAcc(head, style) {
     case "tiara": { const m = mat("#f7c915", { emissive: "#6b5300" }); add(box(0.5, 0.04, 0.04, m), 0, 0.4, 0.18); for (const [x, h] of [[-0.16, 0.08], [0, 0.14], [0.16, 0.08]]) add(new THREE.Mesh(new THREE.ConeGeometry(0.04, h, 4), m), x, 0.44 + h / 2, 0.18); add(sph(0.035, "#e2445c"), 0, 0.46, 0.21); break; }
     case "horns": band("#8a1020"); for (const x of [-0.18, 0.18]) { const c = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.2, 8), mat("#d1102e")); c.rotation.z = -x * 1.5; add(c, x, 0.5, 0.08); } break;
     case "bat-band": band("#1e1b26"); add(box(0.08, 0.08, 0.06, mat("#1e1b26")), 0, 0.46, 0.08); for (const k of [-1, 1]) { const w = box(0.16, 0.07, 0.03, mat("#2a2440")); w.rotation.z = k * 0.3; add(w, k * 0.12, 0.48, 0.08); } break;
+    case "antlers": band("#6b4426"); for (const k of [-1, 1]) { const m = mat("#8a5a3c"); const a = box(0.05, 0.3, 0.05, m); a.rotation.z = -k * 0.3; add(a, k * 0.2, 0.52, 0.04); const b1 = box(0.04, 0.14, 0.04, m); b1.rotation.z = -k * 1.1; add(b1, k * 0.28, 0.56, 0.04); const b2 = box(0.04, 0.12, 0.04, m); b2.rotation.z = k * 0.5; add(b2, k * 0.17, 0.66, 0.04); } break;
+    case "snowclip": add(new THREE.Mesh(new THREE.OctahedronGeometry(0.07), mat("#bfe3ff", { emissive: "#24405a" })), 0.26, 0.3, 0.16); break;
     case "unicorn": band("#c3a6ef"); { const h = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.32, 8), mat("#f7c915", { emissive: "#5a4500" })); h.rotation.x = 0.35; add(h, 0, 0.56, 0.14); } add(sph(0.05, "#f08fc0"), -0.12, 0.42, 0.12); add(sph(0.05, "#8fe3c8"), 0.12, 0.42, 0.12); break;
   }
 }
@@ -654,6 +740,9 @@ function addNeck(g, style) {
     case "choker": add(box(0.32, 0.04, 0.02, mat("#1e1b26")), 0, 1.38, 0.175); add(new THREE.Mesh(new THREE.OctahedronGeometry(0.03), mat("#9d6bdb")), 0, 1.34, 0.19); break;
     case "pendant": { const gold = mat("#e8c25a"); for (let i = -4; i <= 4; i++) add(box(0.03, 0.015, 0.01, gold), i * 0.035, 1.38 - i * i * 0.006, 0.176); const h = box(0.07, 0.07, 0.02, mat("#e2445c")); h.rotation.z = Math.PI / 4; add(h, 0, 1.24, 0.185); break; }
     case "scarf": add(box(0.66, 0.14, 0.4, mat("#e2445c")), 0, 1.36, 0); add(box(0.14, 0.4, 0.05, mat("#e2445c")), 0.16, 1.14, 0.2); for (let y = 1.0; y < 1.3; y += 0.08) add(box(0.145, 0.03, 0.055, mat("#fff")), 0.16, y, 0.2); break;
+    case "bell": add(box(0.34, 0.05, 0.03, mat("#c8102e")), 0, 1.37, 0.175); add(new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 10), mat("#f7c915", { emissive: "#4a3800" })), 0, 1.3, 0.2); break;
+    case "garland": { const cols = ["#e2445c", "#f7c915", "#58b4f0", "#99cc00", "#b06bff"]; for (let i = -5; i <= 5; i++) add(new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 6), new THREE.MeshBasicMaterial({ color: cols[(i + 5) % 5] })), i * 0.045, 1.36 - i * i * 0.005, 0.18); break; }
+    case "xmasscarf": add(box(0.66, 0.14, 0.4, mat("#c8102e")), 0, 1.36, 0); add(box(0.14, 0.42, 0.05, mat("#c8102e")), -0.16, 1.13, 0.2); for (let y = 0.96; y < 1.32; y += 0.09) add(box(0.145, 0.035, 0.055, mat("#fbfbfd")), -0.16, y, 0.2); break;
     case "bowtie": { const m = mat("#9d6bdb"); for (const k of [-1, 1]) { const w = box(0.1, 0.08, 0.04, m); w.rotation.z = k * 0.3; add(w, k * 0.06, 1.33, 0.19); } add(box(0.04, 0.05, 0.05, m), 0, 1.33, 0.19); break; }
     case "medal": { for (const [x, c, r] of [[-0.05, "#0057b7", 0.35], [0.05, "#ffd700", -0.35]]) { const s = box(0.05, 0.22, 0.01, mat(c)); s.rotation.z = r; add(s, x, 1.28, 0.178); } add(new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.02, 16).rotateX(Math.PI / 2), mat("#e8c25a", { emissive: "#4a3800" })), 0, 1.13, 0.19); break; }
   }
@@ -665,7 +754,7 @@ function addAura(g, color) {
   const rainbow = ["#e2445c", "#f7c915", "#99cc00", "#58b4f0", "#9d6bdb"];
   for (let i = 0; i < 18; i++) {
     const ang = (i / 18) * Math.PI * 2;
-    const c = color === "rainbow" ? rainbow[i % rainbow.length] : color === "halloween" ? ["#ff7a1a", "#9d6bdb", "#1e1b26"][i % 3] : color;
+    const c = color === "rainbow" ? rainbow[i % rainbow.length] : color === "halloween" ? ["#ff7a1a", "#9d6bdb", "#1e1b26"][i % 3] : color === "snow" ? "#ffffff" : color;
     const s = new THREE.Mesh(new THREE.OctahedronGeometry(0.05), new THREE.MeshBasicMaterial({ color: c }));
     s.position.set(Math.cos(ang) * 0.7, 0.3 + ((i * 7) % 18) / 10, Math.sin(ang) * 0.7);
     grp.add(s);
@@ -712,25 +801,46 @@ export function avatarPreview(container, cfg, { size = 280, spin = true } = {}) 
 
 // Улюбленець ходить слідом за власником (3D-школа): відчіпляємо від персонажа й ведемо окремо
 export function petFollower(model, scene) {
-  const p = model.userData.pet;
-  if (!p) return null;
-  model.remove(p); model.userData.pet = null; scene.add(p);
-  const f = { x: model.position.x + 0.8, z: model.position.z + 0.6, ry: model.rotation.y };
+  const list = (model.userData.pets || []).filter((p) => p.parent === model);
+  if (!list.length) return null;
+  // місця за власником: праворуч-позаду, ліворуч-позаду, ще далі позаду
+  const SPOT = [[1.0, 0.75], [1.0, -0.75], [1.9, 0]];
+  const fs = list.map((p, k) => { model.remove(p); scene.add(p); return { p, k, x: model.position.x + 0.8, z: model.position.z + 0.6, ry: model.rotation.y }; });
+  model.userData.pet = null;
   return {
     update(dt, t, ox, oz, ory, oy = 0) {
-      // місце трохи позаду й праворуч від власника
-      const tx = ox - Math.sin(ory) * 1.0 + Math.cos(ory) * 0.75, tz = oz - Math.cos(ory) * 1.0 - Math.sin(ory) * 0.75;
-      const dx = tx - f.x, dz = tz - f.z, d = Math.hypot(dx, dz);
-      const moving = d > 0.12;
-      if (d > 8) { f.x = tx; f.z = tz; } // телепорт, якщо загубився
-      else if (moving) { const k = Math.min(1, dt * 5); f.x += dx * k; f.z += dz * k; }
-      const want = moving ? Math.atan2(dx, dz) : ory;
-      let a = (want - f.ry) % (Math.PI * 2); if (a > Math.PI) a -= Math.PI * 2; if (a < -Math.PI) a += Math.PI * 2;
-      f.ry += a * Math.min(1, dt * 8);
-      p.userData.wings?.forEach(([w, s]) => (w.rotation.z = s * Math.sin(t * 14) * 0.6));
-      p.position.set(f.x, oy + 0.05 + (p.userData.fly ? p.userData.fly + Math.sin(t * 2) * 0.08 : moving ? Math.abs(Math.sin(t * 12)) * 0.12 : Math.abs(Math.sin(t * 3)) * 0.04), f.z);
-      p.rotation.set(0, f.ry, moving ? Math.sin(t * 12) * 0.08 : 0);
+      for (const f of fs) {
+        const [back, side] = SPOT[f.k], p = f.p;
+        const tx = ox - Math.sin(ory) * back + Math.cos(ory) * side, tz = oz - Math.cos(ory) * back - Math.sin(ory) * side;
+        const dx = tx - f.x, dz = tz - f.z, d = Math.hypot(dx, dz);
+        const moving = d > 0.12;
+        if (d > 8) { f.x = tx; f.z = tz; } // телепорт, якщо загубився
+        else if (moving) { const kk = Math.min(1, dt * 5); f.x += dx * kk; f.z += dz * kk; }
+        const want = moving ? Math.atan2(dx, dz) : ory;
+        let a = (want - f.ry) % (Math.PI * 2); if (a > Math.PI) a -= Math.PI * 2; if (a < -Math.PI) a += Math.PI * 2;
+        f.ry += a * Math.min(1, dt * 8);
+        p.userData.wings?.forEach(([w, s]) => (w.rotation.z = s * Math.sin(t * 14) * 0.6));
+        p.position.set(f.x, oy + 0.05 + (p.userData.fly ? p.userData.fly + Math.sin(t * 2 + f.k) * 0.08 : moving ? Math.abs(Math.sin(t * 12 + f.k)) * 0.12 : Math.abs(Math.sin(t * 3 + f.k)) * 0.04), f.z);
+        p.rotation.set(0, f.ry, moving ? Math.sin(t * 12 + f.k) * 0.08 : 0);
+      }
     },
-    dispose() { scene.remove(p); },
+    dispose() { fs.forEach((f) => scene.remove(f.p)); },
   };
+}
+
+// Сани Санти з двома оленями (для польоту в 3D-школі)
+export function buildSleigh() {
+  const g = new THREE.Group(); g.name = "sleighrig";
+  const red = mat("#c8102e"), gold = mat("#f7c915", { emissive: "#4a3800" });
+  g.add(at(box(1.0, 0.35, 1.4, red), 0, 0.35, -0.1));
+  g.add(at(box(1.0, 0.5, 0.15, red), 0, 0.65, -0.75));
+  for (const x of [-0.45, 0.45]) { g.add(at(box(0.06, 0.06, 1.8, gold), x, 0.08, 0.05)); g.add(at(box(0.06, 0.22, 0.06, gold), x, 0.2, 0.55)); g.add(at(box(0.06, 0.22, 0.06, gold), x, 0.2, -0.5)); const tip = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.03, 8, 12, Math.PI), gold); tip.rotation.y = Math.PI / 2; tip.position.set(x, 0.2, 0.95); g.add(tip); }
+  g.add(at(new THREE.Mesh(new THREE.SphereGeometry(0.32, 12, 10).scale(1, 1.1, 0.9), mat("#8a5a3c")), 0, 0.8, -0.55));
+  const deer = [];
+  for (const [x, style] of [[-0.42, "rudolf"], [0.42, "reindeer"]]) {
+    const holder = new THREE.Group(); const d = addPet(holder, style); holder.remove(d); d.position.set(x, 0.1, 2.0); d.scale.setScalar(1.6); g.add(d); deer.push(d);
+    g.add(at(box(0.02, 0.02, 1.0, gold), x * 0.7, 0.45, 1.25));
+  }
+  g.userData.deer = deer;
+  return g;
 }
