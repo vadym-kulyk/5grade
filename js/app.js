@@ -266,7 +266,7 @@ async function topicPage(id) {
   page(
     h("a.back", { href: "#/" }, "← До тем"),
     h("section.topichead.card",
-      h("div", h("div.note", `${sectionById[t.s].title} · уроки ${t.lessons}`), h("h1", t.title), T.intro && h("p.lead", T.intro), h("p.note", `За підручником: ${BOOK}`)),
+      h("div", h("div.note", `${sectionById[t.s].title} · уроки ${t.lessons}`), h("h1", t.title), T.intro && h("p.lead", T.intro), h("p.note", `За підручником: ${t.book || BOOK}`)),
       ring(v, 110, 12, v === 100 ? "var(--right)" : "var(--lime)")),
     h("h2.sec__title", "📖 Теорія"),
     theory,

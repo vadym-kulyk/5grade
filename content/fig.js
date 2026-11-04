@@ -122,3 +122,51 @@ export function tree(root, branches, note = "") {
     <rect x="${200 - rw / 2}" y="16" width="${rw}" height="44" rx="22" fill="${C.ink}"/>${T(200, 44, root, { size: 16, w: 800, font: D, fill: "#fff" })}
     ${body}${note ? T(200, H - 12, note, { size: 12, fill: C.muted }) : ""}`, root + ": " + branches.map((b) => b.h + " (" + b.leaves.join(", ") + ")").join("; "));
 }
+
+// ---------- Мнемонічні картинки ----------
+// Потяг слова: [{t:"за", h:"префікс", color}] — локомотив, вагони, колеса
+export function train(parts, caption = "") {
+  const n = parts.length, gap = 10, w = Math.min(92, (360 - (n - 1) * gap) / n), total = n * w + (n - 1) * gap, x0 = (400 - total) / 2;
+  const cars = parts.map((p, i) => { const x = x0 + i * (w + gap), col = C[p.color || "lime"], first = i === 0;
+    return `${i ? `<rect x="${x - gap}" y="128" width="${gap}" height="5" fill="${C.ink}"/>` : ""}
+      ${first ? `<rect x="${x + w * 0.55}" y="58" width="${w * 0.22}" height="26" rx="4" fill="${C.ink}"/><circle cx="${x + w * 0.66}" cy="46" r="9" fill="#d9d2e6" opacity=".8"/><circle cx="${x + w * 0.8}" cy="32" r="7" fill="#d9d2e6" opacity=".6"/>` : ""}
+      <rect x="${x}" y="80" width="${w}" height="60" rx="12" fill="${col}" stroke="${C.ink}" stroke-width="2"/>
+      <rect x="${x + 8}" y="88" width="${w - 16}" height="20" rx="5" fill="#fff" opacity=".9"/>
+      ${T(x + w / 2, 103, p.h, { size: Math.min(12, (w - 16) / (p.h.length * 0.55)), w: 800, fill: C.muted })}
+      ${T(x + w / 2, 131, p.t, { size: Math.min(20, (w - 8) / (p.t.length * 0.62)), w: 800, font: D, fill: ["violet", "right", "wrong"].includes(p.color) ? "#fff" : C.ink })}
+      <circle cx="${x + w * 0.25}" cy="146" r="9" fill="${C.ink}"/><circle cx="${x + w * 0.75}" cy="146" r="9" fill="${C.ink}"/>
+      <circle cx="${x + w * 0.25}" cy="146" r="3.5" fill="#fff"/><circle cx="${x + w * 0.75}" cy="146" r="3.5" fill="#fff"/>`; }).join("");
+  return svg(caption ? 200 : 172, `<rect width="400" height="${caption ? 200 : 172}" rx="18" fill="#f6f1fd"/>
+    <rect x="10" y="155" width="380" height="4" fill="#bfb6cf"/>${Array.from({ length: 19 }, (_, k) => `<rect x="${14 + k * 20}" y="159" width="10" height="4" fill="#bfb6cf"/>`).join("")}
+    ${cars}${caption ? T(200, 188, caption, { size: 13, fill: C.muted }) : ""}`, "Потяг слова: " + parts.map((p) => `${p.h} ${p.t}`).join(", "));
+}
+
+// Дерево слів: корінь під землею, на гілках — споріднені слова
+export function wordtree(root, words, note = "") {
+  const leaves = words.slice(0, 6), pos = [[72, 92], [328, 92], [52, 158], [348, 158], [128, 50], [272, 50]];
+  const body = leaves.map((w, i) => { const [x, y] = pos[i];
+    return `<path d="M200 150 Q${(200 + x) / 2} ${y + 40} ${x} ${y}" stroke="#7a5230" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <ellipse cx="${x}" cy="${y}" rx="${Math.max(44, w.length * 5.4)}" ry="18" fill="#c7e88a" stroke="#99cc00" stroke-width="2"/>${T(x, y + 5, w, { size: w.length > 12 ? 11.5 : 13.5 })}`; }).join("");
+  return svg(290, `<rect width="400" height="290" rx="18" fill="#f3fae0"/>
+    <rect x="0" y="205" width="400" height="85" rx="0" fill="#8a6a4a"/><rect x="0" y="205" width="400" height="6" fill="#6b4f35"/>
+    <path d="M188 210 L192 150 L208 150 L212 210 Z" fill="#7a5230"/>
+    ${body}
+    <path d="M200 212 q-30 20 -60 30 M200 212 q30 20 60 30 M200 212 l0 30" stroke="#5a3a20" stroke-width="3" fill="none"/>
+    <rect x="${200 - Math.max(48, root.length * 7)}" y="238" width="${Math.max(96, root.length * 14)}" height="36" rx="18" fill="#2a1f12" stroke="#f7c915" stroke-width="2"/>
+    ${T(200, 262, root, { size: 16, w: 800, font: D, fill: "#f7c915" })}
+    ${note ? T(200, 18, note, { size: 11.5, fill: C.muted }) : ""}`, `Дерево слів: корінь ${root}; ${leaves.join(", ")}`);
+}
+
+// Ментальна карта з картинками: picmind("Тема", [["🦊", "слово"], ...], color, note)
+export function picmind(center, items, color = "violet", note = "") {
+  const col = C[color], n = items.length;
+  const pos = n <= 4 ? [[92, 62], [308, 62], [92, 198], [308, 198]] : [[84, 55], [316, 55], [72, 132], [328, 132], [84, 210], [316, 210]];
+  const body = items.map(([ic, w], i) => { const [x, y] = pos[i];
+    return `<line x1="200" y1="132" x2="${x}" y2="${y}" stroke="${col}" stroke-width="3" stroke-dasharray="2 5" stroke-linecap="round"/>
+      <rect x="${x - 67}" y="${y - 24}" width="134" height="48" rx="24" fill="#fff" stroke="${col}" stroke-width="2.5"/>
+      <circle cx="${x - 44}" cy="${y}" r="18" fill="${BG[color] || BG.violet}"/><text x="${x - 44}" y="${y + 7}" text-anchor="middle" font-size="19">${ic}</text>
+      ${T(x + 12, y + 5, w, { size: Math.min(w.length > 12 ? 11 : 13, 84 / (w.length * 0.56)) })}`; }).join("");
+  return svg(262, `<rect width="400" height="262" rx="18" fill="${BG[color] || BG.violet}"/>${body}
+    <circle cx="200" cy="132" r="50" fill="${col}"/>${center.split("\n").map((l, i, a) => T(200, 137 + (i - (a.length - 1) / 2) * 18, l, { size: 14, w: 800, font: D, fill: color === "violet" ? "#fff" : C.ink })).join("")}
+    ${note ? T(200, 255, note, { size: 12, fill: C.muted }) : ""}`, center + ": " + items.map((x) => x.join(" ")).join(", "));
+}

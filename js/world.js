@@ -383,11 +383,11 @@ function buildSchool(scene, walls, doors, hw = false) {
   // Коридори: [напрям, розділи]
   const wings = [
     { dir: [0, -1], label: "Лексикологія · Фразеологія", topics: TOPICS.filter((t) => t.s === "s2" || t.s === "s3") },
-    { dir: [1, 0], label: "Фонетика · Орфографія", topics: TOPICS.filter((t) => t.s === "s4" || t.s === "s5") },
+    { dir: [1, 0], label: "Фонетика · Орфографія · Будова слова", topics: TOPICS.filter((t) => t.s === "s4" || t.s === "s5" || t.s === "s8") },
     { dir: [-1, 0], label: "Синтаксис і пунктуація", topics: TOPICS.filter((t) => t.s === "s6") },
     { dir: [0, 1], label: "Мова · Розвиток мовлення", topics: TOPICS.filter((t) => t.s === "s1" || t.s === "s7"), extra: ["Бібліотека", "Спортзал", "Їдальня", "Актова зала"] },
   ];
-  const doorColors = { s1: "#f7c915", s2: "#99cc00", s3: "#9d6bdb", s4: "#f7c915", s5: "#99cc00", s6: "#9d6bdb", s7: "#f7c915" };
+  const doorColors = { s1: "#f7c915", s2: "#99cc00", s3: "#9d6bdb", s4: "#f7c915", s5: "#99cc00", s6: "#9d6bdb", s7: "#f7c915", s8: "#f08fc0" };
 
   for (const w of wings) {
     const items = [...w.topics.map((t) => ({ label: shortTitle(t), topic: t, color: doorColors[t.s] })), ...(w.extra || []).map((l) => ({ label: l, color: "#c9a36b" }))];
