@@ -5,7 +5,7 @@ import { TEACHER_EMAIL, CLASSES, LEVELS_PER_TOPIC, TASKS_PER_LEVEL, halloweenOn,
 import { SECTIONS, TOPICS, topicById, shortTitle } from "../content/index.js";
 import { rankOf, topicPct, BADGES } from "./game.js";
 import { QUEST, questId } from "../content/quest/halloween.js";
-import { previewView, liveView, startTeacherLive, monitoringView, awayFmt, awayDetail } from "./teacher-extra.js";
+import { previewView, liveView, startTeacherLive, stageBar, monitoringView, awayFmt, awayDetail } from "./teacher-extra.js";
 import { monWorks } from "../content/monitoring/index.js";
 import { detailView, focusDetail } from "./teacher-detail.js";
 
@@ -66,7 +66,8 @@ function draw() {
         h("select.select", { onchange: (e) => { cls = e.target.value; draw(); } }, h("option", { value: "all" }, "Усі класи"), CLASSES.map((c) => h("option", { value: c, selected: c === cls }, c))),
         h("button.btn.btn--small", { onclick: async () => { await load(); draw(); toast("Оновлено"); } }, "↻"),
         h("button.btn.btn--small", { onclick: () => logout() }, "Вийти"))),
-    h("main.page.page--wide", { overview, attempts: attemptsView, topic: topicView, mon: () => monitoringView({ students, data, redraw: () => draw(), openStudent: (id) => { studentId = id; tab = "student"; draw(); } }), live: () => liveView({ students, ready }), preview: () => previewView({ ready }), slow, student: studentView, detail: () => detailView({ students, data, ready, redraw: draw }), settings: settingsView }[tab]()));
+    stageBar(() => cls),
+    h("main.page.page--wide", { overview, attempts: attemptsView, topic: topicView, mon: () => monitoringView({ students, data, redraw: () => draw(), openStudent: (id) => { studentId = id; tab = "student"; draw(); } }), live: () => liveView({ students, ready }), preview: () => previewView({ ready, getCls: () => cls }), slow, student: studentView, detail: () => detailView({ students, data, ready, redraw: draw }), settings: settingsView }[tab]()));
 }
 
 // ---------- Огляд ----------

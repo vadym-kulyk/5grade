@@ -8,6 +8,7 @@ import { SECTIONS, TOPICS, topicById, sectionById, shortTitle, loadTopic, BOOK }
 import { runQuiz } from "./quiz.js";
 import { CATEGORIES, ITEMS, itemById, fullAvatar, isFree, avatarPreview } from "./avatar.js";
 import { startLive, stopLive } from "./live.js";
+import { startStage } from "./stage.js";
 import { monWorks, monWork } from "../content/monitoring/index.js";
 const loadMon = async (id) => (await import(`../content/monitoring/${id}.js`)).default;
 // відкриті вчителем роботи теми (варіант 1, 2…)
@@ -49,6 +50,7 @@ watchAuth(async (u) => {
     route();
     await bindStudent(u.uid);
     if (state.user) startLive(u.uid, state.user);
+    startStage();
   } else { stopLive(); unbind(); }
   route();
 });

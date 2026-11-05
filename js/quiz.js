@@ -17,6 +17,23 @@ export function taskLabel(t) {
   return s.length > 140 ? s.slice(0, 137) + "…" : s;
 }
 
+const strip = (s) => String(s ?? "").replace(/<[^>]+>/g, "");
+// Правильна відповідь завдання — коротким текстом
+export function rightAnswer(t) {
+  switch (t.type) {
+    case "choice": return strip(t.options[t.answer]);
+    case "tf": return t.answer ? "Правильно" : "Неправильно";
+    case "multi": return t.answer.map((i) => strip(t.options[i])).join(", ");
+    case "input": return t.answer.join(" / ");
+    case "gap": return strip(t.word).replace("_", `[${t.answer}]`);
+    case "match": return t.pairs.map(([a, b]) => `${strip(a)} — ${strip(b)}`).join("; ");
+    case "sort": return t.groups.map((g, gi) => `${g}: ${t.items.filter(([, x]) => x === gi).map(([w]) => w).join(", ")}`).join("; ");
+    case "pick": return (t.text.match(/\*[^\s,.;:!?«»()]+/g) || []).map((w) => w.slice(1)).join(", ");
+    case "order": return t.items.join(t.joiner ?? " ");
+    default: return "";
+  }
+}
+
 // ---------- Типи завдань ----------
 // Кожен рендерер повертає { el, ready(), value(), check(v), reveal(ok) }
 

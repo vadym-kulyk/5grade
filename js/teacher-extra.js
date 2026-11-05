@@ -20,7 +20,33 @@ const loadTopic = async (id) => (topicCache[id] ??= await (async () => {
   return { ...T, levels: [...T.levels, ...extra] };
 })());
 
-export function previewView({ ready }) {
+// ---------- 🎬 Урок: пауза для учнів і показ завдання на їхніх екранах ----------
+export const stage = { v: null, bar: null, onShow: null };
+export const setStage = (patch) => update(r("settings/stage"), { ...patch, at: Date.now() }).catch((e) => toast("Не вдалося: " + e.message, "warn"));
+const clsText = (c) => (!c || c === "all" ? "усіх класів" : `класу ${c}`);
+
+// Панель угорі кабінету: видно на всіх вкладках
+export function stageBar(getCls) {
+  const bar = h("div.stagebar.noprint");
+  const draw = () => {
+    const v = stage.v || {}, on = !!(v.lock || v.show);
+    bar.classList.toggle("on", on);
+    bar.replaceChildren(...[
+      h("b.stagebar__t", on ? `🎬 Урок іде · для ${clsText(v.cls)}` : "🎬 Урок"),
+      h(`button.btn.btn--small${v.lock ? ".btn--primary" : ""}`, { title: "Учні бачать «Учитель пояснює» і не можуть нічого натискати", onclick: () => setStage(v.lock ? { lock: false } : { lock: true, cls: v.show ? v.cls : getCls() }) }, v.lock ? "▶ Зняти паузу" : "⏸ Пауза для учнів"),
+      v.show ? [
+        h("span.stagebar__on", "📺 На екранах: ", h("b", v.show.label)),
+        h("button.btn.btn--small", { onclick: () => setStage({ reveal: !v.reveal }) }, v.reveal ? "🙈 Сховати відповідь" : "👁 Показати відповідь учням"),
+        h("button.btn.btn--small", { onclick: () => setStage({ show: null, reveal: false }) }, "✕ Завершити показ"),
+      ] : h("span.note", "Показати завдання: «📖 Завдання» → «📺 Показати учням»."),
+      on ? null : h("span.note", `(діятиме для ${clsText(getCls())} — клас обирається праворуч угорі)`)].flat().filter(Boolean));
+  };
+  stage.bar = draw;
+  draw();
+  return bar;
+}
+
+export function previewView({ ready, getCls }) {
   const rt = ready();
   if (!pv.topic || !topicById[pv.topic]) pv.topic = rt[0]?.id;
   const grid = h("div.pv__grid"), card = h("div.pv__card.card");
@@ -61,11 +87,18 @@ export function previewView({ ready }) {
       h("span.pv__lv", L.mon ? (L.mon > 1 ? `Моніторингова · варіант ${L.mon}` : "Моніторингова") : `Рівень ${li + 1}`, h("small", L.mon ? `${L.tasks.length} завдань` : L.title)),
       h("div.pv__nums", L.tasks.map((_, k) => { const n = T.levels.slice(0, li).reduce((s, x) => s + x.tasks.length, 0) + k; return h(`button.pv__n${n === pv.i ? ".on" : ""}`, { onclick: () => { pv.i = n; draw(); } }, n + 1); })))));
     const t = tasks[pv.i];
+    const L = T.levels[t.lv - 1];
+    const label = `${shortTitle(topicById[T.id])} · ${L.mon ? `моніторингова${L.mon > 1 ? ` (варіант ${L.mon})` : ""}` : `рівень ${t.lv}`} · завдання ${pv.i + 1 - T.levels.slice(0, t.lv - 1).reduce((n, x) => n + x.tasks.length, 0)} з ${L.tasks.length}`;
+    const shown = () => stage.v?.show?.id === t.id && stage.v?.show?.topic === T.id;
+    const showIt = () => setStage({ show: { topic: T.id, id: t.id, label }, reveal: false, ...(stage.v?.lock || stage.v?.show ? {} : { cls: getCls() }) });
+    // Якщо вчитель уже показує завдання учням, гортання тут одразу змінює їхній екран
+    if (pv.follow && stage.v?.show && !shown()) showIt();
     const view = renderTask(t);
     const out = h("div");
     let done = false;
     const finish = (show) => {
       if (done) return; done = true;
+      if (show && shown()) setStage({ reveal: true });
       const ok = show ? null : view.check();
       view.reveal(show ? false : ok);
       out.replaceChildren(h(`div.verdict.verdict--${show || ok ? "ok" : "bad"}`,
@@ -74,12 +107,21 @@ export function previewView({ ready }) {
         T.rules?.[t.rule] && h("p.note", "Правило: ", h("b", T.rules[t.rule].title))));
     };
     view.setOnPick?.(() => setTimeout(() => finish(false), 150));
+    const showBtn = h("button.btn.btn--primary");
+    const paintShow = () => {
+      showBtn.textContent = shown() ? "📺 Учні бачать це завдання" : "📺 Показати учням";
+      showBtn.onclick = () => { pv.follow = true; showIt(); toast(`Завдання на екранах ${clsText(stage.v?.lock || stage.v?.show ? stage.v.cls : getCls())} 📺`, "win"); };
+      if (!stage.v?.show) pv.follow = false;
+    };
+    stage.onShow = paintShow; paintShow();
     card.replaceChildren(
       h("div.pv__meta", h("span.note", `${shortTitle(topicById[T.id])} · ${T.levels[t.lv - 1].mon ? `моніторингова робота${T.levels[t.lv - 1].mon > 1 ? `, варіант ${T.levels[t.lv - 1].mon}` : ""}` : `рівень ${t.lv} «${t.lvTitle}»`} · завдання ${pv.i + 1} з ${tasks.length} · ${t.id}`)),
       h("div.task__kind", kindLabel(t)), t.q && h("h2.task__q", { html: t.q }), view.el,
       h("div.task__actions",
         view.autoSubmit ? null : h("button.btn.btn--primary", { onclick: () => (view.ready() ? finish(false) : toast("Спершу дай відповідь або натисни «Показати відповідь»", "info")) }, "Перевірити"),
-        h("button.btn", { onclick: () => finish(true) }, "👁 Показати відповідь")),
+        h("button.btn", { onclick: () => finish(true) }, shown() ? "👁 Показати відповідь (і учням)" : "👁 Показати відповідь"),
+        showBtn,
+        h("button.btn", { title: "Для проєктора чи інтерактивної дошки", onclick: () => (document.fullscreenElement ? document.exitFullscreen() : card.requestFullscreen?.().catch(() => toast("Браузер не дозволив повний екран", "info"))) }, "🖥️ На весь екран")),
       out,
       h("div.row.gap.pv__nav",
         pv.i > 0 ? h("button.btn", { onclick: () => { pv.i--; draw(); } }, "← Попереднє")
@@ -90,7 +132,7 @@ export function previewView({ ready }) {
   draw();
   return [h("div.filters.card.pv__top",
       h("div.row.gap", h("button.btn.btn--small", { title: "Попередня тема", onclick: () => ti() > 0 && goTopic(ti() - 1) }, "◀"), sel, h("button.btn.btn--small", { title: "Наступна тема", onclick: () => ti() < rt.length - 1 && goTopic(ti() + 1) }, "▶")),
-      q, found, h("span.note", "Обери тему або знайди завдання пошуком, далі натисни номер. Тут нічого не зараховується.")),
+      q, found, h("span.note", "Обери тему або знайди завдання пошуком, далі натисни номер. Тут нічого не зараховується. «📺 Показати учням» — завдання з’явиться на екранах учнів; гортай далі — вони бачитимуть наступне.")),
     h("section.card", grid), card];
 }
 
@@ -104,6 +146,7 @@ export function startTeacherLive() {
   live.started = true;
   onValue(r("live"), (s) => { live.data = s.val() || {}; live.refresh?.(); });
   onValue(r("online"), (s) => { live.online = s.val() || {}; live.refresh?.(); });
+  onValue(r("settings/stage"), (s) => { stage.v = s.val(); stage.bar?.(); stage.onShow?.(); });
 }
 
 const PAGES = { "головна": "на головній", topic: "читає тему", level: "виконує завдання", review: "робота над помилками", monitoring: "моніторингова", shop: "у магазині", school: "у 3D-школі", profile: "у профілі", results: "дивиться результати" };

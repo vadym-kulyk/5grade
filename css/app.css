@@ -642,3 +642,23 @@ td.clk:hover { outline: 2px solid var(--violet); outline-offset: -2px; }
   .dtopic__mini { display: none; }
 }
 @media print { .dtopic, .dcell { break-inside: avoid; } }
+
+/* ---------- 🎬 Урок: пауза й показ завдання ---------- */
+.stagebar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px 20px; background: #f6f4fa; border-bottom: 1px solid #e6e2ef; font-size: 14px; }
+.stagebar.on { background: #fff3c4; border-bottom-color: #f7c915; }
+.stagebar__on { padding: 4px 10px; background: #fff; border-radius: 99px; }
+.stage { position: fixed; inset: 0; z-index: 800; display: grid; place-items: center; padding: 16px; overflow: auto; background: rgba(30, 27, 38, .78); backdrop-filter: blur(6px); animation: lqIn .25s ease; }
+.stage__card { width: min(760px, 100%); max-height: calc(100vh - 32px); overflow: auto; background: #fff; border-radius: 26px; padding: 26px; display: grid; gap: 14px; box-shadow: 0 30px 80px -20px rgba(0, 0, 0, .6); border: 3px solid var(--violet); }
+.stage__card--pause { width: min(480px, 100%); text-align: center; justify-items: center; }
+.stage__card--pause h2 { font-size: 30px; margin: 0; }
+.stage__card--pause p { margin: 0; font-size: 18px; }
+.stage__ear { font-size: 84px; animation: stEar 1.6s ease-in-out infinite; }
+@keyframes stEar { 50% { transform: scale(1.12) rotate(-6deg); } }
+.stage__top { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: center; }
+.stage__badge { padding: 5px 12px; border-radius: 99px; background: var(--violet); color: #fff; font-weight: 700; font-size: 14px; }
+.stage__task { pointer-events: none; }
+.stage__think { text-align: center; font-size: 16px; }
+.pv__card:fullscreen { overflow: auto; padding: 5vh 6vw; background: #fff; font-size: 1.35em; display: grid; align-content: start; gap: 18px; }
+.pv__card:fullscreen .task__q { font-size: 2em; }
+.pv__card:fullscreen .opt, .pv__card:fullscreen .input { font-size: 1em; }
+@media print { .stagebar, .stage { display: none !important; } }

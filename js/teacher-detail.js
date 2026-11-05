@@ -3,7 +3,7 @@ import { h, pct, bar, fmtDate, fmtTime, num, today } from "./ui.js";
 import { LEVELS_PER_TOPIC, TASKS_PER_LEVEL } from "./config.js";
 import { SECTIONS, shortTitle } from "../content/index.js";
 import { topicPct, rankOf } from "./game.js";
-import { taskLabel } from "./quiz.js";
+import { taskLabel, rightAnswer } from "./quiz.js";
 import { awayFmt } from "./teacher-extra.js";
 
 const sel = { uid: null, sec: "all", onlyStarted: true, open: new Set() };
@@ -20,23 +20,7 @@ const sec = (x) => Math.min(x.sec || 0, 180); // довше — учень, ма
 const dur = (s) => (s >= 60 ? `${Math.floor(s / 60)} хв ${String(Math.round(s % 60)).padStart(2, "0")} с` : `${Math.round(s)} с`);
 const heat = (v) => (v == null ? "" : `hsl(${Math.round(v * 1.1)}, 70%, ${88 - v * 0.25}%)`);
 const when = (t) => (t ? `${fmtDate(t)} ${fmtTime(t)}` : "—");
-const strip = (s) => String(s ?? "").replace(/<[^>]+>/g, "");
 
-// Правильна відповідь завдання — коротким текстом
-function rightAnswer(t) {
-  switch (t.type) {
-    case "choice": return strip(t.options[t.answer]);
-    case "tf": return t.answer ? "Правильно" : "Неправильно";
-    case "multi": return t.answer.map((i) => strip(t.options[i])).join(", ");
-    case "input": return t.answer.join(" / ");
-    case "gap": return strip(t.word).replace("_", `[${t.answer}]`);
-    case "match": return t.pairs.map(([a, b]) => `${strip(a)} — ${strip(b)}`).join("; ");
-    case "sort": return t.groups.map((g, gi) => `${g}: ${t.items.filter(([, x]) => x === gi).map(([w]) => w).join(", ")}`).join("; ");
-    case "pick": return (t.text.match(/\*[^\s,.;:!?«»()]+/g) || []).map((w) => w.slice(1)).join(", ");
-    case "order": return t.items.join(t.joiner ?? " ");
-    default: return "";
-  }
-}
 
 // Підсумок по набору відповідей
 function sum(answers) {
