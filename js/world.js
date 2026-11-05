@@ -389,11 +389,8 @@ function buildSchool(scene, walls, doors, hw = false) {
     const tree = new THREE.Mesh(new THREE.SphereGeometry(1.1, 10, 8), M(hw ? "#d9822b" : "#7fb83a")); tree.position.set(x, 1.7, z); scene.add(tree);
   }
   // Вивіска з логотипом над входом (південна стіна позаду старту)
-  new THREE.TextureLoader().load("assets/logo-wordmark.png", (t) => {
-    t.colorSpace = THREE.SRGBColorSpace;
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(6, 1.95), new THREE.MeshBasicMaterial({ map: t, transparent: true }));
-    m.position.set(-8.5, 2.8, S - 0.25); m.rotation.y = Math.PI; scene.add(m);
-  });
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(6, 1.7), new THREE.MeshBasicMaterial({ map: textCanvas("Дослівно", { w: 620, hgt: 176, font: "800 76px Unbounded, Manrope, sans-serif" }) }));
+  sign.position.set(-8.5, 2.8, S - 0.25); sign.rotation.y = Math.PI; scene.add(sign);
   const welcome = new THREE.Mesh(new THREE.PlaneGeometry(7, 1.7), new THREE.MeshBasicMaterial({ map: textCanvas(["Школа української мови", "5 клас"], { w: 700, hgt: 170, font: "bold 50px Manrope, sans-serif" }) }));
   welcome.position.set(8.5, 2.8, S - 0.25); welcome.rotation.y = Math.PI; scene.add(welcome);
 

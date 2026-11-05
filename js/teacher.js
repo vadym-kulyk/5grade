@@ -1,5 +1,5 @@
 // Кабінет учителя: огляд, спроби, найдовші питання, звіт учня, налаштування.
-import { h, mount, toast, pct, bar, ring, fmtDate, fmtTime, confirmBox, today, num, groupedBars } from "./ui.js";
+import { h, mount, toast, pct, bar, ring, fmtDate, fmtTime, confirmBox, today, num, groupedBars, wordmark } from "./ui.js";
 import { watchAuth, teacherLogin, teacherRegister, teacherResetPassword, logout, isTeacher, read, patch, write, r, remove, errText } from "./fb.js";
 import { TEACHER_EMAIL, CLASSES, LEVELS_PER_TOPIC, TASKS_PER_LEVEL, halloweenOn, christmasOn } from "./config.js";
 import { SECTIONS, TOPICS, topicById, shortTitle } from "../content/index.js";
@@ -29,7 +29,7 @@ function loginView(u) {
   const err = h("p.err");
   const doIt = async (fn) => { err.textContent = ""; try { await fn(email.value.trim(), pass.value); } catch (e) { err.textContent = errText(e); } };
   mount(h("main.login", h("div.login__box",
-    h("img.mg-logo", { src: "assets/logo-wordmark.png", alt: "Midgard" }),
+    wordmark(".wordmark--big"),
     h("h1", "Кабінет учителя"),
     u && !isTeacher(u) ? h("p.warnbox", "Зараз увійшов учень. Щоб відкрити кабінет, спершу вийди.", h("button.btn.btn--small", { onclick: () => logout() }, "Вийти")) : null,
     h("label.lbl", "Пошта"), email, h("label.lbl", "Пароль"), pass, err,
@@ -60,7 +60,7 @@ function draw() {
   const tabs = [["overview", "📊 Огляд"], ["attempts", "🗂️ Спроби"], ["topic", "📚 Тема"], ["mon", "📋 Моніторингові"], ["live", "🎤 Питання"], ["preview", "📖 Завдання"], ["board", "🖍️ Дошка"], ["slow", "⏱️ Найдовші питання"], ["student", "👤 Учень"], ["detail", "🔬 Детально"], ["settings", "⚙️ Налаштування"]];
   mount(
     h("header.topbar.topbar--teacher",
-      h("a.topbar__logo", { href: "#/teacher" }, h("img", { src: "assets/logo-wordmark.png", alt: "Midgard" })),
+      h("a.topbar__logo", { href: "#/teacher" }, wordmark()),
       h("nav.topbar__nav", tabs.map(([id, t]) => h(`a${tab === id ? ".on" : ""}`, { href: "#/teacher", onclick: (e) => { e.preventDefault(); tab = id; draw(); } }, t))),
       h("div.topbar__me",
         h("select.select", { onchange: (e) => { cls = e.target.value; draw(); } }, h("option", { value: "all" }, "Усі класи"), CLASSES.map((c) => h("option", { value: c, selected: c === cls }, c))),
@@ -258,7 +258,7 @@ function studentView() {
       h("span.note", "У вікні друку обери «Зберегти як PDF».")),
     h("article.report",
       h("header.report__head",
-        h("img", { src: "assets/logo-wordmark.png", alt: "Midgard" }),
+        wordmark(),
         h("div", h("div.note", "Звіт про навчання · Українська мова, 5 клас"), h("h1", u.name), h("div", `Клас ${u.cls} · сформовано ${fmtDate(Date.now())}`)),
         h("div.report__rank", h("span", rk.icon), h("b", rk.title), h("small", `${u.xp || 0} досвіду`))),
       h("div.kpis",
@@ -274,7 +274,7 @@ function studentView() {
       h("section", h("h2", "Останні спроби"), h("div.tablewrap", h("table.tbl",
         h("thead", h("tr", ["Дата", "Що", "Результат", "Час", "Сер. на завдання", "⚡", "👀"].map((x) => h("th", x)))),
         h("tbody", at.slice(0, 25).map((a) => h("tr", h("td", fmtDate(a.end)), h("td", what(a)), h("td", `${a.pct}% (${a.correct}/${a.total})`), h("td.mono", `${Math.round(a.durSec / 60)} хв`), h("td.mono", `${num(a.avgSec)} с`), h("td", a.flagged ? "⚡" : ""), h("td", { title: awayDetail(a) }, a.leaves ? `${a.leaves} · ${awayFmt(a.awaySec)}` : ""))))))),
-      h("footer.report__foot", "Midgard · Українська мова 5 клас · за підручником А. Онатій, Т. Ткачук")),
+      h("footer.report__foot", "Дослівно · Українська мова 5 клас · за підручником А. Онатій, Т. Ткачук · Створено Вадимом Куликом")),
   ];
 }
 const openDetail = (uid, topic, level) => { focusDetail(uid, topic, level); tab = "detail"; draw(); scrollTo(0, 0); };

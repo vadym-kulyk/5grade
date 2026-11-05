@@ -1,5 +1,5 @@
 // Головний модуль: маршрути та сторінки учня.
-import { h, $, mount, toast, modal, shuffle, pct, ring, bar, fmtDate, fmtTime, say, today, num, groupedBars } from "./ui.js";
+import { h, $, mount, toast, modal, shuffle, pct, ring, bar, fmtDate, fmtTime, say, today, num, groupedBars, wordmark } from "./ui.js";
 import { watchAuth, logout, studentLogin, studentRegister, changePin, isTeacher, read, errText } from "./fb.js";
 import { CLASSES, ECONOMY, LEVELS_PER_TOPIC, TASKS_PER_LEVEL, halloweenOn, christmasOn } from "./config.js";
 import { state, onChange, bindStudent, unbind, saveSession, loadAttempts, buyItem, owns, saveAvatar, savePreset, awardBadges, settleAvatar } from "./store.js";
@@ -15,7 +15,6 @@ const loadMon = async (id) => (await import(`../content/monitoring/${id}.js`)).d
 const openWorks = (topic) => monWorks(topic).filter((w) => state.settings?.monitoring?.[`t_${w.id}`]?.open === true);
 const workTitle = (w) => shortTitle(topicById[w.topic]) + (w.n > 1 ? ` · варіант ${w.n}` : "");
 
-const LOGO = "assets/logo-wordmark.png";
 const go = (hash) => (location.hash = hash);
 
 // ---------- Маршрутизатор ----------
@@ -73,7 +72,7 @@ function topbar() {
   const u = state.user;
   const rk = rankOf(u.xp);
   return h("header#topbar.topbar",
-    h("a.topbar__logo", { href: "#/" }, h("img", { src: LOGO, alt: "Midgard" })),
+    h("a.topbar__logo", { href: "#/" }, wordmark()),
     h("nav.topbar__nav",
       h("a", { href: "#/" }, "🏠", h("span", "Теми")),
       h("a", { href: "#/school" }, "🏫", h("span", "Школа")),
@@ -149,7 +148,7 @@ function loginPage() {
       h("span.blob.blob--lime"), h("span.blob.blob--violet"), h("span.blob.blob--yellow"),
       letters.map((l, i) => h("span.fly", { style: { "--x": `${(i * 37 + 7) % 96}%`, "--d": `${14 + (i % 5) * 3}s`, "--delay": `${-i * 2.3}s`, "--s": `${28 + (i % 4) * 14}px` } }, l))),
     h("div.login__box",
-      h("img.mg-logo", { src: LOGO, alt: "Midgard" }),
+      wordmark(".wordmark--big"),
       h("h1.login__title", "Українська мова ", h("span.hl", "5 клас")),
       h("p.lead", "Вчися, заробляй монети, підвищуй звання й гуляй 3D-школою."),
       h("div.login__chips", ["📚 41 тема", "🏅 10 звань", `🎨 ${ITEMS.length} речей для персонажа`, "🏫 3D-школа"].map((t) => h("span.chip", t))),

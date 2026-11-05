@@ -67,7 +67,10 @@ img { max-width: 100%; }
 
 /* Шапка */
 .topbar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 14px; padding: 10px clamp(12px, 3vw, 28px); background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
-.topbar__logo img { height: 34px; display: block; }
+.topbar__logo { text-decoration: none; }
+.wordmark { display: inline-block; font-family: var(--f-display); font-weight: 800; font-size: 24px; line-height: 1; letter-spacing: -0.02em; color: var(--ink, #1e1b26); padding-bottom: 4px; background: linear-gradient(90deg, var(--lime), var(--violet)) no-repeat 0 100% / 100% 4px; white-space: nowrap; }
+.wordmark--big { display: table; margin: 0 auto 14px; font-size: clamp(30px, 8vw, 44px); padding-bottom: 6px; background-size: 100% 6px; }
+.sitefoot { padding: 18px 16px 26px; text-align: center; color: var(--muted); font-size: 13px; }
 .topbar__nav { display: flex; gap: 4px; flex: 1; }
 .topbar__nav a { display: flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 999px; text-decoration: none; font-weight: 700; font-size: 15px; }
 .topbar__nav a:hover, .topbar__nav a.on { background: var(--surface-2); }
@@ -77,7 +80,7 @@ img { max-width: 100%; }
 .streakpill { background: color-mix(in srgb, #ff7a2e 15%, white); }
 @media (max-width: 760px) {
   .topbar { flex-wrap: wrap; gap: 8px; }
-  .topbar__logo img { height: 26px; }
+  .wordmark { font-size: 19px; }
   .topbar__me { margin-left: auto; }
   .rankpill span { display: none; }
   .topbar__nav { order: 3; flex-basis: 100%; justify-content: space-around; }

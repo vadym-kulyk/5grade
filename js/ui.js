@@ -32,6 +32,9 @@ function add(el, kids) {
 export const $ = (s, root = document) => root.querySelector(s);
 export const $$ = (s, root = document) => [...root.querySelectorAll(s)];
 
+// Назва сайту замість логотипа
+export const wordmark = (cls = "") => h(`span.wordmark${cls}`, "Дослівно");
+
 export function mount(...kids) {
   const app = $("#app");
   app.replaceChildren();
