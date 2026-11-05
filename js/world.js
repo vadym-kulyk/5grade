@@ -275,9 +275,9 @@ export function openWorld(state) {
   };
   if (location.search.includes("emu=1")) window.__w = { me, goFloor, out, school, startHunt, renderer, collide, setCam: (y, p) => { camYaw = y; camPitch = p; } }; // лише для тестів в емуляторі
   out.setOnGoal(() => { toast("⚽ ГО-О-ОЛ! 🎉", "win", 2500); emote("⚽ Гол!", "jump"); });
-  try { if (!localStorage.getItem("school3f")) { localStorage.setItem("school3f", "1"); setTimeout(() => toast("🆕 У школі тепер 3 поверхи (сходи в холі), а через південне крило — вихід надвір: ліс, озера, тварини й міні-ігри!", "info", 8000), 1500); } } catch {}
+  try { if (!localStorage.getItem("school3f")) { localStorage.setItem("school3f", "1"); setTimeout(() => toast("🆕 У школі тепер 3 поверхи: сходи — у дальньому лівому кутку холу, за літерою Ї, а через південне крило — вихід надвір: ліс, озера, тварини й міні-ігри!", "info", 8000), 1500); } } catch {}
 
-  const lods = [...school.lod, ...out.lod], tmpV = new THREE.Vector3(); let lodT = -1;
+  const lods = [...school.lod, ...out.lod], tmpV = new THREE.Vector3(); let lodT = -1, stairsCd = 0;
   function loop() {
     if (!alive) return;
     const dt = Math.min(0.05, clock.getDelta()), t = clock.elapsedTime;
@@ -344,7 +344,9 @@ export function openWorld(state) {
 
     // двері поруч?
     nearDoor = null;
-    for (const d of doors) if ((d.floor || 0) === me.floor && Math.hypot(d.x - me.x, d.z - me.z) < 2.2) { nearDoor = d; break; }
+    for (const d of doors) if ((d.floor || 0) === me.floor && Math.hypot(d.x - me.x, d.z - me.z) < (d.r || 2.2)) { nearDoor = d; break; }
+    // Пішов на сходи — одразу питаємо, на який поверх
+    if (me.mv && !me.fly && t > stairsCd && Math.abs(me.x - STAIRS.x) < 2.5 && Math.abs(me.z - STAIRS.z) < 2.5 && !document.querySelector(".modal")) { stairsCd = t + 4; chooseFloor(); }
     if (!nearDoor && me.floor === 0 && !inB) for (const s of out.spots) { const [sx, sz] = out.animalPos(s); if (Math.hypot(sx - me.x, sz - me.z) < s.r) { nearDoor = s; break; } }
     if (out.hunt.on && (t * 3 | 0) !== drawHunt.k) { drawHunt.k = t * 3 | 0; drawHunt(); }
     const qi = quest && me.floor === 0 ? quest.interacts(me) : null;
@@ -490,7 +492,7 @@ function buildSchool(scene, walls, doors, hw = false) {
     addBox(0.12, 1, 3.6, STAIRS.x - 1.75, 1.6, STAIRS.z, railM, false); addBox(0.12, 1, 3.6, STAIRS.x + 1.75, 1.6, STAIRS.z, railM, false);
     const stSign = new THREE.Mesh(new THREE.PlaneGeometry(3, 0.8), new THREE.MeshBasicMaterial({ map: textCanvas(`🪜 ${f + 1} поверх`, { w: 480, hgt: 128, font: "bold 54px Manrope, sans-serif", border: "#9d6bdb" }) }));
     stSign.position.set(STAIRS.x, 3.4, STAIRS.z + 1.9); grp.add(stSign);
-    doors.push({ x: STAIRS.land.x, z: STAIRS.land.z, floor: f, label: `🪜 Сходи · ти на ${f + 1} поверсі`, sub: "Натисни E або сюди — обрати поверх", stairs: true });
+    doors.push({ x: STAIRS.x, z: STAIRS.z, r: 4.2, floor: f, label: `🪜 Сходи · ти на ${f + 1} поверсі`, sub: "Натисни E або сюди — обрати поверх", stairs: true });
 
     // Прикраси холу
     if (f === 0) {
