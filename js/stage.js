@@ -5,9 +5,10 @@ import { state, onChange } from "./store.js";
 import { renderTask, kindLabel, rightAnswer } from "./quiz.js";
 import { topicById, shortTitle } from "../content/index.js";
 import { monWorks } from "../content/monitoring/index.js";
+import { makeBoard, theoryBlock, setStrokes } from "./board.js";
 
 const MAX_AGE = 3 * 3600e3; // забута пауза сама знімається через 3 години
-let el = null, key = "", started = false;
+let el = null, key = "", started = false, board = null, boardKey = "", lastY = null;
 
 // Завдання з будь-якого рівня або моніторингової роботи теми
 async function findTask(topic, id) {
@@ -33,10 +34,24 @@ function apply(s) {
   const st = s.settings?.stage;
   const mine = !!(st && s.user && !s.teacher && (st.lock || st.show) && Date.now() - (st.at || 0) < MAX_AGE && (!st.cls || st.cls === "all" || st.cls === s.user.cls));
   const k = mine ? JSON.stringify([st.lock, st.show, st.reveal]) : "";
-  if (k === key) return;
-  key = k;
-  if (!mine) { el?.remove(); el = null; return; }
-  render(st, k);
+  if (k !== key) {
+    key = k;
+    board?.dispose(); board = null; lastY = null;
+    if (!mine) { el?.remove(); el = null; return; }
+    render(st, k);
+  }
+  ink(s.settings?.board);
+}
+
+// Позначки вчителя на дошці + прокрутка туди, де зараз учитель
+function ink(bd) {
+  if (!board) return;
+  setStrokes(board, bd?.key === boardKey ? bd.strokes : {});
+  if (bd?.key === boardKey && bd.y != null && bd.y !== lastY) {
+    lastY = bd.y;
+    const card = board.wrap.closest(".stage__card");
+    card?.scrollTo({ top: board.wrap.offsetTop + bd.y * board.scale - 20, behavior: "smooth" });
+  }
 }
 
 async function render(st, k) {
@@ -47,7 +62,19 @@ async function render(st, k) {
       h("p", "Відклади мишку й телефон — слухай уважно."), h("p.note", "Сайт продовжить роботу, щойно вчитель зніме паузу. Нічого не загубиться.")));
     return;
   }
-  el.replaceChildren(h("div.stage__card", h("p.note", "Завантаження завдання…")));
+  el.replaceChildren(h("div.stage__card", h("p.note", "Завантаження…")));
+  if (st.show.kind === "theory") {
+    const T = (await import(`../content/topics/${st.show.topic}.js`).catch(() => null))?.default;
+    if (k !== key || !el) return;
+    const b = T?.theory?.[st.show.i];
+    if (!b) return el.replaceChildren(h("div.stage__card", h("h2", "Дивись на дошку 👀")));
+    board = makeBoard(theoryBlock(b)); boardKey = `${st.show.topic}~${st.show.i}`;
+    el.replaceChildren(h("div.stage__card.stage__card--board",
+      h("div.stage__top", h("span.stage__badge", "📖 Учитель пояснює теорію"), h("span.note", shortTitle(topicById[st.show.topic] || { title: "" }))),
+      board.wrap));
+    ink(state.settings?.board);
+    return;
+  }
   const f = await findTask(st.show.topic, st.show.id).catch(() => null);
   if (k !== key || !el) return; // поки вантажили, учитель уже щось змінив
   if (!f) return el.replaceChildren(h("div.stage__card", h("h2", "Дивись на дошку 👀")));

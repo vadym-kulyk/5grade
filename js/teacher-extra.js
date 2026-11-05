@@ -1,6 +1,7 @@
 // Кабінет учителя: перегляд будь-якого завдання і живі питання учням.
 import { h, toast, fmtTime, fmtDate, confirmBox, num } from "./ui.js";
-import { r, push, update, remove, onValue } from "./fb.js";
+import { r, push, update, remove, onValue, set } from "./fb.js";
+import { makeBoard, theoryBlock, setStrokes, paint, packPts } from "./board.js";
 import { renderTask, kindLabel } from "./quiz.js";
 import { topicById, shortTitle } from "../content/index.js";
 import { monWorks, monWork } from "../content/monitoring/index.js";
@@ -21,7 +22,7 @@ const loadTopic = async (id) => (topicCache[id] ??= await (async () => {
 })());
 
 // ---------- 🎬 Урок: пауза для учнів і показ завдання на їхніх екранах ----------
-export const stage = { v: null, bar: null, onShow: null };
+export const stage = { v: null, bar: null, onShow: null, board: null, onBoard: null };
 export const setStage = (patch) => update(r("settings/stage"), { ...patch, at: Date.now() }).catch((e) => toast("Не вдалося: " + e.message, "warn"));
 const clsText = (c) => (!c || c === "all" ? "усіх класів" : `класу ${c}`);
 
@@ -36,9 +37,9 @@ export function stageBar(getCls) {
       h(`button.btn.btn--small${v.lock ? ".btn--primary" : ""}`, { title: "Учні бачать «Учитель пояснює» і не можуть нічого натискати", onclick: () => setStage(v.lock ? { lock: false } : { lock: true, cls: v.show ? v.cls : getCls() }) }, v.lock ? "▶ Зняти паузу" : "⏸ Пауза для учнів"),
       v.show ? [
         h("span.stagebar__on", "📺 На екранах: ", h("b", v.show.label)),
-        h("button.btn.btn--small", { onclick: () => setStage({ reveal: !v.reveal }) }, v.reveal ? "🙈 Сховати відповідь" : "👁 Показати відповідь учням"),
+        v.show.kind === "theory" ? null : h("button.btn.btn--small", { onclick: () => setStage({ reveal: !v.reveal }) }, v.reveal ? "🙈 Сховати відповідь" : "👁 Показати відповідь учням"),
         h("button.btn.btn--small", { onclick: () => setStage({ show: null, reveal: false }) }, "✕ Завершити показ"),
-      ] : h("span.note", "Показати завдання: «📖 Завдання» → «📺 Показати учням»."),
+      ] : h("span.note", "Показати завдання: «📖 Завдання» → «📺 Показати учням». Теорію з позначками: «🖍️ Дошка»."),
       on ? null : h("span.note", `(діятиме для ${clsText(getCls())} — клас обирається праворуч угорі)`)].flat().filter(Boolean));
   };
   stage.bar = draw;
@@ -89,7 +90,7 @@ export function previewView({ ready, getCls }) {
     const t = tasks[pv.i];
     const L = T.levels[t.lv - 1];
     const label = `${shortTitle(topicById[T.id])} · ${L.mon ? `моніторингова${L.mon > 1 ? ` (варіант ${L.mon})` : ""}` : `рівень ${t.lv}`} · завдання ${pv.i + 1 - T.levels.slice(0, t.lv - 1).reduce((n, x) => n + x.tasks.length, 0)} з ${L.tasks.length}`;
-    const shown = () => stage.v?.show?.id === t.id && stage.v?.show?.topic === T.id;
+    const shown = () => stage.v?.show?.kind !== "theory" && stage.v?.show?.id === t.id && stage.v?.show?.topic === T.id;
     const showIt = () => setStage({ show: { topic: T.id, id: t.id, label }, reveal: false, ...(stage.v?.lock || stage.v?.show ? {} : { cls: getCls() }) });
     // Якщо вчитель уже показує завдання учням, гортання тут одразу змінює їхній екран
     if (pv.follow && stage.v?.show && !shown()) showIt();
@@ -147,6 +148,7 @@ export function startTeacherLive() {
   onValue(r("live"), (s) => { live.data = s.val() || {}; live.refresh?.(); });
   onValue(r("online"), (s) => { live.online = s.val() || {}; live.refresh?.(); });
   onValue(r("settings/stage"), (s) => { stage.v = s.val(); stage.bar?.(); stage.onShow?.(); });
+  onValue(r("settings/board"), (s) => { stage.board = s.val(); stage.onBoard?.(); });
 }
 
 const PAGES = { "головна": "на головній", topic: "читає тему", level: "виконує завдання", review: "робота над помилками", monitoring: "моніторингова", shop: "у магазині", school: "у 3D-школі", profile: "у профілі", results: "дивиться результати" };
@@ -293,5 +295,104 @@ export function monitoringView({ students, data, openStudent, redraw }) {
         h("span.hist__pct.mono", { style: { background: heatC(v) } }, v + "%"),
         h("div.hist__main", h("b", g.q), h("span.note", `правильно ${g.ok} з ${g.n} · сер. час ${num(Math.round((g.sec / g.n) * 10) / 10)} с`)), h("span")); }))
         : h("p.note", "Цю роботу ще ніхто не писав.")),
+  ];
+}
+
+// ---------- 🖍️ Дошка: теорія з позначками вчителя, видно на екранах учнів ----------
+const bd = { topic: null, i: 0, tool: "pen", color: "#e2445c", follow: false };
+const TOOLS = [["pen", "✏️ Ручка"], ["mark", "🖍️ Маркер"], ["line", "➖ Підкреслити"], ["oval", "⭕ Обвести"]];
+const COLORS = ["#e2445c", "#1f6fd1", "#2f9e44", "#8a4fd6", "#1e1b26"];
+const theoryCache = {};
+const loadTheory = (id) => (theoryCache[id] ??= import(`../content/topics/${id}.js`).then((m) => m.default));
+
+export function boardView({ ready, getCls }) {
+  const rt = ready();
+  if (!bd.topic || !topicById[bd.topic]) bd.topic = rt[0]?.id;
+  const holder = h("div.bd__holder"), blocks = h("div.bd__blocks"), tools = h("div.bd__tools"), showBox = h("div.row.gap");
+  let B = null, T = null, cur = null, lastSend = 0, mine = [];
+  const key = () => `${bd.topic}~${bd.i}`;
+  const showing = () => stage.v?.show?.kind === "theory" && stage.v.show.topic === bd.topic && stage.v.show.i === bd.i;
+  const label = () => `${shortTitle(topicById[bd.topic])} · теорія: ${T?.theory[bd.i]?.title || ""}`.replace(/<[^>]+>/g, "");
+  const showIt = () => setStage({ show: { kind: "theory", topic: bd.topic, i: bd.i, label: label() }, reveal: false, ...(stage.v?.lock || stage.v?.show ? {} : { cls: getCls() }) });
+  const ink = () => (stage.board?.key === key() ? stage.board.strokes : {});
+
+  const sel = h("select.select", { onchange: (e) => { bd.topic = e.target.value; bd.i = 0; draw(); } }, rt.map((t, k) => h("option", { value: t.id, selected: t.id === bd.topic }, `${k + 1}. ${shortTitle(t)}`)));
+
+  function drawTools() {
+    tools.replaceChildren(
+      ...TOOLS.map(([id, l]) => h(`button.btn.btn--small${bd.tool === id ? ".btn--primary" : ""}`, { onclick: () => { bd.tool = id; drawTools(); } }, l)),
+      h("span.bd__sep"),
+      ...COLORS.map((c) => h(`button.bd__color${bd.color === c ? ".on" : ""}`, { style: { background: c }, title: "Колір", onclick: () => { bd.color = c; drawTools(); } })),
+      h("span.bd__sep"),
+      h("button.btn.btn--small", { title: "Прибрати останню позначку", onclick: () => { const k = mine.pop(); if (k) remove(r(`settings/board/strokes/${k}`)); } }, "↶ Скасувати"),
+      h("button.btn.btn--small", { onclick: () => set(r("settings/board"), { key: key() }) }, "🧹 Стерти все"));
+  }
+  function drawShow() {
+    showBox.replaceChildren(
+      showing() ? h("button.btn.btn--primary", { onclick: () => { bd.follow = false; setStage({ show: null }); } }, "📺 Учні бачать цей блок · ✕ прибрати")
+        : h("button.btn.btn--primary", { onclick: () => { bd.follow = true; showIt(); toast("Теорія на екранах учнів 📺", "win"); } }, "📺 Показати учням"),
+      h("button.btn", { onclick: () => (document.fullscreenElement ? document.exitFullscreen() : holder.requestFullscreen?.().catch(() => {})) }, "🖥️ На весь екран"));
+  }
+
+  const pos = (e) => { const rc = B.canvas.getBoundingClientRect(); return [(e.clientX - rc.left) / B.scale, (e.clientY - rc.top) / B.scale]; };
+  const send = () => { if (!cur) return; lastSend = Date.now(); set(r(`settings/board/strokes/${cur.id}`), { t: cur.t, c: cur.c, w: cur.w, at: cur.at, p: packPts(cur.pts) }).catch(() => {}); };
+  async function down(e) {
+    e.preventDefault(); B.canvas.setPointerCapture(e.pointerId);
+    if (stage.board?.key !== key()) { await set(r("settings/board"), { key: key() }); mine = []; }
+    const mark = bd.tool === "mark";
+    cur = { id: push(r("settings/board/strokes")).key, t: bd.tool, c: mark ? "#f7c915" : bd.color, w: mark ? 20 : 4, at: Date.now(), pts: [pos(e)] };
+  }
+  function move(e) {
+    if (!cur) return;
+    const p = pos(e);
+    if (cur.t === "line" || cur.t === "oval") cur.pts = [cur.pts[0], p];
+    else { const q = cur.pts[cur.pts.length - 1]; if (Math.hypot(p[0] - q[0], p[1] - q[1]) < 2) return; cur.pts.push(p); }
+    B.draft = { ...cur, p: cur.pts }; paint(B);
+    if (Date.now() - lastSend > 150) send();
+  }
+  function up() { if (!cur) return; send(); mine.push(cur.id); cur = null; B.draft = null; paint(B); }
+
+  // Куди вчитель прокрутив дошку — туди прокручується й у дітей
+  let lastY = 0;
+  const onScroll = () => {
+    if (!B?.wrap.isConnected) return removeEventListener("scroll", onScroll, true);
+    if (!showing() || Date.now() - lastY < 300) return;
+    lastY = Date.now();
+    const y = Math.max(0, -B.wrap.getBoundingClientRect().top + 90) / B.scale;
+    update(r("settings/board"), { y: Math.round(y) }).catch(() => {});
+  };
+  addEventListener("scroll", onScroll, true);
+
+  async function draw() {
+    sel.value = bd.topic;
+    holder.replaceChildren(h("p.note", "Завантаження…"));
+    T = await loadTheory(bd.topic);
+    bd.i = Math.min(bd.i, T.theory.length - 1);
+    blocks.replaceChildren(...T.theory.map((b, k) => h(`button.chipbtn${k === bd.i ? ".on" : ""}`, { onclick: () => { bd.i = k; draw(); } }, `${k + 1}. `, h("span", { html: b.title }))));
+    B?.dispose();
+    B = makeBoard(theoryBlock(T.theory[bd.i]));
+    B.canvas.classList.add("draw");
+    B.canvas.addEventListener("pointerdown", down);
+    B.canvas.addEventListener("pointermove", move);
+    B.canvas.addEventListener("pointerup", up);
+    B.canvas.addEventListener("pointercancel", up);
+    holder.replaceChildren(B.wrap);
+    setStrokes(B, ink());
+    // Учні вже дивляться теорію — новий блок одразу й у них
+    if (bd.follow && stage.v?.show?.kind === "theory" && !showing()) showIt();
+    drawShow();
+  }
+  stage.onBoard = () => B && setStrokes(B, ink());
+  stage.onShow = () => { if (!stage.v?.show) bd.follow = false; if (showBox.isConnected) drawShow(); };
+  drawTools();
+  draw();
+  return [
+    h("div.filters.card.bd__top",
+      h("div.row.gap", h("button.btn.btn--small", { onclick: () => { const k = rt.findIndex((t) => t.id === bd.topic); if (k > 0) { bd.topic = rt[k - 1].id; bd.i = 0; draw(); } } }, "◀"), sel,
+        h("button.btn.btn--small", { onclick: () => { const k = rt.findIndex((t) => t.id === bd.topic); if (k < rt.length - 1) { bd.topic = rt[k + 1].id; bd.i = 0; draw(); } } }, "▶")),
+      blocks, showBox,
+      h("span.note", "Малюй прямо на теорії мишкою, пальцем чи стилусом. Якщо блок показано учням, вони бачать позначки одразу й прокручують разом із тобою.")),
+    h("div.card.bd__tools.sticky", tools),
+    holder,
   ];
 }

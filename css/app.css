@@ -662,3 +662,22 @@ td.clk:hover { outline: 2px solid var(--violet); outline-offset: -2px; }
 .pv__card:fullscreen .task__q { font-size: 2em; }
 .pv__card:fullscreen .opt, .pv__card:fullscreen .input { font-size: 1em; }
 @media print { .stagebar, .stage { display: none !important; } }
+
+/* ---------- 🖍️ Дошка з теорією ---------- */
+.boardwrap { position: relative; width: 100%; overflow: hidden; }
+.board { position: absolute; top: 0; left: 0; width: 640px; transform-origin: 0 0; font-size: 17px; line-height: 1.5; }
+.board .rule { grid-template-columns: minmax(0, 1fr); padding: 20px; margin: 0; box-shadow: none; }
+.board .rule__text h3 { font-size: 24px; }
+.board .rule__fig { max-width: 520px; justify-self: center; width: 100%; }
+.board__ink { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.board__ink.draw { pointer-events: auto; touch-action: none; cursor: crosshair; }
+.bd__blocks { display: flex; flex-wrap: wrap; gap: 6px; }
+.bd__tools { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.bd__tools.sticky { position: sticky; top: 0; z-index: 5; padding: 8px 12px; }
+.bd__sep { width: 1px; height: 26px; background: #ddd; margin: 0 4px; }
+.bd__color { width: 28px; height: 28px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 0 1px #ccc; cursor: pointer; }
+.bd__color.on { box-shadow: 0 0 0 3px var(--violet); }
+.bd__holder { background: #fff; border-radius: 20px; }
+.bd__holder:fullscreen { overflow: auto; padding: 2vh 4vw; }
+.stage__card--board { width: min(900px, 100%); }
+@media (max-width: 520px) { .stage { padding: 8px; } .stage__card { padding: 14px; border-radius: 20px; } }

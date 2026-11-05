@@ -5,7 +5,7 @@ import { TEACHER_EMAIL, CLASSES, LEVELS_PER_TOPIC, TASKS_PER_LEVEL, halloweenOn,
 import { SECTIONS, TOPICS, topicById, shortTitle } from "../content/index.js";
 import { rankOf, topicPct, BADGES } from "./game.js";
 import { QUEST, questId } from "../content/quest/halloween.js";
-import { previewView, liveView, startTeacherLive, stageBar, monitoringView, awayFmt, awayDetail } from "./teacher-extra.js";
+import { previewView, liveView, startTeacherLive, stageBar, boardView, monitoringView, awayFmt, awayDetail } from "./teacher-extra.js";
 import { monWorks } from "../content/monitoring/index.js";
 import { detailView, focusDetail } from "./teacher-detail.js";
 
@@ -57,7 +57,7 @@ const ready = () => TOPICS.filter((t) => t.ready);
 const heat = (v) => `hsl(${Math.round(v * 1.1)}, 70%, ${v ? 88 - v * 0.25 : 96}%)`;
 
 function draw() {
-  const tabs = [["overview", "📊 Огляд"], ["attempts", "🗂️ Спроби"], ["topic", "📚 Тема"], ["mon", "📋 Моніторингові"], ["live", "🎤 Питання"], ["preview", "📖 Завдання"], ["slow", "⏱️ Найдовші питання"], ["student", "👤 Учень"], ["detail", "🔬 Детально"], ["settings", "⚙️ Налаштування"]];
+  const tabs = [["overview", "📊 Огляд"], ["attempts", "🗂️ Спроби"], ["topic", "📚 Тема"], ["mon", "📋 Моніторингові"], ["live", "🎤 Питання"], ["preview", "📖 Завдання"], ["board", "🖍️ Дошка"], ["slow", "⏱️ Найдовші питання"], ["student", "👤 Учень"], ["detail", "🔬 Детально"], ["settings", "⚙️ Налаштування"]];
   mount(
     h("header.topbar.topbar--teacher",
       h("a.topbar__logo", { href: "#/teacher" }, h("img", { src: "assets/logo-wordmark.png", alt: "Midgard" })),
@@ -67,7 +67,7 @@ function draw() {
         h("button.btn.btn--small", { onclick: async () => { await load(); draw(); toast("Оновлено"); } }, "↻"),
         h("button.btn.btn--small", { onclick: () => logout() }, "Вийти"))),
     stageBar(() => cls),
-    h("main.page.page--wide", { overview, attempts: attemptsView, topic: topicView, mon: () => monitoringView({ students, data, redraw: () => draw(), openStudent: (id) => { studentId = id; tab = "student"; draw(); } }), live: () => liveView({ students, ready }), preview: () => previewView({ ready, getCls: () => cls }), slow, student: studentView, detail: () => detailView({ students, data, ready, redraw: draw }), settings: settingsView }[tab]()));
+    h("main.page.page--wide", { overview, attempts: attemptsView, topic: topicView, mon: () => monitoringView({ students, data, redraw: () => draw(), openStudent: (id) => { studentId = id; tab = "student"; draw(); } }), live: () => liveView({ students, ready }), preview: () => previewView({ ready, getCls: () => cls }), board: () => boardView({ ready, getCls: () => cls }), slow, student: studentView, detail: () => detailView({ students, data, ready, redraw: draw }), settings: settingsView }[tab]()));
 }
 
 // ---------- Огляд ----------
