@@ -828,6 +828,12 @@ export function petFollower(model, scene) {
   };
 }
 
+// Окрема модель тварини (для лісу навколо школи)
+export function petModel(style, scale = 1) {
+  const holder = new THREE.Group(); const p = addPet(holder, style); holder.remove(p);
+  p.position.set(0, 0, 0); p.scale.setScalar(scale); return p;
+}
+
 // Сани Санти з двома оленями (для польоту в 3D-школі)
 export function buildSleigh() {
   const g = new THREE.Group(); g.name = "sleighrig";

@@ -1,6 +1,6 @@
 // Спільна 3D-школа: учні бачать одне одного й ходять коридорами. Кожні двері — майбутня гра з теми.
 import * as THREE from "three";
-import { h, mount, toast } from "./ui.js";
+import { h, mount, toast, modal } from "./ui.js";
 import { r, set, push, onValue, off, onDisconnect, remove, query, limitToLast } from "./fb.js";
 import { buildAvatar, petFollower, buildSleigh, santaDressed, SLEIGH_NEEDS } from "./avatar.js";
 import { awardBadges, owns } from "./store.js";
@@ -8,8 +8,47 @@ import { SECTIONS, TOPICS, shortTitle } from "../content/index.js";
 import { rankOf } from "./game.js";
 import { halloweenOn } from "./config.js";
 import { setupQuest } from "./hwquest.js";
+import { buildOutdoor } from "./outdoor.js";
+import { mergeStatic } from "./merge.js";
+import { openGame, huntWord, reward, GAMES } from "./minigames.js";
 
 // Політ: мітла — найвище й найшвидше; крила й плащ — нижче. Пішки — 5,5 м/с.
+// Кожен поверх — хол 28×28 і до чотирьох крил. Поверхи стоять один на одному (висота поверху FH).
+const FH = 4.6;
+const STAIRS = { x: -10.5, z: -10.5, land: { x: -7, z: -7.5 } };
+const MUSEUM = [
+  "В українській абетці 33 букви.",
+  "Апостроф — не буква, а знак: він показує, що букви я, ю, є, ї після нього позначають два звуки.",
+  "Тільки в українській серед слов’янських мов є кличний відмінок у звертаннях: Олено! Тарасе! Друже!",
+  "Буква Ґ повернулася до українського правопису 1990 року: ґанок, ґудзик, ґава.",
+  "Слова «привіт» і «вітати» — спільнокореневі: обидва про те, щоб побажати добра.",
+  "Буква Ї завжди позначає два звуки [йі]: їжак, Україна.",
+];
+const INFO = {
+  canteen: "🍲 Смачного! А міні-гра «Рибалка» чекає на пристані біля озера за школою.",
+  hall: "🎭 Тут проходять свята й виступи. Скоро — шкільний концерт!",
+  teachers: "☕ Тссс… тут учителі перевіряють зошити 🤫",
+  museum: () => "🏛️ Музей мови: " + MUSEUM[Math.floor(Math.random() * MUSEUM.length)],
+  med: "🩺 Медпункт: пий воду й роби перерви, коли довго сидиш за екраном 💧",
+  music: "🎵 Музична зала: пісня — теж текст! Спробуй знайти в улюбленій пісні звертання.",
+  art: "🎨 Мистецька студія: тут малюють ментальні карти до правил.",
+  chess: "♟️ Шаховий клуб: шахи тренують увагу — так само, як пошук орфограм.",
+  stars: "🔭 Обсерваторія: «зоря — зірка — зоряний» — спільнокореневі слова ✨",
+  pets: "🌱 Живий куточок: «кіт — котик — котячий»: у корені чергуються і та о 🐱",
+};
+const FLOORS = [
+  { W: { label: "Синтаксис і пунктуація", sec: ["s6"] }, N: { label: "Лексикологія · Фразеологія", sec: ["s2", "s3"] },
+    E: { label: "Бібліотека · Спортзал · Ігри", extra: [["📚 Бібліотека", "game", "anagram"], ["🏀 Спортзал", "game", "blitz"], ["🍲 Їдальня", "info", "canteen"], ["🎭 Актова зала", "info", "hall"], ["🎲 Ігрова кімната", "game", "pairs"]] },
+    S: { label: "Мова · Розвиток мовлення", sec: ["s1", "s7"], exit: true } },
+  { W: { label: "Фонетика · Графіка · Орфоепія", sec: ["s4"] }, N: { label: "Будова слова. Орфографія", sec: ["s8"] }, E: { label: "Орфографія", sec: ["s5"] },
+    S: { label: "Учительська · Музей мови", extra: [["☕ Учительська", "info", "teachers"], ["🏛️ Музей мови", "info", "museum"], ["🩺 Медпункт", "info", "med"]] } },
+  { W: { label: "Клуби й студії", extra: [["💻 Комп’ютерний клас", "game", "typing"], ["🎵 Музична зала", "info", "music"], ["🎨 Мистецька студія", "info", "art"], ["♟️ Шаховий клуб", "info", "chess"]] },
+    N: { label: "Обсерваторія", extra: [["🔭 Обсерваторія", "info", "stars"], ["🌱 Живий куточок", "info", "pets"]] },
+    E: { label: "Кімната головоломок", extra: [["🧩 Кімната головоломок", "game", "gap"]] } },
+];
+const infoText = (k) => (typeof INFO[k] === "function" ? INFO[k]() : INFO[k]);
+
+
 const SLEIGH_FLY = { maxY: 16, speed: 12 };
 const FLY = { "back.broom": { maxY: 14, speed: 10.5 }, "back.bat-wings": { maxY: 6, speed: 9 }, "back.vampire-cape": { maxY: 6, speed: 8.5 } };
 
@@ -48,7 +87,7 @@ export function openWorld(state) {
         EMOTES.map(([ic, a]) => h("button.chipbtn", { onclick: () => emote(null, a) }, ic))),
       chatBox),
     stick,
-    h("div.world__help", "WASD / стрілки — ходити · тягни мишкою — повертати камеру · на телефоні — джойстик ліворуч")));
+    h("div.world__help", "WASD / стрілки — ходити · E — двері, сходи, ігри · тягни мишкою — повертати камеру · на телефоні — джойстик ліворуч")));
 
   // ---------- Сцена ----------
   const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -57,22 +96,23 @@ export function openWorld(state) {
   canvasWrap.append(renderer.domElement);
   const scene = new THREE.Scene();
   const HW = halloweenOn(state.settings);
-  scene.background = new THREE.Color(HW ? "#2a2140" : "#eef5ff");
-  scene.fog = new THREE.Fog(HW ? "#2a2140" : "#eef5ff", HW ? 22 : 30, HW ? 64 : 75);
+  scene.background = new THREE.Color(HW ? "#2a2140" : "#bfe3ff");
+  scene.fog = new THREE.Fog(HW ? "#2a2140" : "#bfe3ff", HW ? 40 : 70, HW ? 150 : 240);
   scene.add(new THREE.HemisphereLight(HW ? 0xd9ccff : 0xffffff, HW ? 0x6a4a3a : 0xcfc6dd, HW ? 1.25 : 1.7));
   const sun = new THREE.DirectionalLight(HW ? 0xffd2a0 : 0xffffff, HW ? 0.85 : 1.2); sun.position.set(10, 20, 8); scene.add(sun);
-  const cam = new THREE.PerspectiveCamera(60, 1, 0.1, 200);
+  const cam = new THREE.PerspectiveCamera(60, 1, 0.1, 420);
 
   const walls = [];   // [minX, maxX, minZ, maxZ]
   const doors = [];   // { x, z, label, topic, nx, nz }
-  buildSchool(scene, walls, doors, HW);
-  const hwTick = HW ? decorateHalloween(scene, doors) : null;
+  const school = buildSchool(scene, walls, doors, HW);
+  const out = buildOutdoor(scene, HW);
+  const hwTick = HW ? decorateHalloween(scene, doors.filter((d) => !d.floor && !d.stairs)) : null;
   // Таємна кімната з квестом (лише в геловінський час)
-  const quest = HW ? setupQuest({ scene, walls, uid, teleport: (p) => { me.x = p.x; me.z = p.z; me.ry = p.ry; camYaw = p.ry + Math.PI; sendPresence(true); } }) : null;
+  const quest = HW ? setupQuest({ scene, walls, uid, teleport: (p) => { me.floor = 0; me.x = p.x; me.z = p.z; me.ry = p.ry; camYaw = p.ry + Math.PI; sendPresence(true); } }) : null;
   if (quest) { document.querySelector(".world")?.append(quest.panel); document.querySelector(".world__bottom")?.prepend(quest.lightUi); quest.setMe(() => ({ x: me.x, y: me.y, z: me.z, broom: me.fly && u.avatar?.back === "back.broom" })); }
 
   // ---------- Мій персонаж ----------
-  const me = { x: (Math.random() - 0.5) * 8, z: 6 + Math.random() * 4, ry: Math.PI, mv: 0, y: 0, fly: false, model: buildAvatar(u.avatar), action: null, actionT: 0 };
+  const me = { x: (Math.random() - 0.5) * 8, z: 6 + Math.random() * 4, ry: Math.PI, mv: 0, y: 0, floor: 0, base: 0, fly: false, model: buildAvatar(u.avatar), action: null, actionT: 0 };
   scene.add(me.model);
   me.pet = petFollower(me.model, scene);
   me.model.add(nameSprite(u.name, rankOf(u.xp).icon));
@@ -99,7 +139,7 @@ export function openWorld(state) {
         o.pet = petFollower(o.model, scene);
         others.set(id, o);
       }
-      Object.assign(o, { tx: p.x, tz: p.z, tr: p.ry, mv: p.mv, name: p.name, ty: p.y || 0, fly: !!p.fl, sl: p.fl === "s" });
+      Object.assign(o, { tx: p.x, tz: p.z, tr: p.ry, mv: p.mv, name: p.name, ty: p.y || 0, f: p.f || 0, fly: !!p.fl, sl: p.fl === "s" });
       if (p.e && p.e.t !== o.eT) { o.eT = p.e.t; if (now - p.e.t < 5000) { if (p.e.text) bubble(o.model, p.e.text); if (p.e.a) { o.action = p.e.a; o.actionT = 0; } } }
     }
     for (const [id, o] of others) if (!all[id] || now - (all[id].t || 0) > 60000) { scene.remove(o.model); o.pet?.dispose(); others.delete(id); }
@@ -109,10 +149,10 @@ export function openWorld(state) {
   let lastSent = 0, lastKey = "";
   function sendPresence(force) {
     const now = Date.now();
-    const key = `${me.x.toFixed(2)},${me.z.toFixed(2)},${me.ry.toFixed(2)},${me.mv},${me.y.toFixed(1)}`;
+    const key = `${me.x.toFixed(2)},${me.z.toFixed(2)},${me.ry.toFixed(2)},${me.mv},${me.y.toFixed(1)},${me.floor}`;
     if (!force && (now - lastSent < 120 || (key === lastKey && now - lastSent < 4000))) return;
     lastSent = now; lastKey = key;
-    set(myRef, { name: u.name, cls: u.cls, rk: rankOf(u.xp).icon, av: u.avatar || null, x: +me.x.toFixed(2), z: +me.z.toFixed(2), ry: +me.ry.toFixed(2), mv: me.mv, y: +me.y.toFixed(2), fl: me.fly ? (SLEIGH ? "s" : true) : null, t: now, e: me.e || null });
+    set(myRef, { name: u.name, cls: u.cls, rk: rankOf(u.xp).icon, av: u.avatar || null, x: +me.x.toFixed(2), z: +me.z.toFixed(2), ry: +me.ry.toFixed(2), mv: me.mv, y: +me.y.toFixed(2), f: me.floor || null, fl: me.fly ? (SLEIGH ? "s" : true) : null, t: now, e: me.e || null });
   }
   function emote(text, action) {
     me.e = { text: text || null, a: action || null, t: Date.now() };
@@ -140,7 +180,7 @@ export function openWorld(state) {
 
   // ---------- Керування ----------
   const keys = new Set();
-  const kd = (e) => { if (e.target.tagName === "INPUT") return; keys.add(e.code); if (e.code === "KeyE" || e.code === "Enter") useDoor(); if (e.code === "KeyF" && canFly) toggleFly(); if (e.code === "KeyG") quest?.throwLight(); if (e.code === "Space" && me.fly) e.preventDefault(); };
+  const kd = (e) => { if (e.target.tagName === "INPUT" || document.body.classList.contains("mg-open")) return; keys.add(e.code); if (e.code === "KeyE" || e.code === "Enter") useDoor(); if (e.code === "KeyF" && canFly) toggleFly(); if (e.code === "KeyG") quest?.throwLight(); if (e.code === "Space" && me.fly) e.preventDefault(); };
   function toggleFly() {
     me.fly = !me.fly;
     flyBtn.textContent = me.fly ? "🛬 Приземлитися" : `${flyIcon} Летіти`;
@@ -172,6 +212,10 @@ export function openWorld(state) {
   function useDoor() {
     if (!nearDoor) return;
     if (nearDoor.act) return nearDoor.act();
+    if (nearDoor.stairs) return chooseFloor();
+    if (nearDoor.game) return openGame(nearDoor.game);
+    if (nearDoor.hunt) return startHunt();
+    if (nearDoor.info) return toast(infoText(nearDoor.info) ?? nearDoor.info, "info", 7000);
     if (nearDoor.topic?.ready) location.hash = `#/topic/${nearDoor.topic.id}`;
     else toast("🚧 Тут з’явиться 3D-гра з цієї теми. Незабаром!", "info", 3000);
   }
@@ -184,11 +228,56 @@ export function openWorld(state) {
   addEventListener("resize", resize); resize();
 
   function collide(x, z) {
-    const R = 0.45;
-    for (const [a, b, c, d] of walls) if (x + R > a && x - R < b && z + R > c && z - R < d) return true;
-    return false;
+    const R = 0.45, y = me.y, f = me.floor;
+    for (const w of walls) {
+      if ((w[4] ?? 0) !== f || y > (w[5] ?? Infinity)) continue;
+      if (x + R > w[0] && x - R < w[1] && z + R > w[2] && z - R < w[3]) return true;
+    }
+    return f === 0 && out.blocked(x, z, y);
   }
+  // Поверхи: вище за мій ховаємо, коли я в будівлі (щоб не заважала стеля)
+  const insideB = () => me.floor > 0 || school.inside(me.x, me.z, 0);
+  const FLOOR_NAMES = ["хол, синтаксис, лексика, бібліотека, спортзал, вихід надвір", "фонетика, орфографія, будова слова, музей мови", "клуби, комп’ютерний клас, кімната головоломок"];
+  function chooseFloor() {
+    const close = modal(h("div.center", h("h2", "🪜 Куди йдемо?"),
+      h("div.floors", [0, 1, 2].map((n) => h(`button.btn${n === me.floor ? "" : ".btn--primary"}`, { disabled: n === me.floor, onclick: () => { close(); goFloor(n); } }, h("b", `${n + 1} поверх`), h("small", FLOOR_NAMES[n]))))));
+  }
+  function goFloor(n) {
+    if (me.fly) toggleFly();
+    me.floor = n; me.x = STAIRS.land.x; me.z = STAIRS.land.z + 1; me.y = 0; me.ry = Math.PI * 0.75; camYaw = me.ry + Math.PI;
+    sendPresence(true);
+    toast(`🪜 ${n + 1} поверх`, "info", 1500);
+  }
+  // Квест «Знайди букви»
+  const huntBox = h("div.hunt");
+  document.querySelector(".world")?.append(huntBox);
+  function drawHunt() {
+    const H = out.hunt;
+    huntBox.classList.toggle("on", H.on);
+    if (!H.on) return;
+    const d = out.huntNearest(me);
+    huntBox.replaceChildren(h("b", "🔎 Знайди букви"), h("div.hunt__w", H.word.split("").map((ch, i) => h(`span${H.got[i] ? ".on" : ""}`, H.got[i] ? ch.toUpperCase() : "?"))),
+      h("small", d < 12 ? "🔥 Гаряче!" : d < 30 ? "🌤 Тепліше" : "❄️ Холодно — шукай у парку й лісі"), h("button.btn.btn--small", { onclick: () => { out.stopHunt(); drawHunt(); } }, "✕"));
+  }
+  async function startHunt() {
+    if (out.hunt.on) return toast("Квест уже триває — шукай букви!", "info");
+    out.startHunt(await huntWord());
+    toast("🔎 Букви сховано в парку й лісі. Підійди до букви — і вона твоя!", "info", 5000);
+    drawHunt();
+  }
+  out.hunt.onGot = async () => {
+    drawHunt();
+    if (out.hunt.got.every(Boolean)) {
+      const w = out.hunt.word; out.stopHunt(); drawHunt();
+      const r = await reward("hunt", w.length * 4);
+      toast(`🎉 Слово «${w}» зібрано!${r.gain ? ` +${r.gain} 🪙` : ""}`, "win", 5000);
+    }
+  };
+  if (location.search.includes("emu=1")) window.__w = { me, goFloor, out, school, startHunt, renderer, collide, setCam: (y, p) => { camYaw = y; camPitch = p; } }; // лише для тестів в емуляторі
+  out.setOnGoal(() => { toast("⚽ ГО-О-ОЛ! 🎉", "win", 2500); emote("⚽ Гол!", "jump"); });
+  try { if (!localStorage.getItem("school3f")) { localStorage.setItem("school3f", "1"); setTimeout(() => toast("🆕 У школі тепер 3 поверхи (сходи в холі), а через південне крило — вихід надвір: ліс, озера, тварини й міні-ігри!", "info", 8000), 1500); } } catch {}
 
+  const lods = [...school.lod, ...out.lod], tmpV = new THREE.Vector3(); let lodT = -1;
   function loop() {
     if (!alive) return;
     const dt = Math.min(0.05, clock.getDelta()), t = clock.elapsedTime;
@@ -205,7 +294,7 @@ export function openWorld(state) {
       fx /= Math.max(1, len); fz /= Math.max(1, len);
       const sin = Math.sin(camYaw), cos = Math.cos(camYaw);
       const wx = fx * cos + fz * sin, wz = -fx * sin + fz * cos;
-      const sp = (me.fly ? flyCfg.speed : 5.5) * dt;
+      const sp = (me.fly ? flyCfg.speed : insideB() ? 5.5 : 7) * dt;
       const nx = me.x + wx * sp, nz = me.z + wz * sp;
       if (!collide(nx, me.z)) me.x = nx;
       if (!collide(me.x, nz)) me.z = nz;
@@ -215,14 +304,19 @@ export function openWorld(state) {
     // Політ: висота від 0 до 7 м
     if (me.fly) {
       const vy = (keys.has("Space") || pad.up ? 1 : 0) - (keys.has("KeyC") || keys.has("ShiftLeft") || pad.down ? 1 : 0);
-      me.y = Math.max(0.6, Math.min(flyCfg.maxY, me.y + vy * 4 * dt));
+      me.y = Math.max(0.6, Math.min(insideB() ? FH - 2.4 : flyCfg.maxY, me.y + vy * 4 * dt));
     } else me.y = Math.max(0, me.y - 5 * dt);
+    me.base = me.floor * FH;
+    const inB = insideB();
+    if (t - lodT > 0.4) { lodT = t; for (const L of lods) { L.o.getWorldPosition(tmpV); L.o.visible = (!L.out || !inB) && (tmpV.x - me.x) ** 2 + (tmpV.z - me.z) ** 2 < L.d * L.d && (L.out || Math.abs(tmpV.y - me.base) < 6); } }
+    school.groups.forEach((g, f) => (g.visible = !inB || f <= me.floor));
     applyAction(me, dt);
-    me.model.position.set(me.x, me.action ? me.model.position.y : me.y + (me.fly ? Math.sin(t * 2) * 0.08 : 0), me.z);
+    me.model.position.set(me.x, me.action ? me.model.position.y : me.base + me.y + (me.fly ? Math.sin(t * 2) * 0.08 : 0), me.z);
     me.model.rotation.y = me.ry;
     me.model.userData.animate(t, me.fly ? 0 : me.mv);
     flyPose(me.model, me.fly || me.y > 0.05, t, SLEIGH && (me.fly || me.y > 0.05));
-    me.pet?.update(dt, t, me.x, me.z, me.ry, me.y * 0.85);
+    me.pet?.update(dt, t, me.x, me.z, me.ry, me.base + me.y * 0.85);
+    out.tick(t, dt, me.floor === 0 ? me : null);
     hwTick?.(t, me);
     quest?.tick(t);
 
@@ -231,29 +325,34 @@ export function openWorld(state) {
       o.z += (o.tz - o.z) * Math.min(1, dt * 8);
       o.ry += angDiff(o.ry, o.tr) * Math.min(1, dt * 8);
       o.y += ((o.ty || 0) - o.y) * Math.min(1, dt * 8);
+      o.base = (o.f || 0) * FH;
+      const vis = !inB || (o.f || 0) <= me.floor;
+      o.model.visible = vis; (o.model.userData.pets || []).forEach((p) => (p.visible = vis));
       applyAction(o, dt);
-      o.model.position.set(o.x, o.action ? o.model.position.y : o.y + (o.fly ? Math.sin(t * 2 + o.x) * 0.08 : 0), o.z);
+      o.model.position.set(o.x, o.action ? o.model.position.y : o.base + o.y + (o.fly ? Math.sin(t * 2 + o.x) * 0.08 : 0), o.z);
       o.model.rotation.y = o.ry;
       o.model.userData.animate(t, o.fly ? 0 : o.mv || 0);
       flyPose(o.model, o.fly || o.y > 0.05, t, o.sl && (o.fly || o.y > 0.05));
-      o.pet?.update(dt, t, o.x, o.z, o.ry, o.y * 0.85);
+      o.pet?.update(dt, t, o.x, o.z, o.ry, o.base + o.y * 0.85);
     }
 
     // камера позаду персонажа
     const dist = 6.5;
-    cam.position.set(me.x + Math.sin(camYaw) * dist * Math.cos(camPitch), me.y + 1.6 + Math.sin(camPitch) * dist, me.z + Math.cos(camYaw) * dist * Math.cos(camPitch));
-    if (quest?.inRoom(me)) quest.clampCam(cam);
-    cam.lookAt(me.x, me.y + 1.5, me.z);
+    cam.position.set(me.x + Math.sin(camYaw) * dist * Math.cos(camPitch), me.base + me.y + 1.6 + Math.sin(camPitch) * dist, me.z + Math.cos(camYaw) * dist * Math.cos(camPitch));
+    if (me.floor === 0 && quest?.inRoom(me)) quest.clampCam(cam);
+    cam.lookAt(me.x, me.base + me.y + 1.5, me.z);
 
     // двері поруч?
     nearDoor = null;
-    for (const d of doors) if (Math.hypot(d.x - me.x, d.z - me.z) < 2.2) { nearDoor = d; break; }
-    const qi = quest ? quest.interacts(me) : null;
+    for (const d of doors) if ((d.floor || 0) === me.floor && Math.hypot(d.x - me.x, d.z - me.z) < 2.2) { nearDoor = d; break; }
+    if (!nearDoor && me.floor === 0 && !inB) for (const s of out.spots) { const [sx, sz] = out.animalPos(s); if (Math.hypot(sx - me.x, sz - me.z) < s.r) { nearDoor = s; break; } }
+    if (out.hunt.on && (t * 3 | 0) !== drawHunt.k) { drawHunt.k = t * 3 | 0; drawHunt(); }
+    const qi = quest && me.floor === 0 ? quest.interacts(me) : null;
     if (qi) nearDoor = qi;
-    quest?.panel.classList.toggle("on", quest.inRoom(me));
+    quest?.panel.classList.toggle("on", me.floor === 0 && quest.inRoom(me));
     prompt.classList.toggle("on", !!nearDoor);
     if (qi) prompt.replaceChildren(h("b", qi.label), h("span", qi.sub));
-    else if (nearDoor) prompt.replaceChildren(h("b", nearDoor.label), h("span", nearDoor.topic?.ready ? "Натисни E або сюди — відкрити тему" : "🚧 3D-гра незабаром"));
+    else if (nearDoor) prompt.replaceChildren(h("b", nearDoor.label), h("span", nearDoor.sub || (nearDoor.topic ? (nearDoor.topic.ready ? "Натисни E або сюди — відкрити тему" : "🚧 3D-гра незабаром") : nearDoor.game ? `Натисни E — грати «${GAMES[nearDoor.game].title}» 🎮` : nearDoor.info ? "Натисни E — дізнатися цікаве" : "")));
 
     sendPresence();
     renderer.render(scene, cam);
@@ -284,8 +383,8 @@ function applyAction(o, dt) {
   const ud = o.model.userData, k = o.actionT;
   if (o.action === "wave") ud.arms[1].rotation.z = -2.6 + Math.sin(k * 12) * 0.4;
   if (o.action === "dance") { o.model.rotation.y += Math.sin(k * 8) * 0.3; ud.arms[0].rotation.z = Math.sin(k * 10) * 1.5; ud.arms[1].rotation.z = -Math.sin(k * 10) * 1.5; }
-  if (o.action === "jump") o.model.position.y = Math.max(0, Math.sin(k * 6) * 1.2);
-  if (k > 2) { o.action = null; ud.arms.forEach((a) => (a.rotation.z = 0)); o.model.position.y = 0; }
+  if (o.action === "jump") o.model.position.y = (o.base || 0) + Math.max(0, Math.sin(k * 6) * 1.2);
+  if (k > 2) { o.action = null; ud.arms.forEach((a) => (a.rotation.z = 0)); o.model.position.y = o.base || 0; }
 }
 // Поза в польоті: мітла під персонажем, крила махають, плащ розвівається
 function flyPose(model, on, t, sleigh = false) {
@@ -347,108 +446,134 @@ function wrapWords(s, n = 18) {
 }
 
 // ---------- Будівля ----------
+// Повертає { groups, inside(x, z, floor) } ; walls: [x0, x1, z0, z1, floor, top]
 function buildSchool(scene, walls, doors, hw = false) {
   const M = (c, o = {}) => new THREE.MeshLambertMaterial({ color: c, ...o });
-  const wallM = M("#fbf9f4"), trimM = M("#99cc00"), floorM = M("#e9e3d6"), hallFloor = M("#f3efe6");
-  const H = 4.2, T = 0.4;
-  const addBox = (w, hh, d, x, y, z, m, solid = true) => {
-    const b = new THREE.Mesh(new THREE.BoxGeometry(w, hh, d), m); b.position.set(x, y, z); scene.add(b);
-    if (solid) walls.push([x - w / 2, x + w / 2, z - d / 2, z + d / 2]);
-    return b;
-  };
-
-  // Підлога: шахова плитка в холі
+  const wallM = M("#fbf9f4"), trimM = M("#99cc00"), floorM = M("#e9e3d6"), outerM = M("#f1e6d2");
+  const H = 4.2, T = 0.4, S = 14, G = 3;
   const tileTex = (() => {
     const c = document.createElement("canvas"); c.width = c.height = 64; const g = c.getContext("2d");
     g.fillStyle = "#f6f2ea"; g.fillRect(0, 0, 64, 64); g.fillStyle = "#e3ead0"; g.fillRect(0, 0, 32, 32); g.fillRect(32, 32, 32, 32);
     const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(14, 14); t.colorSpace = THREE.SRGBColorSpace; t.magFilter = THREE.NearestFilter; return t;
   })();
-  const hall = new THREE.Mesh(new THREE.PlaneGeometry(28, 28), new THREE.MeshLambertMaterial({ map: tileTex }));
-  hall.rotation.x = -Math.PI / 2; scene.add(hall);
-
-  // Хол 28×28 з чотирма проходами (ширина 6) у коридори
-  const S = 14, G = 3; // половина холу, половина проходу
-  for (const [sx, sz, horiz] of [[0, -S, true], [0, S, true], [-S, 0, false], [S, 0, false]]) {
-    // дві частини стіни обабіч проходу
-    const len = S - G;
-    if (horiz) { addBox(len, H, T, -G - len / 2, H / 2, sz, wallM); addBox(len, H, T, G + len / 2, H / 2, sz, wallM); addBox(len, 0.3, T + 0.05, -G - len / 2, 0.15, sz, trimM, false); addBox(len, 0.3, T + 0.05, G + len / 2, 0.15, sz, trimM, false); }
-    else { addBox(T, H, len, sx, H / 2, -G - len / 2, wallM); addBox(T, H, len, sx, H / 2, G + len / 2, wallM); addBox(T + 0.05, 0.3, len, sx, 0.15, -G - len / 2, trimM, false); addBox(T + 0.05, 0.3, len, sx, 0.15, G + len / 2, trimM, false); }
-  }
-
-  // Центр холу: великі літери Ї і Ґ та клумби
-  const letter = (ch, x, z, color) => {
-    const c = document.createElement("canvas"); c.width = c.height = 256; const g = c.getContext("2d");
-    g.fillStyle = color; g.font = "900 220px Unbounded, Manrope, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(ch, 128, 140);
-    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
-    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t })); s.scale.set(3, 3, 1); s.position.set(x, 2.4, z); scene.add(s);
-    addBox(2.2, 0.8, 2.2, x, 0.4, z, M("#e5e0ee"));
-  };
-  letter("Ї", -4, -3, "#9d6bdb"); letter("Ґ", 4, -3, "#99cc00");
-  for (const [x, z] of [[-11, -11], [11, -11], [-11, 11], [11, 11]]) {
-    addBox(1.6, 0.6, 1.6, x, 0.3, z, M("#c9a36b"));
-    const tree = new THREE.Mesh(new THREE.SphereGeometry(1.1, 10, 8), M(hw ? "#d9822b" : "#7fb83a")); tree.position.set(x, 1.7, z); scene.add(tree);
-  }
-  // Вивіска з логотипом над входом (південна стіна позаду старту)
-  const sign = new THREE.Mesh(new THREE.PlaneGeometry(6, 1.7), new THREE.MeshBasicMaterial({ map: textCanvas("Дослівно", { w: 620, hgt: 176, font: "800 76px Unbounded, Manrope, sans-serif" }) }));
-  sign.position.set(-8.5, 2.8, S - 0.25); sign.rotation.y = Math.PI; scene.add(sign);
-  const welcome = new THREE.Mesh(new THREE.PlaneGeometry(7, 1.7), new THREE.MeshBasicMaterial({ map: textCanvas(["Школа української мови", "5 клас"], { w: 700, hgt: 170, font: "bold 50px Manrope, sans-serif" }) }));
-  welcome.position.set(8.5, 2.8, S - 0.25); welcome.rotation.y = Math.PI; scene.add(welcome);
-
-  // Коридори: [напрям, розділи]
-  const wings = [
-    { dir: [0, -1], label: "Лексикологія · Фразеологія", topics: TOPICS.filter((t) => t.s === "s2" || t.s === "s3") },
-    { dir: [1, 0], label: "Фонетика · Орфографія · Будова слова", topics: TOPICS.filter((t) => t.s === "s4" || t.s === "s5" || t.s === "s8") },
-    { dir: [-1, 0], label: "Синтаксис і пунктуація", topics: TOPICS.filter((t) => t.s === "s6") },
-    { dir: [0, 1], label: "Мова · Розвиток мовлення", topics: TOPICS.filter((t) => t.s === "s1" || t.s === "s7"), extra: ["Бібліотека", "Спортзал", "Їдальня", "Актова зала"] },
-  ];
+  const groups = [], rects = [[], [], []], lod = []; // відбитки поверхів (для «всередині»)
   const doorColors = { s1: "#f7c915", s2: "#99cc00", s3: "#9d6bdb", s4: "#f7c915", s5: "#99cc00", s6: "#9d6bdb", s7: "#f7c915", s8: "#f08fc0" };
+  const TOP = FH * 3 + 0.5; // висота всієї будівлі: зовнішні стіни першого поверху не перелетиш нижче даху
 
-  for (const w of wings) {
-    const items = [...w.topics.map((t) => ({ label: shortTitle(t), topic: t, color: doorColors[t.s] })), ...(w.extra || []).map((l) => ({ label: l, color: "#c9a36b" }))];
-    const perSide = Math.ceil(items.length / 2);
-    const step = 5;
-    const L = perSide * step + 6; // довжина коридору
-    const [dx, dz] = w.dir;
-    // Локальні координати: u — уздовж коридору (від холу), v — поперек
-    const toW = (u, v) => (dx !== 0 ? [dx * (S + u), v * dx] : [-v * dz, dz * (S + u)]);
-    const cw = 2 * G; // ширина = ширина проходу
-    // Підлога
-    const fl = new THREE.Mesh(new THREE.PlaneGeometry(dx ? L : cw, dx ? cw : L), floorM);
-    const [fx, fz] = toW(L / 2, 0); fl.position.set(fx, 0.01, fz); fl.rotation.x = -Math.PI / 2; scene.add(fl);
-    // Бічні стіни й торцева
-    for (const side of [-1, 1]) {
-      const [x, z] = toW(L / 2, side * (G + T / 2));
-      addBox(dx ? L : T, H, dx ? T : L, x, H / 2, z, wallM);
-      addBox(dx ? L : T + 0.05, 0.3, dx ? T + 0.05 : L, x, 0.15, z, trimM, false);
+  FLOORS.forEach((F, f) => {
+    const grp = new THREE.Group(); grp.position.y = f * FH; scene.add(grp); groups.push(grp);
+    const addBox = (w, hh, d, x, y, z, m, solid = true) => {
+      const b = new THREE.Mesh(new THREE.BoxGeometry(w, hh, d), m); b.position.set(x, y, z); grp.add(b);
+      if (solid) walls.push([x - w / 2, x + w / 2, z - d / 2, z + d / 2, f, f === 0 ? TOP : Infinity]);
+      return b;
+    };
+    const hall = new THREE.Mesh(new THREE.PlaneGeometry(28.8, 28.8), new THREE.MeshLambertMaterial({ map: tileTex }));
+    hall.rotation.x = -Math.PI / 2; hall.position.y = 0.005; grp.add(hall);
+    rects[f].push([-S, S, -S, S]);
+    // Стіни холу: прохід є лише туди, де на цьому поверсі є крило
+    for (const [k, sx, sz, horiz] of [["N", 0, -S, true], ["S", 0, S, true], ["W", -S, 0, false], ["E", S, 0, false]]) {
+      const len = S - G, open = !!F[k];
+      if (horiz) {
+        if (open) { addBox(len, H, T, -G - len / 2, H / 2, sz, wallM); addBox(len, H, T, G + len / 2, H / 2, sz, wallM); }
+        else addBox(2 * S, H, T, 0, H / 2, sz, wallM);
+        addBox(2 * S, 0.3, T + 0.05, 0, 0.15, sz, trimM, false);
+      } else {
+        if (open) { addBox(T, H, len, sx, H / 2, -G - len / 2, wallM); addBox(T, H, len, sx, H / 2, G + len / 2, wallM); }
+        else addBox(T, H, 2 * S, sx, H / 2, 0, wallM);
+        addBox(T + 0.05, 0.3, 2 * S, sx, 0.15, 0, trimM, false);
+      }
     }
-    const [ex, ez] = toW(L + T / 2, 0); addBox(dx ? T : cw + 2 * T, H, dx ? cw + 2 * T : T, ex, H / 2, ez, wallM);
-    // Табличка над входом у коридор
-    const sign = new THREE.Mesh(new THREE.PlaneGeometry(5.6, 1), new THREE.MeshBasicMaterial({ map: textCanvas(w.label, { w: 900, hgt: 160, font: "bold 64px Manrope, sans-serif", bg: "#1e1b26", fg: "#ffffff" }) }));
-    const [sx, sz] = toW(-0.3, 0); sign.position.set(sx, 3.5, sz); sign.lookAt(0, 3.5, 0); scene.add(sign);
-    // Лампи
-    for (let u = 4; u < L; u += 8) { const [lx, lz] = toW(u, 0); const lamp = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.12, 1.2), new THREE.MeshBasicMaterial({ color: hw ? "#ffb347" : "#fff6c9" })); lamp.position.set(lx, H - 0.1, lz); scene.add(lamp); }
+    // Сходи в кутку холу
+    const stM = M("#c9a36b"), railM = M("#9d6bdb");
+    for (let k = 0; k < 6; k++) addBox(3.4, 0.35 * (k + 1), 0.6, STAIRS.x, 0.175 * (k + 1), STAIRS.z + 1.5 - k * 0.6, stM, false);
+    walls.push([STAIRS.x - 1.8, STAIRS.x + 1.8, STAIRS.z - 1.8, STAIRS.z + 1.8, f, Infinity]);
+    addBox(0.12, 1, 3.6, STAIRS.x - 1.75, 1.6, STAIRS.z, railM, false); addBox(0.12, 1, 3.6, STAIRS.x + 1.75, 1.6, STAIRS.z, railM, false);
+    const stSign = new THREE.Mesh(new THREE.PlaneGeometry(3, 0.8), new THREE.MeshBasicMaterial({ map: textCanvas(`🪜 ${f + 1} поверх`, { w: 480, hgt: 128, font: "bold 54px Manrope, sans-serif", border: "#9d6bdb" }) }));
+    stSign.position.set(STAIRS.x, 3.4, STAIRS.z + 1.9); grp.add(stSign);
+    doors.push({ x: STAIRS.land.x, z: STAIRS.land.z, floor: f, label: `🪜 Сходи · ти на ${f + 1} поверсі`, sub: "Натисни E або сюди — обрати поверх", stairs: true });
 
-    // Двері
-    items.forEach((it, i) => {
-      const side = i % 2 ? 1 : -1;
-      const u = 4 + Math.floor(i / 2) * step;
-      const [x, z] = toW(u, side * (G - 0.02));
-      const door = new THREE.Group();
-      const frame = new THREE.Mesh(new THREE.BoxGeometry(2, 3, 0.12), M("#2a2733"));
-      const leaf = new THREE.Mesh(new THREE.BoxGeometry(1.7, 2.8, 0.14), M(it.color));
-      const knob = new THREE.Mesh(new THREE.SphereGeometry(0.08), M("#f4f1f9"));
-      frame.position.y = 1.5; leaf.position.set(0, 1.42, 0.02); knob.position.set(0.6, 1.4, 0.12);
-      const plate = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 0.9), new THREE.MeshBasicMaterial({ map: textCanvas(wrapWords(it.label), { w: 640, hgt: 240, font: "bold 46px Manrope, sans-serif", border: it.color }) }));
-      plate.position.set(0, 3.55, 0.08);
-      door.add(frame, leaf, knob, plate);
-      door.position.set(x, 0, z);
-      // повертаємо двері лицем до коридору
-      const [cx, cz] = toW(u, 0);
-      door.lookAt(cx, 0, cz);
-      scene.add(door);
-      doors.push({ x: x + (cx - x) * 0.35, z: z + (cz - z) * 0.35, label: it.label, topic: it.topic });
-    });
-  }
+    // Прикраси холу
+    if (f === 0) {
+      const letter = (ch, x, z, color) => {
+        const c = document.createElement("canvas"); c.width = c.height = 256; const g = c.getContext("2d");
+        g.fillStyle = color; g.font = "900 220px Unbounded, Manrope, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(ch, 128, 140);
+        const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+        const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t })); s.scale.set(3, 3, 1); s.position.set(x, 2.4, z); grp.add(s);
+        addBox(2.2, 0.8, 2.2, x, 0.4, z, M("#e5e0ee"));
+      };
+      letter("Ї", -4, -3, "#9d6bdb"); letter("Ґ", 4, -3, "#99cc00");
+      const sign = new THREE.Mesh(new THREE.PlaneGeometry(6, 1.7), new THREE.MeshBasicMaterial({ map: textCanvas("Дослівно", { w: 620, hgt: 176, font: "800 76px Unbounded, Manrope, sans-serif" }) }));
+      sign.position.set(-8.5, 2.8, S - 0.25); sign.rotation.y = Math.PI; grp.add(sign);
+      const welcome = new THREE.Mesh(new THREE.PlaneGeometry(7, 1.7), new THREE.MeshBasicMaterial({ map: textCanvas(["Школа української мови", "5 клас"], { w: 700, hgt: 170, font: "bold 50px Manrope, sans-serif" }) }));
+      welcome.position.set(8.5, 2.8, S - 0.25); welcome.rotation.y = Math.PI; grp.add(welcome);
+    } else {
+      const big = new THREE.Sprite(new THREE.SpriteMaterial({ map: textCanvas(`${f + 1} поверх`, { w: 512, hgt: 150, font: "800 70px Unbounded, Manrope, sans-serif", border: f === 1 ? "#f7c915" : "#f08fc0" }) }));
+      big.scale.set(5, 1.45, 1); big.position.set(0, 2.6, -3); grp.add(big);
+      addBox(4, 0.5, 1.2, 0, 0.25, 4, M("#c3a6ef")); // лава
+    }
+    for (const [x, z] of [[-11, 11], [11, -11], [11, 11]]) {
+      addBox(1.6, 0.6, 1.6, x, 0.3, z, M("#c9a36b"));
+      const tree = new THREE.Mesh(new THREE.SphereGeometry(1.1, 10, 8), M(hw ? "#d9822b" : "#7fb83a")); tree.position.set(x, 1.7, z); grp.add(tree);
+    }
+
+    // Крила
+    for (const [k, dx, dz] of [["N", 0, -1], ["E", 1, 0], ["W", -1, 0], ["S", 0, 1]]) {
+      const w = F[k]; if (!w) continue;
+      const items = [...TOPICS.filter((t) => w.sec?.includes(t.s)).map((t) => ({ label: shortTitle(t), topic: t, color: doorColors[t.s] })),
+        ...(w.extra || []).map(([label, kind, id]) => ({ label, color: kind === "game" ? "#58b4f0" : "#c9a36b", [kind]: id }))];
+      const perSide = Math.ceil(items.length / 2), step = 5, L = perSide * step + 6;
+      const toW = (u, v) => (dx !== 0 ? [dx * (S + u), v * dx] : [-v * dz, dz * (S + u)]);
+      const cw = 2 * G;
+      const fl = new THREE.Mesh(new THREE.PlaneGeometry(dx ? L : cw + 2 * T, dx ? cw + 2 * T : L), floorM);
+      const [fx, fz] = toW(L / 2, 0); fl.position.set(fx, 0.01, fz); fl.rotation.x = -Math.PI / 2; grp.add(fl);
+      { const [x0, z0] = toW(0, -G - T), [x1, z1] = toW(L + T, G + T); rects[f].push([Math.min(x0, x1), Math.max(x0, x1), Math.min(z0, z1), Math.max(z0, z1)]); }
+      for (const side of [-1, 1]) {
+        const [x, z] = toW(L / 2, side * (G + T / 2));
+        addBox(dx ? L : T, H, dx ? T : L, x, H / 2, z, f === 0 ? wallM : wallM);
+        addBox(dx ? L : T + 0.05, 0.3, dx ? T + 0.05 : L, x, 0.15, z, trimM, false);
+        // зовнішній бік — теплий колір фасаду
+        const [ox, oz] = toW(L / 2, side * (G + T + 0.03));
+        const face = new THREE.Mesh(new THREE.PlaneGeometry(L, H), outerM);
+        face.position.set(ox, H / 2, oz); face.lookAt(ox + (dx ? 0 : side * -dz * 10), H / 2, oz + (dx ? side * dx * 10 : 0)); grp.add(face);
+      }
+      if (w.exit) {
+        // головний вхід: проріз у торці + вивіска
+        const [ex, ez] = toW(L + T / 2, 0);
+        addBox(dx ? T : 1.4, H, dx ? 1.4 : T, ex - (dx ? 0 : G - 0.3), H / 2, ez, wallM);
+        addBox(dx ? T : 1.4, H, dx ? 1.4 : T, ex + (dx ? 0 : G - 0.3), H / 2, ez, wallM);
+        addBox(dx ? T : cw + 2 * T, 1, dx ? cw + 2 * T : T, ex, H - 0.5, ez, wallM, false);
+        const out = new THREE.Mesh(new THREE.PlaneGeometry(4.6, 0.9), new THREE.MeshBasicMaterial({ map: textCanvas("🌳 Вихід надвір", { w: 600, hgt: 120, font: "bold 52px Manrope, sans-serif", border: "#2f9e44" }) }));
+        out.position.set(ex, H - 0.5, ez - dz * 0.3); out.lookAt(ex, H - 0.5, ez - dz * 5); grp.add(out);
+        const out2 = out.clone(); out2.position.set(ex, H - 0.5, ez + dz * 0.3); out2.lookAt(ex, H - 0.5, ez + dz * 5);
+        out2.material = new THREE.MeshBasicMaterial({ map: textCanvas("🏫 Школа «Дослівно»", { w: 600, hgt: 120, font: "bold 50px Manrope, sans-serif" }) }); grp.add(out2);
+      } else { const [ex, ez] = toW(L + T / 2, 0); addBox(dx ? T : cw + 2 * T, H, dx ? cw + 2 * T : T, ex, H / 2, ez, wallM); }
+      const sign = new THREE.Mesh(new THREE.PlaneGeometry(5.6, 1), new THREE.MeshBasicMaterial({ map: textCanvas(w.label, { w: 900, hgt: 160, font: "bold 64px Manrope, sans-serif", bg: "#1e1b26", fg: "#ffffff" }) }));
+      const [sx, sz] = toW(-0.3, 0); sign.position.set(sx, 3.5, sz); sign.lookAt(0, 3.5, 0); grp.add(sign);
+      for (let u = 4; u < L; u += 8) { const [lx, lz] = toW(u, 0); const lamp = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.12, 1.2), new THREE.MeshBasicMaterial({ color: hw ? "#ffb347" : "#fff6c9" })); lamp.position.set(lx, H - 0.1, lz); grp.add(lamp); }
+      items.forEach((it, i) => {
+        const side = i % 2 ? 1 : -1;
+        const u = 4 + Math.floor(i / 2) * step;
+        const [x, z] = toW(u, side * (G - 0.02));
+        const door = new THREE.Group();
+        const frame = new THREE.Mesh(new THREE.BoxGeometry(2, 3, 0.12), M("#2a2733"));
+        const leaf = new THREE.Mesh(new THREE.BoxGeometry(1.7, 2.8, 0.14), M(it.color));
+        const knob = new THREE.Mesh(new THREE.SphereGeometry(0.08), M("#f4f1f9"));
+        frame.position.y = 1.5; leaf.position.set(0, 1.42, 0.02); knob.position.set(0.6, 1.4, 0.12);
+        const plate = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 0.9), new THREE.MeshBasicMaterial({ map: textCanvas(wrapWords(it.label), { w: 640, hgt: 240, font: "bold 46px Manrope, sans-serif", border: it.color }) }));
+        plate.position.set(0, 3.55, 0.08);
+        door.add(frame, leaf, knob, plate); lod.push({ o: plate, d: 32 });
+        if (it.game) { const st = new THREE.Sprite(new THREE.SpriteMaterial({ map: textCanvas("🎮", { w: 128, hgt: 128, font: "80px sans-serif", radius: 64, border: "#58b4f0" }) })); st.scale.set(0.7, 0.7, 1); st.position.set(0, 2.2, 0.4); door.add(st); lod.push({ o: st, d: 32 }); }
+        door.position.set(x, 0, z);
+        const [cx, cz] = toW(u, 0);
+        door.lookAt(cx, 0, cz);
+        grp.add(door);
+        doors.push({ x: x + (cx - x) * 0.35, z: z + (cz - z) * 0.35, floor: f, label: it.label, topic: it.topic, game: it.game, info: it.info });
+      });
+    }
+    mergeStatic(grp);
+  });
+  const inside = (x, z, f = 0) => rects[f].some(([a, b, c, d]) => x > a && x < b && z > c && z < d);
+  return { groups, inside, lod, exit: { x: 0, z: 14 + 21 + 1 } };
 }
 
 // ---------- 🎃 Геловін: гарбузи, кажани, привиди, павутина, гірлянди, місяць ----------
