@@ -4,14 +4,14 @@
 export const BOOK = "А. Онатій, Т. Ткачук. Українська мова: підручник для 5 класу (2022)";
 
 export const SECTIONS = [
-  { id: "s1", n: 1, title: "Українська мова в житті українців", color: "#f7c915" },
-  { id: "s2", n: 2, title: "Лексикологія", color: "#99cc00" },
-  { id: "s3", n: 3, title: "Фразеологія", color: "#9d6bdb" },
-  { id: "s4", n: 4, title: "Фонетика. Графіка. Орфоепія", color: "#f7c915" },
-  { id: "s5", n: 5, title: "Орфографія", color: "#99cc00" },
-  { id: "s8", n: 6, title: "Будова слова. Орфографія", color: "#f08fc0" },
-  { id: "s6", n: 7, title: "Синтаксис і пунктуація", color: "#9d6bdb" },
-  { id: "s7", n: 8, title: "Розвиток мовлення", color: "#f7c915" },
+  { id: "s1", n: 1, title: "Українська мова в житті українців", color: "#ffd43b" },
+  { id: "s2", n: 2, title: "Лексикологія", color: "#94aef3" },
+  { id: "s3", n: 3, title: "Фразеологія", color: "#2440c2" },
+  { id: "s4", n: 4, title: "Фонетика. Графіка. Орфоепія", color: "#ffd43b" },
+  { id: "s5", n: 5, title: "Орфографія", color: "#94aef3" },
+  { id: "s8", n: 6, title: "Будова слова. Орфографія", color: "#e46f8f" },
+  { id: "s6", n: 7, title: "Синтаксис і пунктуація", color: "#2440c2" },
+  { id: "s7", n: 8, title: "Розвиток мовлення", color: "#ffd43b" },
 ];
 
 export const TOPICS = [

@@ -6,9 +6,9 @@ const gap = (id, word, answer, rule, explain, options = ["ь", "—"]) => ({ id,
 const fish = (x, y, letter, word, col) => `
   <g transform="translate(${x} ${y})">
     <path d="M-34 0 Q-10 -26 26 0 Q-10 26 -34 0 Z" fill="${col}"/><path d="M24 0 L44 -16 L44 16 Z" fill="${col}"/>
-    <circle cx="-22" cy="-5" r="3.2" fill="#1e1b26"/>
-    <text x="0" y="8" text-anchor="middle" ${D} font-size="20" font-weight="800" fill="#1e1b26">${letter}</text>
-    <text x="4" y="40" text-anchor="middle" ${F} font-size="13" font-weight="700" fill="#1e1b26">${word}</text>
+    <circle cx="-22" cy="-5" r="3.2" fill="#23262d"/>
+    <text x="0" y="8" text-anchor="middle" ${D} font-size="20" font-weight="800" fill="#23262d">${letter}</text>
+    <text x="4" y="40" text-anchor="middle" ${F} font-size="13" font-weight="700" fill="#23262d">${word}</text>
   </g>`;
 
 export default {
@@ -29,10 +29,10 @@ export default {
         <details class="self"><summary>ь чи ні: тін.., лікар.., піс..ня, біл..ший?</summary><p><b>тінь</b>, <b>лікар</b>, <b>пісня</b>, <b>більший</b>.</p></details>`,
       figure: `<svg viewBox="0 0 400 260" role="img" aria-label="Сім рибок: Д Т З С Ц Л Н — Де Ти З’їСи Ці ЛиНи">
         <rect x="0" y="0" width="400" height="260" rx="18" fill="#eaf6ff"/>
-        <text x="200" y="34" text-anchor="middle" ${D} font-size="17" font-weight="800" fill="#1e1b26">«Де Ти З’їСи Ці ЛиНи?»</text>
-        ${fish(60, 80, "Д", "мідь", "#99cc00")}${fish(160, 80, "Т", "суть", "#f7c915")}${fish(260, 80, "З", "мазь", "#9d6bdb")}${fish(350, 80, "С", "вісь", "#99cc00")}
-        ${fish(100, 160, "Ц", "міць", "#f7c915")}${fish(200, 160, "Л", "біль", "#9d6bdb")}${fish(300, 160, "Н", "лінь", "#99cc00")}
-        <text x="200" y="235" text-anchor="middle" ${F} font-size="15" font-weight="700" fill="#c13f2c">Р у сітку не потрапляє: лікар, Харків</text>
+        <text x="200" y="34" text-anchor="middle" ${D} font-size="17" font-weight="800" fill="#23262d">«Де Ти З’їСи Ці ЛиНи?»</text>
+        ${fish(60, 80, "Д", "мідь", "#94aef3")}${fish(160, 80, "Т", "суть", "#ffd43b")}${fish(260, 80, "З", "мазь", "#2440c2")}${fish(350, 80, "С", "вісь", "#94aef3")}
+        ${fish(100, 160, "Ц", "міць", "#ffd43b")}${fish(200, 160, "Л", "біль", "#2440c2")}${fish(300, 160, "Н", "лінь", "#94aef3")}
+        <text x="200" y="235" text-anchor="middle" ${F} font-size="15" font-weight="700" fill="#d9342b">Р у сітку не потрапляє: лікар, Харків</text>
       </svg>`,
     },
     {
@@ -48,19 +48,19 @@ export default {
         <div class="mnemo"><span class="big">Винятки в одному реченні</span>«<b>Боязкий</b> кіт на <b>ковзкій</b>, <b>в’язкій</b>, <b>плаській</b> калюжі зробив <b>різкий</b> стрибок». Тут м’якого знака немає — усе інше з -ськ-, -зьк-, -цьк- пишемо з ь.</div>
         <details class="self"><summary>утвори прикметник: Умань, Ізмаїл, козак</summary><p><b>уманський</b> (н + ськ), <b>ізмаїльський</b> (л + ськ = льськ), <b>козацький</b>.</p></details>`,
       figure: `<svg viewBox="0 0 400 250" role="img" aria-label="Суфікс ськ з м’яким знаком і п’ять винятків">
-        <rect x="0" y="0" width="400" height="250" rx="18" fill="#f3fae0"/>
-        <rect x="20" y="22" width="170" height="90" rx="16" fill="#fff" stroke="#99cc00" stroke-width="3"/>
-        <text x="105" y="62" text-anchor="middle" ${D} font-size="24" font-weight="800">-сь<tspan fill="#9d6bdb">к</tspan>-</text>
-        <text x="105" y="92" text-anchor="middle" ${F} font-size="14" font-weight="700" fill="#3f7a16">-зьк- · -цьк- · завжди з ь</text>
-        <rect x="205" y="22" width="175" height="90" rx="16" fill="#fff" stroke="#c13f2c" stroke-width="3" stroke-dasharray="7 5"/>
-        <text x="292" y="46" text-anchor="middle" ${F} font-size="13" font-weight="800" fill="#c13f2c">5 ВИНЯТКІВ без ь</text>
+        <rect x="0" y="0" width="400" height="250" rx="18" fill="#eef2fd"/>
+        <rect x="20" y="22" width="170" height="90" rx="16" fill="#fff" stroke="#94aef3" stroke-width="3"/>
+        <text x="105" y="62" text-anchor="middle" ${D} font-size="24" font-weight="800">-сь<tspan fill="#2440c2">к</tspan>-</text>
+        <text x="105" y="92" text-anchor="middle" ${F} font-size="14" font-weight="700" fill="#2a8c4a">-зьк- · -цьк- · завжди з ь</text>
+        <rect x="205" y="22" width="175" height="90" rx="16" fill="#fff" stroke="#d9342b" stroke-width="3" stroke-dasharray="7 5"/>
+        <text x="292" y="46" text-anchor="middle" ${F} font-size="13" font-weight="800" fill="#d9342b">5 ВИНЯТКІВ без ь</text>
         <text x="292" y="68" text-anchor="middle" ${F} font-size="14" font-weight="700">боязкий · в’язкий</text>
         <text x="292" y="88" text-anchor="middle" ${F} font-size="14" font-weight="700">ковзкий · різкий</text>
         <text x="292" y="106" text-anchor="middle" ${F} font-size="14" font-weight="700">плаский</text>
         <rect x="20" y="130" width="360" height="100" rx="16" fill="#fff"/>
-        <text x="200" y="160" text-anchor="middle" ${F} font-size="16" font-weight="800">Мелітопо<tspan fill="#9d6bdb">ль</tspan> → мелітопо<tspan fill="#3f7a16">льськ</tspan>ий</text>
-        <text x="200" y="186" text-anchor="middle" ${F} font-size="16" font-weight="800">Ізмаї<tspan fill="#9d6bdb">л</tspan> → ізмаї<tspan fill="#3f7a16">льськ</tspan>ий</text>
-        <text x="200" y="212" text-anchor="middle" ${F} font-size="16" font-weight="800">Ума<tspan fill="#9d6bdb">нь</tspan> → ума<tspan fill="#c13f2c">нськ</tspan>ий (без ь!)</text>
+        <text x="200" y="160" text-anchor="middle" ${F} font-size="16" font-weight="800">Мелітопо<tspan fill="#2440c2">ль</tspan> → мелітопо<tspan fill="#2a8c4a">льськ</tspan>ий</text>
+        <text x="200" y="186" text-anchor="middle" ${F} font-size="16" font-weight="800">Ізмаї<tspan fill="#2440c2">л</tspan> → ізмаї<tspan fill="#2a8c4a">льськ</tspan>ий</text>
+        <text x="200" y="212" text-anchor="middle" ${F} font-size="16" font-weight="800">Ума<tspan fill="#2440c2">нь</tspan> → ума<tspan fill="#d9342b">нськ</tspan>ий (без ь!)</text>
       </svg>`,
     },
     {
@@ -75,12 +75,12 @@ export default {
         <details class="self"><summary>промін..чик, тон..ший?</summary><p><b>промінчик</b>, <b>тонший</b> — без ь.</p></details>`,
       figure: `<svg viewBox="0 0 400 240" role="img" aria-label="Пончик: н перед ч, ш без м’якого знака">
         <rect x="0" y="0" width="400" height="240" rx="18" fill="#fff8ea"/>
-        <circle cx="130" cy="120" r="88" fill="#e3a65a"/><circle cx="130" cy="120" r="78" fill="#f08fc0"/>
+        <circle cx="130" cy="120" r="88" fill="#e3a65a"/><circle cx="130" cy="120" r="78" fill="#e46f8f"/>
         <circle cx="130" cy="120" r="30" fill="#fff8ea"/>
-        ${[[80, 70, "#99cc00"], [175, 75, "#f7c915"], [95, 175, "#9d6bdb"], [180, 160, "#fff"], [60, 125, "#fff"], [150, 60, "#9d6bdb"]].map(([x, y, c]) => `<rect x="${x}" y="${y}" width="16" height="6" rx="3" fill="${c}" transform="rotate(${x % 50} ${x} ${y})"/>`).join("")}
-        <text x="130" y="129" text-anchor="middle" ${D} font-size="22" font-weight="800" fill="#1e1b26">н</text>
-        <text x="300" y="70" text-anchor="middle" ${D} font-size="40" font-weight="800" fill="#1e1b26">ч ш</text>
-        <text x="300" y="112" text-anchor="middle" ${D} font-size="40" font-weight="800" fill="#c13f2c">✗ь</text>
+        ${[[80, 70, "#94aef3"], [175, 75, "#ffd43b"], [95, 175, "#2440c2"], [180, 160, "#fff"], [60, 125, "#fff"], [150, 60, "#2440c2"]].map(([x, y, c]) => `<rect x="${x}" y="${y}" width="16" height="6" rx="3" fill="${c}" transform="rotate(${x % 50} ${x} ${y})"/>`).join("")}
+        <text x="130" y="129" text-anchor="middle" ${D} font-size="22" font-weight="800" fill="#23262d">н</text>
+        <text x="300" y="70" text-anchor="middle" ${D} font-size="40" font-weight="800" fill="#23262d">ч ш</text>
+        <text x="300" y="112" text-anchor="middle" ${D} font-size="40" font-weight="800" fill="#d9342b">✗ь</text>
         <text x="300" y="155" text-anchor="middle" ${F} font-size="16" font-weight="800">пончик</text>
         <text x="300" y="180" text-anchor="middle" ${F} font-size="15" font-weight="700">інший · менший</text>
         <text x="300" y="203" text-anchor="middle" ${F} font-size="15" font-weight="700">камінчик</text>
@@ -97,13 +97,13 @@ export default {
         <div class="trap">Правильно віднови називний! <b>долоньці</b> — від <i>долонька</i>, а не від <i>долоня</i>; <b>доньці</b> — від <i>донька</i>.</div>
         <details class="self"><summary>ь чи ні: хатин..ці, скрин..ці, нян..ці?</summary><p><b>хатинці</b> (хатинка), <b>скриньці</b> (скринька), <b>няньці</b> (нянька).</p></details>`,
       figure: `<svg viewBox="0 0 400 220" role="img" aria-label="Таблиця: вишенька — вишеньці, стежинка — стежинці">
-        <rect x="0" y="0" width="400" height="220" rx="18" fill="#faf8fc" stroke="#e5e0ee" stroke-width="2"/>
-        <text x="110" y="38" text-anchor="middle" ${F} font-size="14" font-weight="800" fill="#5d5868">хто? що?</text>
-        <text x="300" y="38" text-anchor="middle" ${F} font-size="14" font-weight="800" fill="#5d5868">кому? чому?</text>
+        <rect x="0" y="0" width="400" height="220" rx="18" fill="#f7f9fd" stroke="#d6deeb" stroke-width="2"/>
+        <text x="110" y="38" text-anchor="middle" ${F} font-size="14" font-weight="800" fill="#5e6372">хто? що?</text>
+        <text x="300" y="38" text-anchor="middle" ${F} font-size="14" font-weight="800" fill="#5e6372">кому? чому?</text>
         ${[["вишен", "ька", "вишен", "ьці", 76, true], ["ляль", "ка", "ляль", "ці", 116, true], ["стежин", "ка", "стежин", "ці", 156, false], ["весел", "ка", "весел", "ці", 196, false]].map(([a, b, c, d, y, soft]) => `
-          <text x="110" y="${y}" text-anchor="middle" ${F} font-size="19" font-weight="800">${a}<tspan fill="${soft ? "#9d6bdb" : "#1e1b26"}">${b}</tspan></text>
-          <text x="205" y="${y}" text-anchor="middle" ${F} font-size="20" fill="#99cc00">→</text>
-          <text x="300" y="${y}" text-anchor="middle" ${F} font-size="19" font-weight="800">${c}<tspan fill="${soft ? "#9d6bdb" : "#1e1b26"}">${d}</tspan></text>`).join("")}
+          <text x="110" y="${y}" text-anchor="middle" ${F} font-size="19" font-weight="800">${a}<tspan fill="${soft ? "#2440c2" : "#23262d"}">${b}</tspan></text>
+          <text x="205" y="${y}" text-anchor="middle" ${F} font-size="20" fill="#94aef3">→</text>
+          <text x="300" y="${y}" text-anchor="middle" ${F} font-size="19" font-weight="800">${c}<tspan fill="${soft ? "#2440c2" : "#23262d"}">${d}</tspan></text>`).join("")}
       </svg>`,
     },
     {
@@ -118,11 +118,11 @@ export default {
         <details class="self"><summary>він вибереться — ти ви...?</summary><p><b>виберешся</b> — без ь.</p></details>`,
       figure: `<svg viewBox="0 0 400 200" role="img" aria-label="-ться з м’яким знаком, -шся без">
         <rect x="0" y="0" width="400" height="200" rx="18" fill="#fff"/>
-        <rect x="16" y="20" width="176" height="160" rx="16" fill="#f3fae0" stroke="#99cc00" stroke-width="3"/>
-        <text x="104" y="70" text-anchor="middle" ${D} font-size="30" font-weight="800">-т<tspan fill="#9d6bdb">ь</tspan>ся</text>
+        <rect x="16" y="20" width="176" height="160" rx="16" fill="#eef2fd" stroke="#94aef3" stroke-width="3"/>
+        <text x="104" y="70" text-anchor="middle" ${D} font-size="30" font-weight="800">-т<tspan fill="#2440c2">ь</tspan>ся</text>
         <text x="104" y="104" text-anchor="middle" ${F} font-size="15" font-weight="700">він (що робить?)</text>
         <text x="104" y="140" text-anchor="middle" ${F} font-size="18" font-weight="800">сміється</text>
-        <rect x="208" y="20" width="176" height="160" rx="16" fill="#fff6f3" stroke="#ff7a5e" stroke-width="3"/>
+        <rect x="208" y="20" width="176" height="160" rx="16" fill="#fff6f3" stroke="#f08a80" stroke-width="3"/>
         <text x="296" y="70" text-anchor="middle" ${D} font-size="30" font-weight="800">-шся</text>
         <text x="296" y="104" text-anchor="middle" ${F} font-size="15" font-weight="700">ти (що робиш?)</text>
         <text x="296" y="140" text-anchor="middle" ${F} font-size="18" font-weight="800">смієшся</text>
@@ -139,16 +139,16 @@ export default {
         <details class="self"><summary>ьо чи йо: с..годні, ра..н, міл..н?</summary><p><b>сьогодні</b>, <b>район</b>, <b>мільйон</b>.</p></details>`,
       say: ["сьогодні", "бадьорий", "район", "мільйон"],
       figure: `<svg viewBox="0 0 400 220" role="img" aria-label="ьо після приголосного, йо після голосного або на початку">
-        <rect x="0" y="0" width="400" height="220" rx="18" fill="#f6f1fd"/>
+        <rect x="0" y="0" width="400" height="220" rx="18" fill="#e8edfb"/>
         <rect x="18" y="20" width="172" height="180" rx="16" fill="#fff"/>
-        <text x="104" y="62" text-anchor="middle" ${D} font-size="34" font-weight="800" fill="#9d6bdb">ьо</text>
-        <text x="104" y="92" text-anchor="middle" ${F} font-size="14" font-weight="700" fill="#5d5868">після приголосного</text>
+        <text x="104" y="62" text-anchor="middle" ${D} font-size="34" font-weight="800" fill="#2440c2">ьо</text>
+        <text x="104" y="92" text-anchor="middle" ${F} font-size="14" font-weight="700" fill="#5e6372">після приголосного</text>
         <text x="104" y="126" text-anchor="middle" ${F} font-size="17" font-weight="800">сьогодні</text>
         <text x="104" y="152" text-anchor="middle" ${F} font-size="17" font-weight="800">бадьорий</text>
         <text x="104" y="178" text-anchor="middle" ${F} font-size="17" font-weight="800">льон</text>
         <rect x="210" y="20" width="172" height="180" rx="16" fill="#fff"/>
-        <text x="296" y="62" text-anchor="middle" ${D} font-size="34" font-weight="800" fill="#99cc00">йо</text>
-        <text x="296" y="92" text-anchor="middle" ${F} font-size="14" font-weight="700" fill="#5d5868">початок · голосний · ь</text>
+        <text x="296" y="62" text-anchor="middle" ${D} font-size="34" font-weight="800" fill="#94aef3">йо</text>
+        <text x="296" y="92" text-anchor="middle" ${F} font-size="14" font-weight="700" fill="#5e6372">початок · голосний · ь</text>
         <text x="296" y="126" text-anchor="middle" ${F} font-size="17" font-weight="800">його</text>
         <text x="296" y="152" text-anchor="middle" ${F} font-size="17" font-weight="800">район</text>
         <text x="296" y="178" text-anchor="middle" ${F} font-size="17" font-weight="800">мільйон</text>

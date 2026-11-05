@@ -22,27 +22,27 @@ export default {
         <details class="self"><summary>чому «пір’я», але «буря»?</summary><p>У <b>пір’я</b> чути окремий [й] — вимова роздільна. У <b>буря</b> [р΄] м’який, злитий з [а] — апостроф не потрібен.</p></details>`,
       say: ["бур’ян", "буряк", "пір’я", "буря"],
       figure: `<svg viewBox="0 0 400 230" role="img" aria-label="бур’ян — роздільна вимова, буряк — злита">
-        <rect x="10" y="10" width="185" height="210" rx="18" fill="#f3fae0" stroke="#99cc00" stroke-width="3"/>
-        <text x="102" y="52" text-anchor="middle" ${D} font-size="26" font-weight="800" fill="#1e1b26">бур’ян</text>
+        <rect x="10" y="10" width="185" height="210" rx="18" fill="#eef2fd" stroke="#94aef3" stroke-width="3"/>
+        <text x="102" y="52" text-anchor="middle" ${D} font-size="26" font-weight="800" fill="#23262d">бур’ян</text>
         <g ${F} font-weight="800" font-size="20" text-anchor="middle">
-          <circle cx="45" cy="105" r="22" fill="#fff" stroke="#1e1b26" stroke-width="2"/><text x="45" y="112">б</text>
-          <circle cx="80" cy="105" r="22" fill="#fff" stroke="#1e1b26" stroke-width="2"/><text x="80" y="112">у</text>
-          <circle cx="115" cy="105" r="22" fill="#fff" stroke="#1e1b26" stroke-width="2"/><text x="115" y="112">р</text>
-          <circle cx="160" cy="105" r="22" fill="#9d6bdb"/><text x="160" y="112" fill="#fff">й</text>
-          <circle cx="102" cy="160" r="22" fill="#fff" stroke="#1e1b26" stroke-width="2"/><text x="102" y="167">а</text>
-          <circle cx="140" cy="160" r="22" fill="#fff" stroke="#1e1b26" stroke-width="2"/><text x="140" y="167">н</text>
+          <circle cx="45" cy="105" r="22" fill="#fff" stroke="#23262d" stroke-width="2"/><text x="45" y="112">б</text>
+          <circle cx="80" cy="105" r="22" fill="#fff" stroke="#23262d" stroke-width="2"/><text x="80" y="112">у</text>
+          <circle cx="115" cy="105" r="22" fill="#fff" stroke="#23262d" stroke-width="2"/><text x="115" y="112">р</text>
+          <circle cx="160" cy="105" r="22" fill="#2440c2"/><text x="160" y="112" fill="#fff">й</text>
+          <circle cx="102" cy="160" r="22" fill="#fff" stroke="#23262d" stroke-width="2"/><text x="102" y="167">а</text>
+          <circle cx="140" cy="160" r="22" fill="#fff" stroke="#23262d" stroke-width="2"/><text x="140" y="167">н</text>
         </g>
-        <text x="137" y="88" ${D} font-size="30" fill="#9d6bdb">’</text>
-        <text x="102" y="208" text-anchor="middle" ${F} font-size="15" font-weight="700" fill="#3f7a16">чути [й] окремо → ’</text>
-        <rect x="205" y="10" width="185" height="210" rx="18" fill="#faf8fc" stroke="#e5e0ee" stroke-width="3"/>
-        <text x="297" y="52" text-anchor="middle" ${D} font-size="26" font-weight="800" fill="#1e1b26">буряк</text>
+        <text x="137" y="88" ${D} font-size="30" fill="#2440c2">’</text>
+        <text x="102" y="208" text-anchor="middle" ${F} font-size="15" font-weight="700" fill="#2a8c4a">чути [й] окремо → ’</text>
+        <rect x="205" y="10" width="185" height="210" rx="18" fill="#f7f9fd" stroke="#d6deeb" stroke-width="3"/>
+        <text x="297" y="52" text-anchor="middle" ${D} font-size="26" font-weight="800" fill="#23262d">буряк</text>
         <g ${F} font-weight="800" font-size="20" text-anchor="middle">
-          <circle cx="245" cy="105" r="22" fill="#fff" stroke="#1e1b26" stroke-width="2"/><text x="245" y="112">б</text>
-          <circle cx="280" cy="105" r="22" fill="#fff" stroke="#1e1b26" stroke-width="2"/><text x="280" y="112">у</text>
-          <rect x="300" y="83" width="80" height="44" rx="22" fill="#fff" stroke="#1e1b26" stroke-width="2"/><text x="340" y="112">р′а</text>
-          <circle cx="297" cy="160" r="22" fill="#fff" stroke="#1e1b26" stroke-width="2"/><text x="297" y="167">к</text>
+          <circle cx="245" cy="105" r="22" fill="#fff" stroke="#23262d" stroke-width="2"/><text x="245" y="112">б</text>
+          <circle cx="280" cy="105" r="22" fill="#fff" stroke="#23262d" stroke-width="2"/><text x="280" y="112">у</text>
+          <rect x="300" y="83" width="80" height="44" rx="22" fill="#fff" stroke="#23262d" stroke-width="2"/><text x="340" y="112">р′а</text>
+          <circle cx="297" cy="160" r="22" fill="#fff" stroke="#23262d" stroke-width="2"/><text x="297" y="167">к</text>
         </g>
-        <text x="297" y="208" text-anchor="middle" ${F} font-size="15" font-weight="700" fill="#5d5868">м’яко, злито → без ’</text>
+        <text x="297" y="208" text-anchor="middle" ${F} font-size="15" font-weight="700" fill="#5e6372">м’яко, злито → без ’</text>
       </svg>`,
     },
     {
@@ -60,16 +60,16 @@ export default {
         <div class="mnemo"><span class="big">Мавпа Буфер стулює губи</span>Б, п, в, м, ф — <b>губні</b>: на них губи стуляються й «відрізають» [й], тому він вистрибує окремо. Р — їхній друг, що приєднався в кінці складу.</div>
         <details class="self"><summary>апостроф чи ні: м..ята, цв..ях, верб..я?</summary><p><b>м’ята</b> (початок слова — «так»), <b>цвях</b> (перед в стоїть ц — «ні»), <b>верб’я</b> (перед б стоїть р — «так»).</p></details>`,
       figure: `<svg viewBox="0 0 400 270" role="img" aria-label="Три ТАК: мавпа Буфер, я ю є ї, голосний або р перед ними">
-        <rect x="0" y="0" width="400" height="270" rx="18" fill="#1e1b26"/>
-        <text x="200" y="38" text-anchor="middle" ${D} font-size="20" font-weight="800" fill="#f7c915">ТАЛАНТ-ШОУ «АПОСТРОФ»</text>
+        <rect x="0" y="0" width="400" height="270" rx="18" fill="#23262d"/>
+        <text x="200" y="38" text-anchor="middle" ${D} font-size="20" font-weight="800" fill="#ffd43b">ТАЛАНТ-ШОУ «АПОСТРОФ»</text>
         ${[["ТАК №1", "м в п б ф р", "мавпа Буфер", 70], ["ТАК №2", "я ю є ї", "після них", 200], ["ТАК №3", "голосний / р", "або початок", 330]].map(([t, a, b, x]) => `
-          <rect x="${x - 58}" y="58" width="116" height="140" rx="14" fill="#2a2536" stroke="#99cc00" stroke-width="2"/>
-          <circle cx="${x}" cy="92" r="22" fill="#99cc00"/><text x="${x}" y="99" text-anchor="middle" ${D} font-size="18" font-weight="800" fill="#1e1b26">✓</text>
-          <text x="${x}" y="136" text-anchor="middle" ${F} font-size="14" font-weight="800" fill="#f7c915">${t}</text>
+          <rect x="${x - 58}" y="58" width="116" height="140" rx="14" fill="#252a3a" stroke="#94aef3" stroke-width="2"/>
+          <circle cx="${x}" cy="92" r="22" fill="#94aef3"/><text x="${x}" y="99" text-anchor="middle" ${D} font-size="18" font-weight="800" fill="#23262d">✓</text>
+          <text x="${x}" y="136" text-anchor="middle" ${F} font-size="14" font-weight="800" fill="#ffd43b">${t}</text>
           <text x="${x}" y="160" text-anchor="middle" ${F} font-size="16" font-weight="800" fill="#fff">${a}</text>
-          <text x="${x}" y="182" text-anchor="middle" ${F} font-size="13" fill="#cfc6dd">${b}</text>`).join("")}
-        <text x="200" y="232" text-anchor="middle" ${D} font-size="22" font-weight="800" fill="#fff">сім<tspan fill="#99cc00">’</tspan>я  ✓✓✓</text>
-        <text x="200" y="258" text-anchor="middle" ${F} font-size="15" fill="#ff7a5e">цвях: ✓✓✗ → апострофа немає</text>
+          <text x="${x}" y="182" text-anchor="middle" ${F} font-size="13" fill="#c9d3e6">${b}</text>`).join("")}
+        <text x="200" y="232" text-anchor="middle" ${D} font-size="22" font-weight="800" fill="#fff">сім<tspan fill="#94aef3">’</tspan>я  ✓✓✓</text>
+        <text x="200" y="258" text-anchor="middle" ${F} font-size="15" fill="#f08a80">цвях: ✓✓✗ → апострофа немає</text>
       </svg>`,
     },
     {
@@ -86,13 +86,13 @@ export default {
         <div class="mnemo"><span class="big">Р — друг апострофа лише в кінці складу</span>Пір’-я, бур’-ян, подвір’-я — р закриває склад, тож ставимо апостроф. А на початку складу р пом’якшується без апострофа: ря-док, бу-ряк, рю-кзак.</div>
         <details class="self"><summary>чому «духмяний» без апострофа?</summary><p>Перед <b>м</b> стоїть приголосний <b>х</b> (не р) — третього «ТАК» немає.</p></details>`,
       figure: `<svg viewBox="0 0 400 220" role="img" aria-label="Приголосний перед губним блокує апостроф">
-        <rect x="0" y="0" width="400" height="220" rx="18" fill="#fff6f3" stroke="#ff7a5e" stroke-width="2"/>
-        <text x="200" y="36" text-anchor="middle" ${F} font-size="16" font-weight="800" fill="#c13f2c">Приголосний-«охоронець» не пускає апостроф</text>
+        <rect x="0" y="0" width="400" height="220" rx="18" fill="#fff6f3" stroke="#f08a80" stroke-width="2"/>
+        <text x="200" y="36" text-anchor="middle" ${F} font-size="16" font-weight="800" fill="#d9342b">Приголосний-«охоронець» не пускає апостроф</text>
         ${[["с", "в", "ято", 60], ["ц", "в", "ях", 160], ["х", "м", "яний", 270]].map(([c, l, rest, x]) => `
-          <rect x="${x - 26}" y="62" width="44" height="54" rx="10" fill="#c13f2c"/><text x="${x - 4}" y="99" text-anchor="middle" ${D} font-size="24" font-weight="800" fill="#fff">${c}</text>
-          <rect x="${x + 22}" y="62" width="44" height="54" rx="10" fill="#fff" stroke="#1e1b26" stroke-width="2"/><text x="${x + 44}" y="99" text-anchor="middle" ${D} font-size="24" font-weight="800">${l}</text>
-          <text x="${x + 60}" y="150" text-anchor="middle" ${F} font-size="16" font-weight="700" fill="#1e1b26">…${rest}</text>`).join("")}
-        <text x="200" y="190" text-anchor="middle" ${F} font-size="15" fill="#1e1b26">свято · цвях · духмяний — без апострофа</text>
+          <rect x="${x - 26}" y="62" width="44" height="54" rx="10" fill="#d9342b"/><text x="${x - 4}" y="99" text-anchor="middle" ${D} font-size="24" font-weight="800" fill="#fff">${c}</text>
+          <rect x="${x + 22}" y="62" width="44" height="54" rx="10" fill="#fff" stroke="#23262d" stroke-width="2"/><text x="${x + 44}" y="99" text-anchor="middle" ${D} font-size="24" font-weight="800">${l}</text>
+          <text x="${x + 60}" y="150" text-anchor="middle" ${F} font-size="16" font-weight="700" fill="#23262d">…${rest}</text>`).join("")}
+        <text x="200" y="190" text-anchor="middle" ${F} font-size="15" fill="#23262d">свято · цвях · духмяний — без апострофа</text>
       </svg>`,
     },
     {
@@ -105,14 +105,14 @@ export default {
         <div class="mnemo"><span class="big">Апостроф — замок між префіксом і коренем</span>роз’-яснити, під’-їзд, без’-язикий, з’-їсти: префікс «замикає» двері, і [й] звучить окремо. Префікс на голосний (по-, за-) замка не має: поїзд, заїхати.</div>
         <details class="self"><summary>з..єднати, по..їзд, роз..яснити?</summary><p><b>з’єднати</b>, <b>поїзд</b> (по- закінчується на голосний), <b>роз’яснити</b>.</p></details>`,
       figure: `<svg viewBox="0 0 400 220" role="img" aria-label="Префікс від, апостроф-стіна, корінь їзд">
-        <rect x="0" y="0" width="400" height="220" rx="18" fill="#f6f1fd"/>
-        <rect x="30" y="50" width="120" height="70" rx="14" fill="#9d6bdb"/><text x="90" y="95" text-anchor="middle" ${D} font-size="26" font-weight="800" fill="#fff">від</text>
-        <text x="90" y="140" text-anchor="middle" ${F} font-size="14" font-weight="700" fill="#5d5868">префікс на приголосний</text>
-        <rect x="160" y="40" width="22" height="90" rx="6" fill="#99cc00"/><text x="171" y="32" text-anchor="middle" ${D} font-size="30" font-weight="800" fill="#1e1b26">’</text>
-        <rect x="192" y="50" width="170" height="70" rx="14" fill="#fff" stroke="#1e1b26" stroke-width="2"/><text x="277" y="95" text-anchor="middle" ${D} font-size="26" font-weight="800">їзд</text>
-        <text x="277" y="140" text-anchor="middle" ${F} font-size="14" font-weight="700" fill="#5d5868">корінь на я, ю, є, ї</text>
-        <text x="200" y="185" text-anchor="middle" ${F} font-size="16" font-weight="800" fill="#3f7a16">від’їзд · з’їсти · роз’яснити</text>
-        <text x="200" y="208" text-anchor="middle" ${F} font-size="14" fill="#5d5868">але: заїхати, пояснити (префікс на голосний)</text>
+        <rect x="0" y="0" width="400" height="220" rx="18" fill="#e8edfb"/>
+        <rect x="30" y="50" width="120" height="70" rx="14" fill="#2440c2"/><text x="90" y="95" text-anchor="middle" ${D} font-size="26" font-weight="800" fill="#fff">від</text>
+        <text x="90" y="140" text-anchor="middle" ${F} font-size="14" font-weight="700" fill="#5e6372">префікс на приголосний</text>
+        <rect x="160" y="40" width="22" height="90" rx="6" fill="#94aef3"/><text x="171" y="32" text-anchor="middle" ${D} font-size="30" font-weight="800" fill="#23262d">’</text>
+        <rect x="192" y="50" width="170" height="70" rx="14" fill="#fff" stroke="#23262d" stroke-width="2"/><text x="277" y="95" text-anchor="middle" ${D} font-size="26" font-weight="800">їзд</text>
+        <text x="277" y="140" text-anchor="middle" ${F} font-size="14" font-weight="700" fill="#5e6372">корінь на я, ю, є, ї</text>
+        <text x="200" y="185" text-anchor="middle" ${F} font-size="16" font-weight="800" fill="#2a8c4a">від’їзд · з’їсти · роз’яснити</text>
+        <text x="200" y="208" text-anchor="middle" ${F} font-size="14" fill="#5e6372">але: заїхати, пояснити (префікс на голосний)</text>
       </svg>`,
     },
     {
@@ -132,20 +132,20 @@ export default {
         <details class="self"><summary>інтерв..ю, бул..йон, п..юре?</summary><p><b>інтерв’ю</b>, <b>бульйон</b>, <b>пюре</b>.</p></details>`,
       say: ["інтерв’ю", "бюро", "Лук’ян"],
       figure: `<svg viewBox="0 0 400 250" role="img" aria-label="Три колонки іншомовних слів і кіт Лук’ян">
-        <rect x="0" y="0" width="400" height="250" rx="18" fill="#fffdf2" stroke="#f7c915" stroke-width="2"/>
-        ${[["’", "інтерв’ю", "п’єса", "кур’єр", 70, "#99cc00"], ["ь", "мільярд", "ательє", "бульйон", 200, "#9d6bdb"], ["—", "бюро", "пюре", "рюкзак", 330, "#c9c2d6"]].map(([s, a, b, c, x, col]) => `
-          <circle cx="${x}" cy="44" r="24" fill="${col}"/><text x="${x}" y="54" text-anchor="middle" ${D} font-size="26" font-weight="800" fill="#1e1b26">${s}</text>
+        <rect x="0" y="0" width="400" height="250" rx="18" fill="#fff8d6" stroke="#ffd43b" stroke-width="2"/>
+        ${[["’", "інтерв’ю", "п’єса", "кур’єр", 70, "#94aef3"], ["ь", "мільярд", "ательє", "бульйон", 200, "#2440c2"], ["—", "бюро", "пюре", "рюкзак", 330, "#c3cde0"]].map(([s, a, b, c, x, col]) => `
+          <circle cx="${x}" cy="44" r="24" fill="${col}"/><text x="${x}" y="54" text-anchor="middle" ${D} font-size="26" font-weight="800" fill="#23262d">${s}</text>
           <text x="${x}" y="98" text-anchor="middle" ${F} font-size="16" font-weight="700">${a}</text>
           <text x="${x}" y="122" text-anchor="middle" ${F} font-size="16" font-weight="700">${b}</text>
           <text x="${x}" y="146" text-anchor="middle" ${F} font-size="16" font-weight="700">${c}</text>`).join("")}
         <g transform="translate(150 165)">
           <rect x="0" y="22" width="56" height="40" rx="12" fill="#e08a3c"/><rect x="6" y="0" width="44" height="34" rx="10" fill="#e08a3c"/>
           <path d="M8 4 L14 -10 L22 2 Z M34 2 L42 -10 L48 4 Z" fill="#e08a3c"/>
-          <circle cx="20" cy="16" r="3" fill="#1e1b26"/><circle cx="36" cy="16" r="3" fill="#1e1b26"/>
+          <circle cx="20" cy="16" r="3" fill="#23262d"/><circle cx="36" cy="16" r="3" fill="#23262d"/>
           <path d="M56 50 q22 -6 18 -30" stroke="#e08a3c" stroke-width="7" fill="none" stroke-linecap="round"/>
         </g>
-        <text x="255" y="200" ${D} font-size="22" font-weight="800" fill="#1e1b26">Лук<tspan fill="#99cc00">’</tspan>ян</text>
-        <text x="255" y="224" ${F} font-size="13" fill="#5d5868">завжди з апострофом</text>
+        <text x="255" y="200" ${D} font-size="22" font-weight="800" fill="#23262d">Лук<tspan fill="#94aef3">’</tspan>ян</text>
+        <text x="255" y="224" ${F} font-size="13" fill="#5e6372">завжди з апострофом</text>
       </svg>`,
     },
       { id: "map", title: "🗺️ Карта теми: апостроф",

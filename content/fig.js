@@ -1,8 +1,8 @@
-// Будівельні блоки для схем-ілюстрацій до правил (SVG у стилі Midgard).
+// Будівельні блоки для схем-ілюстрацій до правил (SVG у стилі «Зошит»).
 export const F = "font-family='Fixel Text, sans-serif'";
 export const D = "font-family='Fixel Display, Fixel Text, sans-serif'";
-export const C = { lime: "#99cc00", violet: "#9d6bdb", yellow: "#f7c915", ink: "#1e1b26", muted: "#5d5868", right: "#3f7a16", wrong: "#c13f2c", line: "#e5e0ee" };
-const BG = { lime: "#f3fae0", violet: "#f6f1fd", yellow: "#fffdf2", ink: "#faf8fc" };
+export const C = { lime: "#94aef3", violet: "#2440c2", yellow: "#ffd43b", ink: "#23262d", muted: "#5e6372", right: "#2a8c4a", wrong: "#d9342b", line: "#d6deeb" };
+const BG = { lime: "#eef2fd", violet: "#e8edfb", yellow: "#fff8d6", ink: "#f7f9fd" };
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
 const svg = (h, body, label) => `<svg viewBox="0 0 400 ${h}" role="img" aria-label="${esc(label)}">${body}</svg>`;
 const supT = (s, size) => { const up = Math.round(size * 0.42); let lift = 0;
@@ -56,7 +56,7 @@ export function pairs(list, title = "", { wrong = true } = {}) {
       ${T(98, y + 21, a, { size: a.length > 18 ? 12 : 14, fill: wrong ? C.wrong : C.ink })}
       ${wrong ? `<line x1="${98 - Math.min(76, a.length * 4)}" y1="${y + 16}" x2="${98 + Math.min(76, a.length * 4)}" y2="${y + 16}" stroke="${C.wrong}" stroke-width="2"/>` : ""}
       ${T(200, y + 22, "→", { size: 18, fill: C.muted })}
-      <rect x="220" y="${y}" width="164" height="32" rx="10" fill="#e3f1cf"/>${T(302, y + 21, b, { size: b.length > 18 ? 12 : 14, fill: C.right })}`; }).join("");
+      <rect x="220" y="${y}" width="164" height="32" rx="10" fill="#dcefe2"/>${T(302, y + 21, b, { size: b.length > 18 ? 12 : 14, fill: C.right })}`; }).join("");
   return svg(H, `<rect width="400" height="${H}" rx="18" fill="#fff"/>${title ? T(200, 27, title, { size: 15, w: 800, font: D }) : ""}${body}`, title || "пари");
 }
 
@@ -129,15 +129,15 @@ export function train(parts, caption = "") {
   const n = parts.length, gap = 10, w = Math.min(92, (360 - (n - 1) * gap) / n), total = n * w + (n - 1) * gap, x0 = (400 - total) / 2;
   const cars = parts.map((p, i) => { const x = x0 + i * (w + gap), col = C[p.color || "lime"], first = i === 0;
     return `${i ? `<rect x="${x - gap}" y="128" width="${gap}" height="5" fill="${C.ink}"/>` : ""}
-      ${first ? `<rect x="${x + w * 0.55}" y="58" width="${w * 0.22}" height="26" rx="4" fill="${C.ink}"/><circle cx="${x + w * 0.66}" cy="46" r="9" fill="#d9d2e6" opacity=".8"/><circle cx="${x + w * 0.8}" cy="32" r="7" fill="#d9d2e6" opacity=".6"/>` : ""}
+      ${first ? `<rect x="${x + w * 0.55}" y="58" width="${w * 0.22}" height="26" rx="4" fill="${C.ink}"/><circle cx="${x + w * 0.66}" cy="46" r="9" fill="#d6deeb" opacity=".8"/><circle cx="${x + w * 0.8}" cy="32" r="7" fill="#d6deeb" opacity=".6"/>` : ""}
       <rect x="${x}" y="80" width="${w}" height="60" rx="12" fill="${col}" stroke="${C.ink}" stroke-width="2"/>
       <rect x="${x + 8}" y="88" width="${w - 16}" height="20" rx="5" fill="#fff" opacity=".9"/>
       ${T(x + w / 2, 103, p.h, { size: Math.min(12, (w - 16) / (p.h.length * 0.55)), w: 800, fill: C.muted })}
       ${T(x + w / 2, 131, p.t, { size: Math.min(20, (w - 8) / (p.t.length * 0.62)), w: 800, font: D, fill: ["violet", "right", "wrong"].includes(p.color) ? "#fff" : C.ink })}
       <circle cx="${x + w * 0.25}" cy="146" r="9" fill="${C.ink}"/><circle cx="${x + w * 0.75}" cy="146" r="9" fill="${C.ink}"/>
       <circle cx="${x + w * 0.25}" cy="146" r="3.5" fill="#fff"/><circle cx="${x + w * 0.75}" cy="146" r="3.5" fill="#fff"/>`; }).join("");
-  return svg(caption ? 200 : 172, `<rect width="400" height="${caption ? 200 : 172}" rx="18" fill="#f6f1fd"/>
-    <rect x="10" y="155" width="380" height="4" fill="#bfb6cf"/>${Array.from({ length: 19 }, (_, k) => `<rect x="${14 + k * 20}" y="159" width="10" height="4" fill="#bfb6cf"/>`).join("")}
+  return svg(caption ? 200 : 172, `<rect width="400" height="${caption ? 200 : 172}" rx="18" fill="#e8edfb"/>
+    <rect x="10" y="155" width="380" height="4" fill="#b8c3d8"/>${Array.from({ length: 19 }, (_, k) => `<rect x="${14 + k * 20}" y="159" width="10" height="4" fill="#b8c3d8"/>`).join("")}
     ${cars}${caption ? T(200, 188, caption, { size: 13, fill: C.muted }) : ""}`, "Потяг слова: " + parts.map((p) => `${p.h} ${p.t}`).join(", "));
 }
 
@@ -146,14 +146,14 @@ export function wordtree(root, words, note = "") {
   const leaves = words.slice(0, 6), pos = [[72, 92], [328, 92], [52, 158], [348, 158], [128, 50], [272, 50]];
   const body = leaves.map((w, i) => { const [x, y] = pos[i];
     return `<path d="M200 150 Q${(200 + x) / 2} ${y + 40} ${x} ${y}" stroke="#7a5230" stroke-width="5" fill="none" stroke-linecap="round"/>
-      <ellipse cx="${x}" cy="${y}" rx="${Math.max(44, w.length * 5.4)}" ry="18" fill="#c7e88a" stroke="#99cc00" stroke-width="2"/>${T(x, y + 5, w, { size: w.length > 12 ? 11.5 : 13.5 })}`; }).join("");
-  return svg(290, `<rect width="400" height="290" rx="18" fill="#f3fae0"/>
+      <ellipse cx="${x}" cy="${y}" rx="${Math.max(44, w.length * 5.4)}" ry="18" fill="#cbd8fa" stroke="#94aef3" stroke-width="2"/>${T(x, y + 5, w, { size: w.length > 12 ? 11.5 : 13.5 })}`; }).join("");
+  return svg(290, `<rect width="400" height="290" rx="18" fill="#eef2fd"/>
     <rect x="0" y="205" width="400" height="85" rx="0" fill="#8a6a4a"/><rect x="0" y="205" width="400" height="6" fill="#6b4f35"/>
     <path d="M188 210 L192 150 L208 150 L212 210 Z" fill="#7a5230"/>
     ${body}
     <path d="M200 212 q-30 20 -60 30 M200 212 q30 20 60 30 M200 212 l0 30" stroke="#5a3a20" stroke-width="3" fill="none"/>
-    <rect x="${200 - Math.max(48, root.length * 7)}" y="238" width="${Math.max(96, root.length * 14)}" height="36" rx="18" fill="#2a1f12" stroke="#f7c915" stroke-width="2"/>
-    ${T(200, 262, root, { size: 16, w: 800, font: D, fill: "#f7c915" })}
+    <rect x="${200 - Math.max(48, root.length * 7)}" y="238" width="${Math.max(96, root.length * 14)}" height="36" rx="18" fill="#2a1f12" stroke="#ffd43b" stroke-width="2"/>
+    ${T(200, 262, root, { size: 16, w: 800, font: D, fill: "#ffd43b" })}
     ${note ? T(200, 18, note, { size: 11.5, fill: C.muted }) : ""}`, `Дерево слів: корінь ${root}; ${leaves.join(", ")}`);
 }
 

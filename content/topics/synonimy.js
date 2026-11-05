@@ -17,14 +17,14 @@ export default {
         <div class="box">У ряді є <b>стрижневе слово</b> — найзагальніше й нейтральне (у словнику синонімів його подають першим): <span class="ex">горизонт</span> — видноколо, обрій, небозвід.</div>
         <p class="note">В одному синонімічному ряді переважно слова однієї частини мови: хоробрий — сміливий — мужній — безстрашний.</p>`,
       figure: `<svg viewBox="0 0 400 250" role="img" aria-label="Синонімічний ряд до слова іти">
-        <rect x="0" y="0" width="400" height="250" rx="18" fill="#f3fae0"/>
+        <rect x="0" y="0" width="400" height="250" rx="18" fill="#eef2fd"/>
         ${[["крокувати", 90, 55], ["маршувати", 310, 55], ["шкутильгати", 90, 195], ["чимчикувати", 310, 195]].map(([w, x, y]) => `
-          <line x1="200" y1="125" x2="${x}" y2="${y}" stroke="#99cc00" stroke-width="4"/>
-          <rect x="${x - 70}" y="${y - 22}" width="140" height="44" rx="22" fill="#fff" stroke="#99cc00" stroke-width="3"/>
+          <line x1="200" y1="125" x2="${x}" y2="${y}" stroke="#94aef3" stroke-width="4"/>
+          <rect x="${x - 70}" y="${y - 22}" width="140" height="44" rx="22" fill="#fff" stroke="#94aef3" stroke-width="3"/>
           <text x="${x}" y="${y + 6}" text-anchor="middle" ${F} font-size="16" font-weight="800">${w}</text>`).join("")}
-        <circle cx="200" cy="125" r="46" fill="#99cc00"/>
-        <text x="200" y="133" text-anchor="middle" ${D} font-size="24" font-weight="800" fill="#1e1b26">іти</text>
-        <text x="200" y="240" text-anchor="middle" ${F} font-size="13" fill="#3f7a16">одне значення «рухатися» — різні відтінки</text>
+        <circle cx="200" cy="125" r="46" fill="#94aef3"/>
+        <text x="200" y="133" text-anchor="middle" ${D} font-size="24" font-weight="800" fill="#23262d">іти</text>
+        <text x="200" y="240" text-anchor="middle" ${F} font-size="13" fill="#2a8c4a">одне значення «рухатися» — різні відтінки</text>
       </svg>`,
     },
     {
@@ -35,11 +35,11 @@ export default {
         <ul><li>Солдати урочисто <b>маршували</b> площею.</li><li>Дідусь, накульгуючи, <b>шкутильгав</b> стежкою.</li></ul>
         <p>Одне багатозначне слово в різних значеннях має різні синоніми: <span class="ex">грубий зошит</span> — товстий, <span class="ex">груба помилка</span> — серйозна, <span class="ex">груба поведінка</span> — нечемна.</p>`,
       figure: `<svg viewBox="0 0 400 230" role="img" aria-label="Сходинки: усміхатися, сміятися, реготати">
-        <rect x="0" y="0" width="400" height="230" rx="18" fill="#fffdf2"/>
-        <text x="200" y="32" text-anchor="middle" ${F} font-size="15" font-weight="800" fill="#5d5868">Сила значення зростає ↗</text>
+        <rect x="0" y="0" width="400" height="230" rx="18" fill="#fff8d6"/>
+        <text x="200" y="32" text-anchor="middle" ${F} font-size="15" font-weight="800" fill="#5e6372">Сила значення зростає ↗</text>
         <rect x="30" y="150" width="110" height="56" rx="10" fill="#fdf0bb"/><text x="85" y="184" text-anchor="middle" ${F} font-size="15" font-weight="800">усміхатися</text>
         <rect x="145" y="110" width="110" height="96" rx="10" fill="#f9dd6b"/><text x="200" y="144" text-anchor="middle" ${F} font-size="15" font-weight="800">сміятися</text>
-        <rect x="260" y="60" width="110" height="146" rx="10" fill="#f7c915"/><text x="315" y="94" text-anchor="middle" ${F} font-size="15" font-weight="800">реготати</text>
+        <rect x="260" y="60" width="110" height="146" rx="10" fill="#ffd43b"/><text x="315" y="94" text-anchor="middle" ${F} font-size="15" font-weight="800">реготати</text>
         <text x="85" y="140" text-anchor="middle" font-size="28">🙂</text><text x="200" y="100" text-anchor="middle" font-size="28">😄</text><text x="315" y="52" text-anchor="middle" font-size="28">🤣</text>
       </svg>`,
     },
@@ -50,12 +50,12 @@ export default {
         <p><span class="ex">відповідати — запитувати, світлий — темний, друг — ворог, сухо — мокро</span>.</p>
         <p>Антоніми є словами <b>тієї самої частини мови</b>. Вони можуть різнитися лише префіксом: <span class="ex">надія — безнадія, схід — захід, відкрити — закрити</span>.</p>`,
       figure: `<svg viewBox="0 0 400 230" role="img" aria-label="Гойдалка: світлий і темний">
-        <rect x="0" y="0" width="400" height="230" rx="18" fill="#f6f1fd"/>
-        <polygon points="200,170 180,205 220,205" fill="#1e1b26"/>
-        <rect x="40" y="158" width="320" height="12" rx="6" fill="#9d6bdb" transform="rotate(-8 200 164)"/>
-        <rect x="45" y="104" width="120" height="50" rx="14" fill="#f7c915" transform="rotate(-8 200 164)"/>
+        <rect x="0" y="0" width="400" height="230" rx="18" fill="#e8edfb"/>
+        <polygon points="200,170 180,205 220,205" fill="#23262d"/>
+        <rect x="40" y="158" width="320" height="12" rx="6" fill="#2440c2" transform="rotate(-8 200 164)"/>
+        <rect x="45" y="104" width="120" height="50" rx="14" fill="#ffd43b" transform="rotate(-8 200 164)"/>
         <text x="105" y="140" text-anchor="middle" ${F} font-size="18" font-weight="800" transform="rotate(-8 200 164)">світлий</text>
-        <rect x="235" y="104" width="120" height="50" rx="14" fill="#1e1b26" transform="rotate(-8 200 164)"/>
+        <rect x="235" y="104" width="120" height="50" rx="14" fill="#23262d" transform="rotate(-8 200 164)"/>
         <text x="295" y="140" text-anchor="middle" ${F} font-size="18" font-weight="800" fill="#fff" transform="rotate(-8 200 164)">темний</text>
         <text x="105" y="70" text-anchor="middle" font-size="34">☀️</text><text x="300" y="56" text-anchor="middle" font-size="34">🌙</text>
         <text x="200" y="30" text-anchor="middle" ${D} font-size="16" font-weight="800">АНТОНІМИ — ПРОТИЛЕЖНОСТІ</text>
@@ -69,11 +69,11 @@ export default {
         <p>Так само: <b>свіжий</b> хліб — <b>черствий</b>, <b>свіжа</b> квітка — <b>зів’яла</b>.</p>`,
       figure: `<svg viewBox="0 0 400 230" role="img" aria-label="Слово тихий має різні антоніми">
         <rect x="0" y="0" width="400" height="230" rx="18" fill="#fff"/>
-        <rect x="20" y="90" width="110" height="50" rx="25" fill="#9d6bdb"/><text x="75" y="122" text-anchor="middle" ${D} font-size="18" font-weight="800" fill="#fff">тихий</text>
+        <rect x="20" y="90" width="110" height="50" rx="25" fill="#2440c2"/><text x="75" y="122" text-anchor="middle" ${D} font-size="18" font-weight="800" fill="#fff">тихий</text>
         ${[["голос", "гучний", 45], ["погода", "вітряна", 115], ["море", "розбурхане", 185]].map(([n, a, y]) => `
-          <path d="M130 115 C170 115 170 ${y} 205 ${y}" stroke="#9d6bdb" stroke-width="3" fill="none"/>
-          <text x="212" y="${y - 6}" ${F} font-size="13" font-weight="700" fill="#5d5868">${n}</text>
-          <rect x="205" y="${y}" width="170" height="34" rx="17" fill="#f3fae0" stroke="#99cc00" stroke-width="2"/>
+          <path d="M130 115 C170 115 170 ${y} 205 ${y}" stroke="#2440c2" stroke-width="3" fill="none"/>
+          <text x="212" y="${y - 6}" ${F} font-size="13" font-weight="700" fill="#5e6372">${n}</text>
+          <rect x="205" y="${y}" width="170" height="34" rx="17" fill="#eef2fd" stroke="#94aef3" stroke-width="2"/>
           <text x="290" y="${y + 23}" text-anchor="middle" ${F} font-size="16" font-weight="800">↔ ${a}</text>`).join("")}
       </svg>`,
     },
@@ -85,11 +85,11 @@ export default {
         <li><span class="ex">Ніч коротка — довга розлука…</span> (Леся Українка)</li>
         <li>Загадка: <span class="ex">Сильніша за сонце, слабша за вітер</span> (хмара).</li></ul>`,
       figure: `<svg viewBox="0 0 400 200" role="img" aria-label="Прислів’я: ситий — голодного">
-        <rect x="0" y="0" width="400" height="200" rx="18" fill="#fffdf2" stroke="#f7c915" stroke-width="2"/>
-        <text x="200" y="60" text-anchor="middle" ${F} font-size="22" font-weight="800"><tspan fill="#3f7a16">Ситий</tspan> <tspan fill="#c13f2c">голодного</tspan></text>
+        <rect x="0" y="0" width="400" height="200" rx="18" fill="#fff8d6" stroke="#ffd43b" stroke-width="2"/>
+        <text x="200" y="60" text-anchor="middle" ${F} font-size="22" font-weight="800"><tspan fill="#2a8c4a">Ситий</tspan> <tspan fill="#d9342b">голодного</tspan></text>
         <text x="200" y="92" text-anchor="middle" ${F} font-size="22" font-weight="800">не розуміє.</text>
-        <text x="110" y="150" text-anchor="middle" font-size="40">😋</text><text x="200" y="150" text-anchor="middle" ${D} font-size="26" fill="#9d6bdb">↔</text><text x="290" y="150" text-anchor="middle" font-size="40">😩</text>
-        <text x="200" y="185" text-anchor="middle" ${F} font-size="13" fill="#5d5868">антоніми в прислів’ї</text>
+        <text x="110" y="150" text-anchor="middle" font-size="40">😋</text><text x="200" y="150" text-anchor="middle" ${D} font-size="26" fill="#2440c2">↔</text><text x="290" y="150" text-anchor="middle" font-size="40">😩</text>
+        <text x="200" y="185" text-anchor="middle" ${F} font-size="13" fill="#5e6372">антоніми в прислів’ї</text>
       </svg>`,
     },
   ],
