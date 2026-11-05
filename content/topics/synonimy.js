@@ -1,7 +1,7 @@
 // Тема: Синоніми. Антоніми (Онатій, Ткачук, уроки 12–18, с. 33–45).
 import { ch, tf, mu, inp, mt, so, pk } from "../t.js";
-const F = "font-family='Manrope, sans-serif'";
-const D = "font-family='Unbounded, Manrope, sans-serif'";
+const F = "font-family='Fixel Text, sans-serif'";
+const D = "font-family='Fixel Display, Fixel Text, sans-serif'";
 
 export default {
   id: "synonimy",

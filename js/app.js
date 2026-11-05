@@ -67,6 +67,16 @@ onChange(async () => {
 // Оновлюємо шапку (монети, звання), коли змінюються дані
 onChange(() => { const t = $("#topbar"); if (t && state.user) t.replaceWith(topbar()); });
 
+// Лінійні іконки меню (як намальовані ручкою)
+const ICON = {
+  topics: '<path d="M4 5.5C4 4.7 4.7 4 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M20 5.5c0-.8-.7-1.5-1.5-1.5H13v16h5.5c.8 0 1.5-.7 1.5-1.5z"/>',
+  school: '<path d="M3 20h18M5 20V9l7-5 7 5v11"/><path d="M10 20v-5h4v5"/>',
+  avatar: '<circle cx="12" cy="8" r="3.5"/><path d="M5 20c.8-3.6 3.6-6 7-6s6.2 2.4 7 6"/>',
+  progress: '<path d="M4 19h16"/><path d="M7 16v-4M12 16V8M17 16v-7"/>',
+};
+const icon = (k) => h("span.ic", { html: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[k]}</svg>` });
+const navLink = (href, k, label) => { const cur = (location.hash || "#/").split("/")[1] || ""; const on = href.split("/")[1] === cur || (href === "#/" && (cur === "" || cur === "topic")); return h("a", { href, "aria-current": on ? "page" : null }, icon(k), h("span", label)); };
+
 // ---------- Спільні елементи ----------
 function topbar() {
   const u = state.user;
@@ -74,10 +84,10 @@ function topbar() {
   return h("header#topbar.topbar",
     h("a.topbar__logo", { href: "#/" }, wordmark()),
     h("nav.topbar__nav",
-      h("a", { href: "#/" }, "🏠", h("span", "Теми")),
-      h("a", { href: "#/school" }, "🏫", h("span", "Школа")),
-      h("a", { href: "#/shop" }, "🎨", h("span", "Персонаж")),
-      h("a", { href: "#/profile" }, "📊", h("span", "Прогрес"))),
+      navLink("#/", "topics", "Теми"),
+      navLink("#/school", "school", "Школа"),
+      navLink("#/shop", "avatar", "Персонаж"),
+      navLink("#/profile", "progress", "Прогрес")),
     h("div.topbar__me",
       h("span.coinpill", { title: "Монети" }, "🪙 ", h("b", u.coins || 0)),
       h("span.rankpill", { title: `Звання: ${rk.title}` }, rk.icon, h("span", rk.title)),
@@ -142,21 +152,16 @@ function loginPage() {
     area.scrollIntoView({ behavior: "smooth" });
   }
 
-  const letters = ["А", "Ґ", "Є", "Ї", "Ш", "Я", "’", "Ж", "Ю", "Щ", "Й", "Ь"];
   mount(h("main.login",
-    h("div.login__bg", { "aria-hidden": "true" },
-      h("span.blob.blob--lime"), h("span.blob.blob--violet"), h("span.blob.blob--yellow"),
-      letters.map((l, i) => h("span.fly", { style: { "--x": `${(i * 37 + 7) % 96}%`, "--d": `${14 + (i % 5) * 3}s`, "--delay": `${-i * 2.3}s`, "--s": `${28 + (i % 4) * 14}px` } }, l))),
     h("div.login__box",
       wordmark(".wordmark--big"),
-      h("h1.login__title", "Українська мова ", h("span.hl", "5 клас")),
-      h("p.lead", "Вчися, заробляй монети, підвищуй звання й гуляй 3D-школою."),
-      h("div.login__chips", ["📚 41 тема", "🏅 10 звань", `🎨 ${ITEMS.length} речей для персонажа`, "🏫 3D-школа"].map((t) => h("span.chip", t))),
+      h("h1.login__title", "Українська мова, 5 клас"),
+      h("p.lead", "Теорія за підручником, завдання з перевіркою і спільна 3D-школа для класу."),
       h("div.login__panel",
-        h("p.login__step", "1. Обери свій клас"), tabs,
-        h("p.login__step", "2. Натисни на своє ім’я"), list, area),
-      h("div.login__qr", h("img", { src: "assets/qr.png", alt: "QR-код", width: 150, height: 150 }), h("p.note", "📱 Відкрий платформу на телефоні: наведи камеру на QR‑код")),
-      h("a.teacherlink", { href: "#/teacher" }, "Вхід для вчителя →"))));
+        h("p.login__step", "Твій клас"), tabs,
+        h("p.login__step", "Знайди своє ім’я"), list, area),
+      h("div.login__qr", h("img", { src: "assets/qr.png", alt: "QR-код", width: 150, height: 150 }), h("p.note", "Щоб відкрити на телефоні, наведи камеру на код")),
+      h("a.teacherlink", { href: "#/teacher" }, "Вхід для вчителя"))));
   drawNames();
 }
 function pinInput(ph = "PIN") {
@@ -192,7 +197,7 @@ function home() {
       h("div.hero__ring", ring(o.avg, 120, 12), h("div.note", "середній прогрес"))),
 
     assigned.length ? h("section.card.assign",
-      h("h2", "📌 Завдання від учителя"),
+      h("h2", "Завдання від учителя"),
       h("div.assign__list", assigned.map((t) => {
         const d = state.settings.topics[t.id].deadline;
         const tp = topicPct(p[t.id]);
@@ -203,7 +208,7 @@ function home() {
     h("section.quick",
       h("a.card.quick__item", { href: "#/review" }, h("span.quick__ic", "🔁"), h("b", "Робота над помилками"), h("span.note", due ? `Завдань для повторення: ${due}` : waiting ? `Наступне повторення — пізніше (${waiting})` : "Помилок немає 🎉")),
       h("a.card.quick__item", { href: "#/school" }, h("span.quick__ic", "🏫"), h("b", "3D-школа"), h("span.note", "Гуляй школою разом з однокласниками")),
-      h("a.card.quick__item", { href: "#/shop" }, h("span.quick__ic", "🎨"), h("b", "Персонаж"), h("span.note", `${Object.keys(u.owned || {}).length} речей · ${ITEMS.length} у магазині`)),
+      h("a.card.quick__item", { href: "#/shop" }, h("span.quick__ic", "🎨"), h("b", "Персонаж"), h("span.note", `Твоїх речей: ${Object.keys(u.owned || {}).length} з ${ITEMS.length}`)),
       ...openMon.map((s) => h("a.card.quick__item.quick__item--mon", { href: `#/monitoring/${s.id}` }, h("span.quick__ic", "📋"), h("b", s.id === "diag" ? s.title : `Моніторингова робота: ${s.title}`), h("span.note", "Відкрив учитель")))),
 
     ...SECTIONS.map((s) => {
@@ -216,15 +221,15 @@ function home() {
   avatarPreview(avBox, u.avatar, { size: 200 });
 }
 const days = (n) => (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? "дні" : n % 10 === 1 && n % 100 !== 11 ? "день" : "днів");
-const stat = (ic, v, l) => h("div.stat", h("span", ic), h("b", v), h("small", l));
+const stat = (ic, v, l) => h("div.stat", h("b", v), h("small", l));
 
 function topicCard(t, pr) {
   const v = topicPct(pr);
-  if (!t.ready) return h("div.tcard.tcard--soon", h("div.tcard__t", shortTitle(t)), h("div.note", `Уроки ${t.lessons} · незабаром`));
+  if (!t.ready) return h("div.tcard.tcard--soon", h("div.tcard__t", shortTitle(t)), h("div.note", `Уроки ${t.lessons}, незабаром`));
   if (!topicOpen(t.id)) return h("div.tcard.tcard--locked", h("div.tcard__t", shortTitle(t)), h("div.note", "🔒 Відкриє вчитель"));
   return h(`a.tcard${v === 100 ? ".tcard--done" : ""}`, { href: `#/topic/${t.id}` },
     h("div.tcard__t", shortTitle(t)),
-    h("div.tcard__b", ring(v, 54, 7, v === 100 ? "var(--right)" : "var(--lime)"), h("div.note", `Уроки ${t.lessons}`, h("br"), v === 100 ? "🏆 Опановано" : `${LEVELS_PER_TOPIC} рівнів`)));
+    h("div.tcard__b", ring(v, 54, 7, v === 100 ? "var(--right)" : "var(--lime)"), h("div.note", `Уроки ${t.lessons}`, h("br"), v === 100 ? "Опановано" : `${LEVELS_PER_TOPIC} рівнів`)));
 }
 
 function leaderboardBlock() {
@@ -267,15 +272,15 @@ async function topicPage(id) {
   page(
     h("a.back", { href: "#/" }, "← До тем"),
     h("section.topichead.card",
-      h("div", h("div.note", `${sectionById[t.s].title} · уроки ${t.lessons}`), h("h1", t.title), T.intro && h("p.lead", T.intro), h("p.note", `За підручником: ${t.book || BOOK}`)),
+      h("div", h("div.note", `${sectionById[t.s].title}, уроки ${t.lessons}`), h("h1", t.title), T.intro && h("p.lead", T.intro), h("p.note", `За підручником: ${t.book || BOOK}`)),
       ring(v, 110, 12, v === 100 ? "var(--right)" : "var(--lime)")),
-    h("h2.sec__title", "📖 Теорія"),
+    h("h2.sec__title", "Теорія"),
     theory,
-    ...openWorks(id).map((w) => h("a.card.quick__item.quick__item--mon.topicmon", { href: `#/monitoring/t_${w.id}` }, h("span.quick__ic", "📋"), h("b", w.n > 1 ? `Моніторингова робота · варіант ${w.n}` : "Моніторингова робота з теми"), h("span.note", "Відкрив учитель · складні завдання без підказок"))),
-    h("h2.sec__title", "🎯 Рівні (по 10 завдань)"),
-    h("p.note", `Відсоток теми — сума найкращих результатів усіх рівнів. Перший правильний розв’язок: +${ECONOMY.firstSolve} 🪙, 10 з 10: +${ECONOMY.levelPerfect} 🪙, тема на 100 %: +${ECONOMY.topicPerfect} 🪙.`),
+    ...openWorks(id).map((w) => h("a.card.quick__item.quick__item--mon.topicmon", { href: `#/monitoring/t_${w.id}` }, h("span.quick__ic", "📋"), h("b", w.n > 1 ? `Моніторингова робота, варіант ${w.n}` : "Моніторингова робота з теми"), h("span.note", "Відкрив учитель. Складні завдання без підказок"))),
+    h("h2.sec__title", "Рівні"),
+    h("p.note", `У кожному рівні 10 завдань. Відсоток теми рахується з найкращих результатів усіх рівнів. Перший правильний розв’язок: +${ECONOMY.firstSolve} 🪙, 10 з 10: +${ECONOMY.levelPerfect} 🪙, тема на 100 %: +${ECONOMY.topicPerfect} 🪙.`),
     levels,
-    mistakesHere.length ? h("section.card.recs", h("h3", "🔎 Що повторити"), recsFromTasks(T, mistakesHere.map((m) => m.id)), h("a.btn", { href: "#/review" }, "До роботи над помилками")) : null);
+    mistakesHere.length ? h("section.card.recs", h("h3", "Що повторити"), recsFromTasks(T, mistakesHere.map((m) => m.id)), h("a.btn", { href: "#/review" }, "До роботи над помилками")) : null);
 }
 
 // Рекомендації: за правилами, у яких були помилки
@@ -288,7 +293,7 @@ function recsFromTasks(T, wrongIds) {
   return h("ul.recs__list", tags.map(([tag, n]) => {
     const rule = T.rules[tag] || { title: tag, text: "" };
     return h("li", h("b", rule.title), h("span.badge", `помилок: ${n}`), h("div", { html: rule.text }),
-      rule.block != null && h("a.note", { href: `#/topic/${T.id}`, onclick: () => setTimeout(() => document.getElementById(`rule-${rule.block}`)?.scrollIntoView({ behavior: "smooth" }), 300) }, "→ перечитати в теорії"));
+      rule.block != null && h("a.note", { href: `#/topic/${T.id}`, onclick: () => setTimeout(() => document.getElementById(`rule-${rule.block}`)?.scrollIntoView({ behavior: "smooth" }), 300) }, "Перечитати в теорії"));
   }));
 }
 
@@ -495,7 +500,7 @@ function shop() {
     h("div.shop__left.card", prev,
       h("div.shop__ctl",
         h("div.note.center.shop__hint", "Покрути персонажа пальцем або мишкою"),
-        h("button.btn.btn--primary", { onclick: async () => { if (!(await save())) toast("Образ збережено ✨", "win"); draw(); } }, "💾 Зберегти образ"),
+        h("button.btn.btn--primary", { onclick: async () => { if (!(await save())) toast("Образ збережено ✨", "win"); draw(); } }, "Зберегти образ"),
         slots, info)),
     h("div.shop__right", tabs, grid)));
   const small = innerWidth < 820;
@@ -563,7 +568,7 @@ async function profile() {
 
   page(
     h("section.card.profhead",
-      h("div.profhead__who", h("span.rankbig", rk.icon), h("div", h("h1", u.name), h("p.note", `Клас ${u.cls} · ${rk.title}`))),
+      h("div.profhead__who", h("span.rankbig", rk.icon), h("div", h("h1", u.name), h("p.note", `Клас ${u.cls}, ${rk.title.toLowerCase()}`))),
       h("button.btn.btn--small", { onclick: () => { logout(); go("#/"); } }, "Вийти")),
     h("div.stats.stats--profile",
       stat("📈", o.avg + "%", "середній прогрес"), stat("💯", `${o.done}/${o.ready}`, "тем на 100 %"),
@@ -572,15 +577,15 @@ async function profile() {
       h("div.rankcard__top", h("b", `${rk.icon} ${rk.title}`), h("span.note", rk.next ? `до «${rk.next.title}»: ${rk.next.xp - (u.xp || 0)} ⭐` : "Найвище звання!")),
       bar(rk.toNext, "var(--violet)"),
       h("details", h("summary.note", "Усі звання"), h("div.ranks", RANKS.map((r, i) => h(`div.rankstep${i < rk.level ? ".got" : ""}${i === rk.level - 1 ? ".cur" : ""}`, h("span", r.icon), h("b", r.title), h("small", `${r.xp} ⭐`)))))),
-    h("h2.sec__title", "📈 Прогрес за темами"),
+    h("h2.sec__title", "Прогрес за темами"),
     groupedBars(groups),
     monBox,
-    h("h2.sec__title", `🏅 Значки · ${got.length} з ${BADGES.length}`),
+    h("h2.sec__title", `Значки: ${got.length} з ${BADGES.length}`),
     got.length ? h("div.badges", got.map((b) => badge(b, true))) : h("p.note", "Ще немає значків — пройди перший рівень!"),
     notYet.length ? h("details.card", h("summary", `Ще не отримані (${notYet.length})`), h("div.badges", notYet.map((b) => badge(b, false)))) : null,
-    h("h2.sec__title", "🗂️ Історія спроб"),
+    h("h2.sec__title", "Історія спроб"),
     attemptsBox,
-    h("h2.sec__title", "🔑 Змінити PIN"),
+    h("h2.sec__title", "Змінити PIN"),
     h("div.card.row.gap", pin1, pin2, h("button.btn", { onclick: async () => {
       if (pin1.value.length !== 4 || pin1.value !== pin2.value) return toast("PIN-коди мають бути з 4 цифр і збігатися", "warn");
       try { await changePin(state.uid, pin1.value); toast("PIN змінено", "win"); } catch (e) { toast(errText(e) + " Вийди й увійди знову, потім зміни PIN.", "warn", 5000); }
@@ -590,7 +595,7 @@ async function profile() {
   // Моніторингові: найкращий результат кожної роботи
   const mon = {};
   at.filter((a) => a.type === "monitoring").forEach((a) => { const m = (mon[a.monitoringId] ||= { title: a.topicTitle, best: 0, n: 0, last: a }); m.best = Math.max(m.best, a.pct); m.n++; });
-  if (Object.keys(mon).length) monBox.replaceChildren(h("h2.sec__title", "📋 Моніторингові роботи"),
+  if (Object.keys(mon).length) monBox.replaceChildren(h("h2.sec__title", "Моніторингові роботи"),
     h("div.gbars__grid.card", Object.values(mon).map((m) => h("div.gtile", h("span.gtile__l", m.title.replace("Моніторингова робота: ", "")), h("b.gtile__v.mono", m.best + "%"), bar(m.best, m.best >= 80 ? "var(--right)" : m.best >= 60 ? "var(--yellow)" : "var(--wrong)"), h("small.gtile__s", `спроб: ${m.n}`)))));
   const what = (a) => a.type === "level" ? `${shortTitle(topicById[a.topic] || { title: a.topicTitle })}, рівень ${a.level}` : a.topicTitle;
   attemptsBox.replaceChildren(at.length ? h("div.hist", at.slice(0, 50).map((a) => h("div.hist__row",

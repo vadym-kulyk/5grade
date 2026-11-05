@@ -21,11 +21,11 @@ const RANGE = 24; // дальність кидка кулі світла
 export const LIGHT_PACKS = [[1, 15], [5, 60], [10, 110]]; // [кулі, монети]
 
 const tex = (w, hh, draw) => { const c = document.createElement("canvas"); c.width = w; c.height = hh; draw(c.getContext("2d")); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; };
-const label = (lines, { w = 512, hgt = 128, bg = "rgba(30,20,50,.85)", fg = "#ffd9a0", font = "bold 40px Manrope, sans-serif", k = 1 } = {}) => {
+const label = (lines, { w = 512, hgt = 128, bg = "rgba(30,20,50,.85)", fg = "#ffd9a0", font = "bold 40px Fixel Text, sans-serif", k = 1 } = {}) => {
   const t = tex(w, hgt, (g) => { g.fillStyle = bg; g.beginPath(); g.roundRect(4, 4, w - 8, hgt - 8, 28); g.fill(); g.fillStyle = fg; g.font = font; g.textAlign = "center"; g.textBaseline = "middle"; [].concat(lines).forEach((l, i, a) => g.fillText(l, w / 2, hgt / 2 + (i - (a.length - 1) / 2) * 46)); });
   const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false })); s.scale.set((w / 200) * k, (hgt / 200) * k, 1); return s;
 };
-const bigLetter = (ch) => { const t = tex(128, 128, (g) => { g.shadowColor = "#ff9d00"; g.shadowBlur = 24; g.fillStyle = "#ffd54a"; g.font = "900 100px Unbounded, Manrope, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(ch, 64, 70); });
+const bigLetter = (ch) => { const t = tex(128, 128, (g) => { g.shadowColor = "#ff9d00"; g.shadowBlur = 24; g.fillStyle = "#ffd54a"; g.font = "900 100px Fixel Display, Fixel Text, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(ch, 64, 70); });
   const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false })); s.scale.set(1.1, 1.1, 1); return s; };
 
 export function setupQuest({ scene, walls, uid, teleport }) {
@@ -53,7 +53,7 @@ export function setupQuest({ scene, walls, uid, teleport }) {
   const stone = L("#3b3150");
   box(x1 - x0 + T * 2, H, T, cx, H / 2, z0 - T / 2, stone); box(x1 - x0 + T * 2, H, T, cx, H / 2, z1 + T / 2, stone);
   box(T, H, z1 - z0, x0 - T / 2, H / 2, cz, stone); box(T, H, z1 - z0, x1 + T / 2, H / 2, cz, stone);
-  const title = label(["Таємна кімната", "відьми Граматихи"], { w: 640, hgt: 160, font: "bold 52px Manrope, sans-serif" }); title.position.set(cx, 5.6, z0 + 0.3); title.scale.multiplyScalar(2); scene.add(title);
+  const title = label(["Таємна кімната", "відьми Граматихи"], { w: 640, hgt: 160, font: "bold 52px Fixel Text, sans-serif" }); title.position.set(cx, 5.6, z0 + 0.3); title.scale.multiplyScalar(2); scene.add(title);
   // Свічки
   const candleSpots = [];
   for (let k = 0; k <= 8; k++) { const f = x0 + 0.6 + (k * (x1 - x0 - 1.2)) / 8; candleSpots.push([f, z0 + 0.6], [f, z1 - 0.6]); }
@@ -69,7 +69,7 @@ export function setupQuest({ scene, walls, uid, teleport }) {
   for (const [x, z] of [[x0 + 6, z0 + 6], [x1 - 6, z0 + 6], [x0 + 6, z1 - 6], [x1 - 6, z1 - 6]]) {
     const col = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.9, H, 10), stone); col.position.set(x, H / 2, z); scene.add(col); walls.push([x - 0.9, x + 0.9, z - 0.9, z + 0.9]);
   }
-  const graveT = (w) => tex(128, 160, (g) => { g.fillStyle = "#6f6a7d"; g.beginPath(); g.moveTo(8, 160); g.lineTo(8, 60); g.arc(64, 60, 56, Math.PI, 0); g.lineTo(120, 160); g.fill(); g.fillStyle = "#2a2433"; g.font = "bold 22px Manrope, sans-serif"; g.textAlign = "center"; g.fillText("Тут спочиває", 64, 70); g.font = "bold 24px Manrope, sans-serif"; g.fillText(w, 64, 104); });
+  const graveT = (w) => tex(128, 160, (g) => { g.fillStyle = "#6f6a7d"; g.beginPath(); g.moveTo(8, 160); g.lineTo(8, 60); g.arc(64, 60, 56, Math.PI, 0); g.lineTo(120, 160); g.fill(); g.fillStyle = "#2a2433"; g.font = "bold 22px Fixel Text, sans-serif"; g.textAlign = "center"; g.fillText("Тут спочиває", 64, 70); g.font = "bold 24px Fixel Text, sans-serif"; g.fillText(w, 64, 104); });
   [["«ложить»", x0 + 3, cz - 4], ["«булочна»", x0 + 3, cz + 4], ["«вобщем»", x1 - 3, cz - 4], ["«прийшлось»", x1 - 3, cz + 4], ["«согласен»", cx - 6, z1 - 3], ["«на протязі»", cx + 6, z1 - 3]].forEach(([w, x, z]) => {
     const m = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 1.75), new THREE.MeshLambertMaterial({ map: graveT(w), transparent: true, side: THREE.DoubleSide })); m.position.set(x, 0.88, z); m.lookAt(cx, 0.88, cz); scene.add(m);
   });
@@ -124,9 +124,9 @@ export function setupQuest({ scene, walls, uid, teleport }) {
   // ---------- Боси Темряви ----------
   const hpBar = (name, left, max) => tex(512, 120, (g) => {
     g.fillStyle = "rgba(10,6,20,.85)"; g.beginPath(); g.roundRect(4, 4, 504, 112, 24); g.fill();
-    g.fillStyle = "#ffb3c8"; g.font = "bold 34px Manrope, sans-serif"; g.textAlign = "center"; g.fillText(left > 0 ? name : `${name} — розвіяна!`, 256, 46);
+    g.fillStyle = "#ffb3c8"; g.font = "bold 34px Fixel Text, sans-serif"; g.textAlign = "center"; g.fillText(left > 0 ? name : `${name} — розвіяна!`, 256, 46);
     g.fillStyle = "#3a2a4d"; g.fillRect(40, 70, 432, 26); g.fillStyle = left > 0 ? "#ff3b5c" : "#ffd54a"; g.fillRect(40, 70, 432 * Math.max(0, left) / max, 26);
-    g.fillStyle = "#fff"; g.font = "bold 22px Manrope, sans-serif"; g.fillText(`${Math.max(0, left)} / ${max}`, 256, 91);
+    g.fillStyle = "#fff"; g.font = "bold 22px Fixel Text, sans-serif"; g.fillText(`${Math.max(0, left)} / ${max}`, 256, 91);
   });
   const darkM = new THREE.MeshBasicMaterial({ color: "#05020a", transparent: true, opacity: 0.92 });
   const flashM = new THREE.MeshBasicMaterial({ color: "#fff6c9" });
@@ -225,7 +225,7 @@ export function setupQuest({ scene, walls, uid, teleport }) {
     const n = Object.keys(S).length, ready = n === 6 && bossesDown();
     liquidM.color.set(qs.done ? "#ffd54a" : ready ? "#b06bff" : "#5cff6a");
     cLight.color.set(qs.done ? 0xffd54a : ready ? 0xb06bff : 0x5cff6a);
-    if (qs.done && !doneSprite) { doneSprite = label(`✨ ${QUEST.word.toUpperCase()} ✨`, { w: 700, hgt: 170, font: "900 76px Unbounded, Manrope, sans-serif", fg: "#ffd54a" }); doneSprite.position.set(C.x, 3.4, C.z); doneSprite.scale.multiplyScalar(1.3); scene.add(doneSprite); }
+    if (qs.done && !doneSprite) { doneSprite = label(`✨ ${QUEST.word.toUpperCase()} ✨`, { w: 700, hgt: 170, font: "900 76px Fixel Display, Fixel Text, sans-serif", fg: "#ffd54a" }); doneSprite.position.set(C.x, 3.4, C.z); doneSprite.scale.multiplyScalar(1.3); scene.add(doneSprite); }
     if (!qs.done && doneSprite) { scene.remove(doneSprite); doneSprite = null; }
     drawPanel();
     claim();

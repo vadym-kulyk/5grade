@@ -418,7 +418,7 @@ function sleighPose(model, on, t) {
 const angDiff = (a, b) => { let d = (b - a) % (Math.PI * 2); if (d > Math.PI) d -= Math.PI * 2; if (d < -Math.PI) d += Math.PI * 2; return d; };
 
 // ---------- Написи ----------
-function textCanvas(lines, { w = 512, hgt = 128, bg = "#ffffff", fg = "#1e1b26", font = "bold 44px Manrope, sans-serif", radius = 24, border = "#99cc00" } = {}) {
+function textCanvas(lines, { w = 512, hgt = 128, bg = "#ffffff", fg = "#1e1b26", font = "bold 44px Fixel Text, sans-serif", radius = 24, border = "#99cc00" } = {}) {
   const c = document.createElement("canvas"); c.width = w; c.height = hgt;
   const g = c.getContext("2d");
   g.fillStyle = bg; g.beginPath(); g.roundRect(4, 4, w - 8, hgt - 8, radius); g.fill();
@@ -430,12 +430,12 @@ function textCanvas(lines, { w = 512, hgt = 128, bg = "#ffffff", fg = "#1e1b26",
   return t;
 }
 function nameSprite(name, icon) {
-  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: textCanvas(`${icon} ${name}`, { w: 512, hgt: 110, font: "bold 52px Manrope, sans-serif" }), depthTest: false }));
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: textCanvas(`${icon} ${name}`, { w: 512, hgt: 110, font: "bold 52px Fixel Text, sans-serif" }), depthTest: false }));
   s.scale.set(1.8, 0.39, 1); s.position.y = 2.45; s.renderOrder = 10;
   return s;
 }
 function bubble(model, text) {
-  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: textCanvas(text, { w: 640, hgt: 130, bg: "#fffbe6", border: "#f7c915", font: "bold 48px Manrope, sans-serif" }), depthTest: false }));
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: textCanvas(text, { w: 640, hgt: 130, bg: "#fffbe6", border: "#f7c915", font: "bold 48px Fixel Text, sans-serif" }), depthTest: false }));
   s.scale.set(2.6, 0.53, 1); s.position.y = 3.05; s.renderOrder = 11;
   model.add(s);
   setTimeout(() => model.remove(s), 4500);
@@ -490,7 +490,7 @@ function buildSchool(scene, walls, doors, hw = false) {
     for (let k = 0; k < 6; k++) addBox(3.4, 0.35 * (k + 1), 0.6, STAIRS.x, 0.175 * (k + 1), STAIRS.z + 1.5 - k * 0.6, stM, false);
     walls.push([STAIRS.x - 1.8, STAIRS.x + 1.8, STAIRS.z - 1.8, STAIRS.z + 1.8, f, Infinity]);
     addBox(0.12, 1, 3.6, STAIRS.x - 1.75, 1.6, STAIRS.z, railM, false); addBox(0.12, 1, 3.6, STAIRS.x + 1.75, 1.6, STAIRS.z, railM, false);
-    const stSign = new THREE.Mesh(new THREE.PlaneGeometry(3, 0.8), new THREE.MeshBasicMaterial({ map: textCanvas(`🪜 ${f + 1} поверх`, { w: 480, hgt: 128, font: "bold 54px Manrope, sans-serif", border: "#9d6bdb" }) }));
+    const stSign = new THREE.Mesh(new THREE.PlaneGeometry(3, 0.8), new THREE.MeshBasicMaterial({ map: textCanvas(`🪜 ${f + 1} поверх`, { w: 480, hgt: 128, font: "bold 54px Fixel Text, sans-serif", border: "#9d6bdb" }) }));
     stSign.position.set(STAIRS.x, 3.4, STAIRS.z + 1.9); grp.add(stSign);
     doors.push({ x: STAIRS.x, z: STAIRS.z, r: 4.2, floor: f, label: `🪜 Сходи · ти на ${f + 1} поверсі`, sub: "Натисни E або сюди — обрати поверх", stairs: true });
 
@@ -498,18 +498,18 @@ function buildSchool(scene, walls, doors, hw = false) {
     if (f === 0) {
       const letter = (ch, x, z, color) => {
         const c = document.createElement("canvas"); c.width = c.height = 256; const g = c.getContext("2d");
-        g.fillStyle = color; g.font = "900 220px Unbounded, Manrope, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(ch, 128, 140);
+        g.fillStyle = color; g.font = "900 220px Fixel Display, Fixel Text, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(ch, 128, 140);
         const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
         const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t })); s.scale.set(3, 3, 1); s.position.set(x, 2.4, z); grp.add(s);
         addBox(2.2, 0.8, 2.2, x, 0.4, z, M("#e5e0ee"));
       };
       letter("Ї", -4, -3, "#9d6bdb"); letter("Ґ", 4, -3, "#99cc00");
-      const sign = new THREE.Mesh(new THREE.PlaneGeometry(6, 1.7), new THREE.MeshBasicMaterial({ map: textCanvas("Дослівно", { w: 620, hgt: 176, font: "800 76px Unbounded, Manrope, sans-serif" }) }));
+      const sign = new THREE.Mesh(new THREE.PlaneGeometry(6, 1.7), new THREE.MeshBasicMaterial({ map: textCanvas("Дослівно", { w: 620, hgt: 176, font: "800 76px Fixel Display, Fixel Text, sans-serif" }) }));
       sign.position.set(-8.5, 2.8, S - 0.25); sign.rotation.y = Math.PI; grp.add(sign);
-      const welcome = new THREE.Mesh(new THREE.PlaneGeometry(7, 1.7), new THREE.MeshBasicMaterial({ map: textCanvas(["Школа української мови", "5 клас"], { w: 700, hgt: 170, font: "bold 50px Manrope, sans-serif" }) }));
+      const welcome = new THREE.Mesh(new THREE.PlaneGeometry(7, 1.7), new THREE.MeshBasicMaterial({ map: textCanvas(["Школа української мови", "5 клас"], { w: 700, hgt: 170, font: "bold 50px Fixel Text, sans-serif" }) }));
       welcome.position.set(8.5, 2.8, S - 0.25); welcome.rotation.y = Math.PI; grp.add(welcome);
     } else {
-      const big = new THREE.Sprite(new THREE.SpriteMaterial({ map: textCanvas(`${f + 1} поверх`, { w: 512, hgt: 150, font: "800 70px Unbounded, Manrope, sans-serif", border: f === 1 ? "#f7c915" : "#f08fc0" }) }));
+      const big = new THREE.Sprite(new THREE.SpriteMaterial({ map: textCanvas(`${f + 1} поверх`, { w: 512, hgt: 150, font: "800 70px Fixel Display, Fixel Text, sans-serif", border: f === 1 ? "#f7c915" : "#f08fc0" }) }));
       big.scale.set(5, 1.45, 1); big.position.set(0, 2.6, -3); grp.add(big);
       addBox(4, 0.5, 1.2, 0, 0.25, 4, M("#c3a6ef")); // лава
     }
@@ -544,12 +544,12 @@ function buildSchool(scene, walls, doors, hw = false) {
         addBox(dx ? T : 1.4, H, dx ? 1.4 : T, ex - (dx ? 0 : G - 0.3), H / 2, ez, wallM);
         addBox(dx ? T : 1.4, H, dx ? 1.4 : T, ex + (dx ? 0 : G - 0.3), H / 2, ez, wallM);
         addBox(dx ? T : cw + 2 * T, 1, dx ? cw + 2 * T : T, ex, H - 0.5, ez, wallM, false);
-        const out = new THREE.Mesh(new THREE.PlaneGeometry(4.6, 0.9), new THREE.MeshBasicMaterial({ map: textCanvas("🌳 Вихід надвір", { w: 600, hgt: 120, font: "bold 52px Manrope, sans-serif", border: "#2f9e44" }) }));
+        const out = new THREE.Mesh(new THREE.PlaneGeometry(4.6, 0.9), new THREE.MeshBasicMaterial({ map: textCanvas("🌳 Вихід надвір", { w: 600, hgt: 120, font: "bold 52px Fixel Text, sans-serif", border: "#2f9e44" }) }));
         out.position.set(ex, H - 0.5, ez - dz * 0.3); out.lookAt(ex, H - 0.5, ez - dz * 5); grp.add(out);
         const out2 = out.clone(); out2.position.set(ex, H - 0.5, ez + dz * 0.3); out2.lookAt(ex, H - 0.5, ez + dz * 5);
-        out2.material = new THREE.MeshBasicMaterial({ map: textCanvas("🏫 Школа «Дослівно»", { w: 600, hgt: 120, font: "bold 50px Manrope, sans-serif" }) }); grp.add(out2);
+        out2.material = new THREE.MeshBasicMaterial({ map: textCanvas("🏫 Школа «Дослівно»", { w: 600, hgt: 120, font: "bold 50px Fixel Text, sans-serif" }) }); grp.add(out2);
       } else { const [ex, ez] = toW(L + T / 2, 0); addBox(dx ? T : cw + 2 * T, H, dx ? cw + 2 * T : T, ex, H / 2, ez, wallM); }
-      const sign = new THREE.Mesh(new THREE.PlaneGeometry(5.6, 1), new THREE.MeshBasicMaterial({ map: textCanvas(w.label, { w: 900, hgt: 160, font: "bold 64px Manrope, sans-serif", bg: "#1e1b26", fg: "#ffffff" }) }));
+      const sign = new THREE.Mesh(new THREE.PlaneGeometry(5.6, 1), new THREE.MeshBasicMaterial({ map: textCanvas(w.label, { w: 900, hgt: 160, font: "bold 64px Fixel Text, sans-serif", bg: "#1e1b26", fg: "#ffffff" }) }));
       const [sx, sz] = toW(-0.3, 0); sign.position.set(sx, 3.5, sz); sign.lookAt(0, 3.5, 0); grp.add(sign);
       for (let u = 4; u < L; u += 8) { const [lx, lz] = toW(u, 0); const lamp = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.12, 1.2), new THREE.MeshBasicMaterial({ color: hw ? "#ffb347" : "#fff6c9" })); lamp.position.set(lx, H - 0.1, lz); grp.add(lamp); }
       items.forEach((it, i) => {
@@ -561,7 +561,7 @@ function buildSchool(scene, walls, doors, hw = false) {
         const leaf = new THREE.Mesh(new THREE.BoxGeometry(1.7, 2.8, 0.14), M(it.color));
         const knob = new THREE.Mesh(new THREE.SphereGeometry(0.08), M("#f4f1f9"));
         frame.position.y = 1.5; leaf.position.set(0, 1.42, 0.02); knob.position.set(0.6, 1.4, 0.12);
-        const plate = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 0.9), new THREE.MeshBasicMaterial({ map: textCanvas(wrapWords(it.label), { w: 640, hgt: 240, font: "bold 46px Manrope, sans-serif", border: it.color }) }));
+        const plate = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 0.9), new THREE.MeshBasicMaterial({ map: textCanvas(wrapWords(it.label), { w: 640, hgt: 240, font: "bold 46px Fixel Text, sans-serif", border: it.color }) }));
         plate.position.set(0, 3.55, 0.08);
         door.add(frame, leaf, knob, plate); lod.push({ o: plate, d: 32 });
         if (it.game) { const st = new THREE.Sprite(new THREE.SpriteMaterial({ map: textCanvas("🎮", { w: 128, hgt: 128, font: "80px sans-serif", radius: 64, border: "#58b4f0" }) })); st.scale.set(0.7, 0.7, 1); st.position.set(0, 2.2, 0.4); door.add(st); lod.push({ o: st, d: 32 }); }
@@ -672,7 +672,7 @@ function decorateHalloween(scene, doors) {
 
   // Банери
   const banner = (lines, x, z, ry, bg, fg) => {
-    const t = tex(800, 220, (g) => { g.fillStyle = bg; g.beginPath(); g.roundRect(0, 0, 800, 220, 36); g.fill(); g.fillStyle = fg; g.textAlign = "center"; g.font = "bold 64px Manrope, sans-serif"; lines.forEach((l, i) => g.fillText(l, 400, 92 + i * 80)); });
+    const t = tex(800, 220, (g) => { g.fillStyle = bg; g.beginPath(); g.roundRect(0, 0, 800, 220, 36); g.fill(); g.fillStyle = fg; g.textAlign = "center"; g.font = "bold 64px Fixel Text, sans-serif"; lines.forEach((l, i) => g.fillText(l, 400, 92 + i * 80)); });
     const m = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 1.76), B("#ffffff", { map: t, transparent: true })); m.position.set(x, 2.8, z); m.rotation.y = ry; scene.add(m);
   };
   banner(["Щасливого Геловіну!", "Моторошно цікавої мови"], -8.5, -S + 0.25, 0, "#ff7a1a", "#1e1b26");

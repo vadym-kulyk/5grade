@@ -1,7 +1,7 @@
 import { tree } from "../fig.js";
 // Тема: Правила вживання м’якого знака (Онатій, Ткачук, уроки 56–57, с. 139–146).
-const F = "font-family='Manrope, sans-serif'";
-const D = "font-family='Unbounded, Manrope, sans-serif'";
+const F = "font-family='Fixel Text, sans-serif'";
+const D = "font-family='Fixel Display, Fixel Text, sans-serif'";
 const gap = (id, word, answer, rule, explain, options = ["ь", "—"]) => ({ id, type: "gap", word, options, answer, rule, explain });
 const fish = (x, y, letter, word, col) => `
   <g transform="translate(${x} ${y})">

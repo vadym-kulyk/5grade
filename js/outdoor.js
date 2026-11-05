@@ -241,7 +241,7 @@ export function buildOutdoor(scene, hw = false) {
     hunt.on = true; hunt.word = word; hunt.got = word.split("").map(() => false);
     hunt.letters = word.split("").map((ch, i) => {
       let x, z, k = 0; do { const a = rnd() * Math.PI * 2, r = 25 + Math.random() * 85; x = Math.cos(a) * r; z = 45 + Math.sin(a) * r * 0.9; } while ((!walk(x, z) || Math.hypot(x - 6, z - 52) < 15) && k++ < 200);
-      const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: textTex([ch.toUpperCase()], "#9d6bdb", 128, "900 86px Unbounded, Manrope, sans-serif"), depthTest: true }));
+      const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: textTex([ch.toUpperCase()], "#9d6bdb", 128, "900 86px Fixel Display, Fixel Text, sans-serif"), depthTest: true }));
       s.scale.set(1.6, 1.6, 1); s.position.set(x, 1.6, z); scene.add(s);
       return { s, i, x, z };
     });
@@ -307,7 +307,7 @@ export function buildOutdoor(scene, hw = false) {
 
 const at = (m, x, y, z) => (m.position.set(x, y, z), m);
 const angDiff = (a, b) => { let d = (b - a) % (Math.PI * 2); if (d > Math.PI) d -= Math.PI * 2; if (d < -Math.PI) d += Math.PI * 2; return d; };
-function textTex(lines, border = "#99cc00", w = 512, font = "bold 64px Manrope, sans-serif") {
+function textTex(lines, border = "#99cc00", w = 512, font = "bold 64px Fixel Text, sans-serif") {
   const hgt = w === 128 ? 128 : 280;
   const c = document.createElement("canvas"); c.width = w; c.height = hgt; const g = c.getContext("2d");
   g.fillStyle = "#fffdf6"; g.beginPath(); g.roundRect(4, 4, w - 8, hgt - 8, 24); g.fill(); g.strokeStyle = border; g.lineWidth = 8; g.stroke();

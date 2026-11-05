@@ -1,7 +1,7 @@
 import { tree } from "../fig.js";
 // Тема: Правила вживання апострофа (Онатій, Ткачук, уроки 58–59, с. 146–150).
-const F = "font-family='Manrope, sans-serif'";
-const D = "font-family='Unbounded, Manrope, sans-serif'";
+const F = "font-family='Fixel Text, sans-serif'";
+const D = "font-family='Fixel Display, Fixel Text, sans-serif'";
 const gap = (id, word, answer, rule, explain, extra = {}) => ({ id, type: "gap", word, options: ["’", "—"], answer, rule, explain, ...extra });
 
 export default {

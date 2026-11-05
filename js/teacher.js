@@ -57,7 +57,7 @@ const ready = () => TOPICS.filter((t) => t.ready);
 const heat = (v) => `hsl(${Math.round(v * 1.1)}, 70%, ${v ? 88 - v * 0.25 : 96}%)`;
 
 function draw() {
-  const tabs = [["overview", "📊 Огляд"], ["attempts", "🗂️ Спроби"], ["topic", "📚 Тема"], ["mon", "📋 Моніторингові"], ["live", "🎤 Питання"], ["preview", "📖 Завдання"], ["board", "🖍️ Дошка"], ["slow", "⏱️ Найдовші питання"], ["student", "👤 Учень"], ["detail", "🔬 Детально"], ["settings", "⚙️ Налаштування"]];
+  const tabs = [["overview", "Огляд"], ["attempts", "Спроби"], ["topic", "Тема"], ["mon", "Моніторингові"], ["live", "Питання"], ["preview", "Завдання"], ["board", "Дошка"], ["slow", "Найдовші питання"], ["student", "Учень"], ["detail", "Детально"], ["settings", "Налаштування"]];
   mount(
     h("header.topbar.topbar--teacher",
       h("a.topbar__logo", { href: "#/teacher" }, wordmark()),

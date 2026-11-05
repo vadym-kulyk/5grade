@@ -1,6 +1,6 @@
 // Будівельні блоки для схем-ілюстрацій до правил (SVG у стилі Midgard).
-export const F = "font-family='Manrope, sans-serif'";
-export const D = "font-family='Unbounded, Manrope, sans-serif'";
+export const F = "font-family='Fixel Text, sans-serif'";
+export const D = "font-family='Fixel Display, Fixel Text, sans-serif'";
 export const C = { lime: "#99cc00", violet: "#9d6bdb", yellow: "#f7c915", ink: "#1e1b26", muted: "#5d5868", right: "#3f7a16", wrong: "#c13f2c", line: "#e5e0ee" };
 const BG = { lime: "#f3fae0", violet: "#f6f1fd", yellow: "#fffdf2", ink: "#faf8fc" };
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
