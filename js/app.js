@@ -187,8 +187,10 @@ function home() {
   const rk = rankOf(u.xp);
   const assigned = TOPICS.filter((t) => state.settings?.topics?.[t.id]?.assigned && t.ready);
 
+  const avBox = h("div.hero__av");
   page(
     h("section.hero.card",
+      avBox,
       h("div.hero__info",
         h("h1", `Привіт, ${u.name}!`),
         h("div.rankline", h("span.rankbig", rk.icon), h("div",
@@ -215,6 +217,7 @@ function home() {
         h("div.topics", ts.map((t) => topicCard(t, p[t.id]))));
     }),
     leaderboardBlock());
+  avatarPreview(avBox, u.avatar, { size: 200 });
 }
 const days = (n) => (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? "дні" : n % 10 === 1 && n % 100 !== 11 ? "день" : "днів");
 const stat = (ic, v, l) => h("div.stat", h("b", v), h("small", l));
