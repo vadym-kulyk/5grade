@@ -13,6 +13,14 @@ import { monWorks, monWork } from "../content/monitoring/index.js";
 const loadMon = async (id) => (await import(`../content/monitoring/${id}.js`)).default;
 // відкриті вчителем роботи теми (варіант 1, 2…)
 const openWorks = (topic) => monWorks(topic).filter((w) => state.settings?.monitoring?.[`t_${w.id}`]?.open === true);
+const monFor = (topicId) => {
+  const t = topicById[topicId], mon = state.settings?.monitoring || {};
+  return [
+    ...openWorks(topicId).map((w) => ({ href: `#/monitoring/t_${w.id}`, title: w.n > 1 ? `Моніторингова робота з теми, варіант ${w.n}` : "Моніторингова робота з теми", note: "Складні завдання без підказок" })),
+    ...(mon[t.s]?.open ? [{ href: `#/monitoring/${t.s}`, title: `Моніторингова робота з розділу «${sectionById[t.s].title}»`, note: "Завдання з усіх тем розділу" }] : []),
+    ...(mon.diag?.open ? [{ href: "#/monitoring/diag", title: "Вхідна діагностика", note: "Завдання з усіх тем курсу" }] : []),
+  ];
+};
 const workTitle = (w) => shortTitle(topicById[w.topic]) + (w.n > 1 ? ` · варіант ${w.n}` : "");
 
 const go = (hash) => (location.hash = hash);
@@ -179,11 +187,9 @@ function home() {
   const waiting = Object.values(state.mistakes || {}).length;
   const avBox = h("div.hero__av");
   const assigned = TOPICS.filter((t) => state.settings?.topics?.[t.id]?.assigned && t.ready);
-  const mon = state.settings?.monitoring || {};
-  const openMon = [...SECTIONS.filter((s) => mon[s.id]?.open), ...(mon.diag?.open ? [{ id: "diag", title: "Вхідна діагностика", n: "🧭" }] : []),
-    ...TOPICS.filter((t) => t.ready).flatMap((t) => openWorks(t.id)).map((w) => ({ id: `t_${w.id}`, title: workTitle(w) }))];
 
   page(
+    h("a.card.quick__item.review-top", { href: "#/review" }, h("b", "Робота над помилками"), h("span.note", due ? `Завдань для повторення: ${due}` : waiting ? `Наступне повторення — пізніше (${waiting})` : "Помилок немає 🎉")),
     h("section.hero.card",
       avBox,
       h("div.hero__info",
@@ -205,12 +211,6 @@ function home() {
         return h("a.assign__item", { href: `#/topic/${t.id}` }, h("b", shortTitle(t)), d && h(`span.${late ? "late" : "note"}`, `до ${fmtDate(d)}`), h("span.mono", tp + "%"), bar(tp));
       }))) : null,
 
-    h("section.quick",
-      h("a.card.quick__item", { href: "#/review" }, h("span.quick__ic", "🔁"), h("b", "Робота над помилками"), h("span.note", due ? `Завдань для повторення: ${due}` : waiting ? `Наступне повторення — пізніше (${waiting})` : "Помилок немає 🎉")),
-      h("a.card.quick__item", { href: "#/school" }, h("span.quick__ic", "🏫"), h("b", "3D-школа"), h("span.note", "Гуляй школою разом з однокласниками")),
-      h("a.card.quick__item", { href: "#/shop" }, h("span.quick__ic", "🎨"), h("b", "Персонаж"), h("span.note", `Твоїх речей: ${Object.keys(u.owned || {}).length} з ${ITEMS.length}`)),
-      ...openMon.map((s) => h("a.card.quick__item.quick__item--mon", { href: `#/monitoring/${s.id}` }, h("span.quick__ic", "📋"), h("b", s.id === "diag" ? s.title : `Моніторингова робота: ${s.title}`), h("span.note", "Відкрив учитель")))),
-
     ...SECTIONS.map((s) => {
       const ts = TOPICS.filter((t) => t.s === s.id);
       return h("section.sec",
@@ -229,6 +229,7 @@ function topicCard(t, pr) {
   if (!topicOpen(t.id)) return h("div.tcard.tcard--locked", h("div.tcard__t", shortTitle(t)), h("div.note", "🔒 Відкриє вчитель"));
   return h(`a.tcard${v === 100 ? ".tcard--done" : ""}`, { href: `#/topic/${t.id}` },
     h("div.tcard__t", shortTitle(t)),
+    monFor(t.id).length ? h("span.tcard__mon", "Відкрита моніторингова робота") : null,
     h("div.tcard__b", ring(v, 54, 7, v === 100 ? "var(--right)" : "var(--lime)"), h("div.note", `Уроки ${t.lessons}`, h("br"), v === 100 ? "Опановано" : `${LEVELS_PER_TOPIC} рівнів`)));
 }
 
@@ -274,9 +275,9 @@ async function topicPage(id) {
     h("section.topichead.card",
       h("div", h("div.note", `${sectionById[t.s].title}, уроки ${t.lessons}`), h("h1", t.title), T.intro && h("p.lead", T.intro), h("p.note", `За підручником: ${t.book || BOOK}`)),
       ring(v, 110, 12, v === 100 ? "var(--right)" : "var(--lime)")),
+    ...monFor(id).map((m) => h("a.card.quick__item.quick__item--mon.topicmon", { href: m.href }, h("b", m.title), h("span.note", `Відкрив учитель. ${m.note}`))),
     h("h2.sec__title", "Теорія"),
     theory,
-    ...openWorks(id).map((w) => h("a.card.quick__item.quick__item--mon.topicmon", { href: `#/monitoring/t_${w.id}` }, h("span.quick__ic", "📋"), h("b", w.n > 1 ? `Моніторингова робота, варіант ${w.n}` : "Моніторингова робота з теми"), h("span.note", "Відкрив учитель. Складні завдання без підказок"))),
     h("h2.sec__title", "Рівні"),
     h("p.note", `У кожному рівні 10 завдань. Відсоток теми рахується з найкращих результатів усіх рівнів. Перший правильний розв’язок: +${ECONOMY.firstSolve} 🪙, 10 з 10: +${ECONOMY.levelPerfect} 🪙, тема на 100 %: +${ECONOMY.topicPerfect} 🪙.`),
     levels,
