@@ -72,8 +72,10 @@ function sync() {
   const progress = fetchDb('progress');
   const tz = Session.getScriptTimeZone();
 
+  // Справжнє ім’я (вписує вчитель на сайті) замість нікнейму учня
+  Object.keys(users).forEach((uid) => { const u = users[uid]; u.nick = u.name; if (u.realName) u.name = u.realName; });
   const attempts = [];
-  Object.keys(attemptsRaw).forEach((uid) => Object.keys(attemptsRaw[uid]).forEach((id) => attempts.push(Object.assign({ uid: uid }, attemptsRaw[uid][id]))));
+  Object.keys(attemptsRaw).forEach((uid) => Object.keys(attemptsRaw[uid]).forEach((id) => attempts.push(Object.assign({ uid: uid }, attemptsRaw[uid][id], users[uid] ? { name: users[uid].name } : {}))));
   attempts.sort((a, b) => b.end - a.end);
 
   // ---------- Спроби ----------
@@ -104,14 +106,14 @@ function sync() {
   // ---------- Учні ----------
   const sU = sheet('Учні', 1);
   sU.clear(); sU.getFilter() && sU.getFilter().remove(); sU.clearConditionalFormatRules();
-  const colsU = ['Клас', 'Учень', 'Звання', 'Досвід', 'Монети', 'Тем на 100 %', 'Середній % тем', 'Спроб', 'Спроб із ⚡', 'Сер. час на завдання, с', 'Серія днів (найкраща)', 'Значків', 'Остання активність'];
+  const colsU = ['Клас', 'Учень', 'Нікнейм', 'Звання', 'Досвід', 'Монети', 'Тем на 100 %', 'Середній % тем', 'Спроб', 'Спроб із ⚡', 'Сер. час на завдання, с', 'Серія днів (найкраща)', 'Значків', 'Остання активність'];
   header(sU, colsU, VIOLET);
   const uids = Object.keys(users).sort((a, b) => (users[a].cls + users[a].name).localeCompare(users[b].cls + users[b].name, 'uk'));
   const touchedTopics = TOPICS.map((t) => t[0]).filter((id) => uids.some((u) => progress[u] && progress[u][id]));
   const rowsU = uids.map((uid) => {
     const u = users[uid], my = attempts.filter((a) => a.uid === uid), p = progress[uid] || {};
     const pcts = touchedTopics.map((id) => (p[id] && p[id].pct) || 0);
-    return [u.cls, u.name, rankOf(u.xp), u.xp || 0, u.coins || 0, pcts.filter((v) => v === 100).length,
+    return [u.cls, u.name, u.nick, rankOf(u.xp), u.xp || 0, u.coins || 0, pcts.filter((v) => v === 100).length,
       pcts.length ? pcts.reduce((s, v) => s + v, 0) / pcts.length / 100 : 0, my.length, my.filter((a) => a.flagged).length,
       my.length ? Math.round(my.reduce((s, a) => s + (a.avgSec || 0), 0) / my.length * 10) / 10 : '',
       (u.streak && u.streak.best) || 0, Object.keys(u.badges || {}).length,
@@ -119,11 +121,11 @@ function sync() {
   });
   if (rowsU.length) {
     sU.getRange(2, 1, rowsU.length, colsU.length).setValues(rowsU);
-    sU.getRange(2, 7, rowsU.length, 1).setNumberFormat('0%');
+    sU.getRange(2, 8, rowsU.length, 1).setNumberFormat('0%');
     sU.getRange(1, 1, rowsU.length + 1, colsU.length).createFilter();
     sU.setConditionalFormatRules([
-      SpreadsheetApp.newConditionalFormatRule().setGradientMinpointWithValue('#f4c7c0', SpreadsheetApp.InterpolationType.NUMBER, '0').setGradientMaxpointWithValue('#c9e88a', SpreadsheetApp.InterpolationType.NUMBER, '1').setRanges([sU.getRange(2, 7, rowsU.length, 1)]).build(),
-      SpreadsheetApp.newConditionalFormatRule().whenNumberGreaterThan(0).setBackground('#fff1b8').setRanges([sU.getRange(2, 9, rowsU.length, 1)]).build(),
+      SpreadsheetApp.newConditionalFormatRule().setGradientMinpointWithValue('#f4c7c0', SpreadsheetApp.InterpolationType.NUMBER, '0').setGradientMaxpointWithValue('#c9e88a', SpreadsheetApp.InterpolationType.NUMBER, '1').setRanges([sU.getRange(2, 8, rowsU.length, 1)]).build(),
+      SpreadsheetApp.newConditionalFormatRule().whenNumberGreaterThan(0).setBackground('#fff1b8').setRanges([sU.getRange(2, 10, rowsU.length, 1)]).build(),
     ]);
   }
   sU.setColumnWidths(1, colsU.length, 110); sU.setColumnWidth(2, 150);
@@ -289,7 +291,8 @@ function reportDialog() {
 function makeReport(name) {
   const ss = SpreadsheetApp.getActive(), tz = Session.getScriptTimeZone();
   const users = fetchDb('users'), progress = fetchDb('progress'), attemptsRaw = fetchDb('attempts');
-  const uid = Object.keys(users).find((k) => users[k].name.toLowerCase() === name.toLowerCase());
+  Object.keys(users).forEach((k) => { const x = users[k]; x.nick = x.name; if (x.realName) x.name = x.realName; });
+  const uid = Object.keys(users).find((k) => (users[k].name.toLowerCase() === name.toLowerCase() || (users[k].nick || '').toLowerCase() === name.toLowerCase()));
   if (!uid) throw new Error('Учня «' + name + '» не знайдено');
   const u = users[uid], p = progress[uid] || {};
   const at = Object.keys(attemptsRaw[uid] || {}).map((k) => attemptsRaw[uid][k]).sort((a, b) => b.end - a.end);

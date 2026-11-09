@@ -49,6 +49,9 @@ async function load() {
   const list = [];
   for (const [uid, a] of Object.entries(attempts || {})) for (const [id, x] of Object.entries(a)) list.push({ ...x, uid, id });
   list.sort((a, b) => b.end - a.end);
+  // Справжнє ім’я (вписує вчитель) замість нікнейму, який учень обрав сам — у всьому кабінеті
+  for (const u of Object.values(users || {})) { u.nick = u.name; if (u.realName) u.name = u.realName; }
+  for (const a of list) if (users?.[a.uid]) a.name = users[a.uid].name;
   data = { users: users || {}, progress: progress || {}, attempts: list, settings: settings || {}, pins: pins || {} };
 }
 
@@ -94,7 +97,7 @@ function overview() {
         h("tbody", st.map(([id, u]) => {
           const mine = at.filter((a) => a.uid === id);
           return h("tr",
-            h("td", h("a", { href: "#/teacher", onclick: (e) => { e.preventDefault(); studentId = id; tab = "student"; draw(); } }, u.name)),
+            h("td", h("a", { href: "#/teacher", onclick: (e) => { e.preventDefault(); studentId = id; tab = "student"; draw(); } }, u.name), nickNote(u)),
             h("td", u.cls), h("td", `${rankOf(u.xp).icon} ${rankOf(u.xp).title}`),
             rt.map((t) => { const v = topicPct(data.progress[id]?.[t.id]); return h("td.mono.center.clk", { style: { background: heat(v) }, title: "Детально по рівнях", onclick: () => openDetail(id, t.id) }, v); }),
             h("td.mono.center", mine.length), h("td.mono.center", mine.filter((a) => a.flagged).length || ""),
@@ -146,7 +149,7 @@ function topicView() {
       h("div.tablewrap", h("table.tbl.heat",
         h("thead", h("tr", h("th", "Учень"), h("th", "Клас"), h("th", "% теми"), lv.map((n) => h("th", `Р${n}`)), h("th", "Спроб"), h("th", "⚡"), h("th", "Сер. на завдання"), h("th", "Остання спроба"))),
         h("tbody", rows.map(({ id, u, p, v, mine, avgSec }) => h("tr",
-          h("td", h("a", { href: "#/teacher", onclick: (e) => { e.preventDefault(); studentId = id; tab = "student"; draw(); } }, u.name)),
+          h("td", h("a", { href: "#/teacher", onclick: (e) => { e.preventDefault(); studentId = id; tab = "student"; draw(); } }, u.name), nickNote(u)),
           h("td", u.cls), h("td.mono.center", { style: { background: heat(v) } }, v + "%"),
           lv.map((n) => { const L = p.levels?.[n]; return h("td.mono.center.clk", { title: "Кожна спроба й кожне завдання рівня", onclick: () => openDetail(id, topicId, n), style: { background: L ? heat((L.best / TASKS_PER_LEVEL) * 100) : "" } }, L ? `${L.best}` : "—"); }),
           h("td.mono.center", mine.length || ""), h("td.mono.center", mine.filter((a) => a.flagged).length || ""),
@@ -304,6 +307,25 @@ function questClassBox(cls) {
   return box;
 }
 
+const nickNote = (u) => (u.realName && u.nick !== u.name ? h("div.note", `нікнейм: ${u.nick}`) : null);
+
+// Справжні імена: учень сам обирає нікнейм, а вчитель вписує, як його звати насправді
+function namesCard() {
+  const st = students();
+  const rows = st.map(([id, u]) => {
+    const inp = h("input.input.input--small", { value: u.realName || "", placeholder: "Прізвище та ім’я", maxlength: 60 });
+    const save = async () => {
+      const v = inp.value.trim().replace(/\s+/g, " ");
+      try { await write(`users/${id}/realName`, v || null); toast(v ? `Збережено: ${v}` : "Справжнє ім’я прибрано"); await load(); draw(); } catch (e) { toast(errText(e), "warn"); }
+    };
+    inp.addEventListener("keydown", (e) => e.key === "Enter" && save());
+    return h("tr", h("td", u.cls), h("td", u.nick), h("td", inp), h("td", h("button.btn.btn--small", { onclick: save }, "Зберегти")));
+  });
+  return h("section.card", h("h2", "Справжні імена учнів"),
+    h("p.note", "Учні входять під нікнеймом, який обрали самі, і бачать саме його. У кабінеті, звітах і Google Таблиці показується справжнє ім’я, якщо ти його вписав."),
+    st.length ? h("div.tablewrap", h("table.tbl", h("thead", h("tr", ["Клас", "Нікнейм", "Справжнє ім’я", ""].map((c) => h("th", c)))), h("tbody", rows))) : h("p.note", "Учнів ще немає."));
+}
+
 function settingsView() {
   const s = data.settings;
   const save = async (path, val, msg = "Збережено") => { try { await write(`settings/${path}`, val); await load(); draw(); toast(msg); } catch (e) { toast(errText(e), "warn"); } };
@@ -317,6 +339,7 @@ function settingsView() {
       h("p.note", "Готові фрази й емоції працюють завжди. Вільний чат — лише коли ти дозволиш. Нецензурні слова автоматично замінюються на ***."),
       h("button.btn.btn--small", { onclick: async () => { if (await confirmBox("Очистити всю історію чату?")) { await remove(r("chat")); toast("Чат очищено"); } } }, "🧹 Очистити чат"),
       sw(s.leaderboard === true, (v) => save("leaderboard", v), "Показувати рейтинг класу (п’ятірка лідерів, інші бачать лише своє місце)")),
+    namesCard(),
     questCard(),
     h("section.card", h("h2", "📋 Моніторингові роботи"),
       h("p.note", "Відкрий роботу — учні побачать її на головній. Завдання беруться з усіх готових тем розділу (до 25 штук)."),
