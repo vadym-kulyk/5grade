@@ -1,6 +1,6 @@
 // Головний модуль: маршрути та сторінки учня.
 import { h, $, mount, toast, modal, shuffle, pct, ring, bar, fmtDate, fmtTime, say, today, num, groupedBars, wordmark } from "./ui.js";
-import { watchAuth, logout, studentLogin, studentRegister, changePin, isTeacher, read, errText } from "./fb.js";
+import { watchAuth, logout, studentLogin, studentRegister, changePin, isTeacher, read, write, errText } from "./fb.js";
 import { CLASSES, ECONOMY, LEVELS_PER_TOPIC, TASKS_PER_LEVEL, halloweenOn, christmasOn } from "./config.js";
 import { state, onChange, bindStudent, unbind, saveSession, loadAttempts, buyItem, owns, saveAvatar, savePreset, awardBadges, settleAvatar } from "./store.js";
 import { RANKS, rankOf, BADGES, badgeById, topicPct, overall } from "./game.js";
@@ -81,9 +81,10 @@ const ICON = {
   school: '<path d="M3 20h18M5 20V9l7-5 7 5v11"/><path d="M10 20v-5h4v5"/>',
   avatar: '<circle cx="12" cy="8" r="3.5"/><path d="M5 20c.8-3.6 3.6-6 7-6s6.2 2.4 7 6"/>',
   progress: '<path d="M4 19h16"/><path d="M7 16v-4M12 16V8M17 16v-7"/>',
+  review: '<path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v4.5h-4.5"/><path d="M8.5 12.5l2.3 2.3 4.7-4.8"/>',
 };
 const icon = (k) => h("span.ic", { html: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[k]}</svg>` });
-const navLink = (href, k, label) => { const cur = (location.hash || "#/").split("/")[1] || ""; const on = href.split("/")[1] === cur || (href === "#/" && (cur === "" || cur === "topic")); return h("a", { href, "aria-current": on ? "page" : null }, icon(k), h("span", label)); };
+const navLink = (href, k, label, count = 0) => { const cur = (location.hash || "#/").split("/")[1] || ""; const on = href.split("/")[1] === cur || (href === "#/" && (cur === "" || cur === "topic")); return h("a", { href, "aria-current": on ? "page" : null }, icon(k), h("span", label), count ? h("b.navcount", { title: "Завдань для повторення" }, count) : null); };
 
 // ---------- Спільні елементи ----------
 function topbar() {
@@ -93,6 +94,7 @@ function topbar() {
     h("a.topbar__logo", { href: "#/" }, wordmark()),
     h("nav.topbar__nav",
       navLink("#/", "topics", "Теми"),
+      navLink("#/review", "review", "Помилки", Object.values(state.mistakes || {}).filter((m) => m.due <= Date.now()).length),
       navLink("#/school", "school", "Школа"),
       navLink("#/shop", "avatar", "Персонаж"),
       navLink("#/profile", "progress", "Прогрес")),
@@ -183,15 +185,10 @@ function home() {
   const u = state.user, p = state.progress || {};
   const o = overall(p);
   const rk = rankOf(u.xp);
-  const due = Object.values(state.mistakes || {}).filter((m) => m.due <= Date.now()).length;
-  const waiting = Object.values(state.mistakes || {}).length;
-  const avBox = h("div.hero__av");
   const assigned = TOPICS.filter((t) => state.settings?.topics?.[t.id]?.assigned && t.ready);
 
   page(
-    h("a.card.quick__item.review-top", { href: "#/review" }, h("b", "Робота над помилками"), h("span.note", due ? `Завдань для повторення: ${due}` : waiting ? `Наступне повторення — пізніше (${waiting})` : "Помилок немає 🎉")),
     h("section.hero.card",
-      avBox,
       h("div.hero__info",
         h("h1", `Привіт, ${u.name}!`),
         h("div.rankline", h("span.rankbig", rk.icon), h("div",
@@ -218,7 +215,6 @@ function home() {
         h("div.topics", ts.map((t) => topicCard(t, p[t.id]))));
     }),
     leaderboardBlock());
-  avatarPreview(avBox, u.avatar, { size: 200 });
 }
 const days = (n) => (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? "дні" : n % 10 === 1 && n % 100 !== 11 ? "день" : "днів");
 const stat = (ic, v, l) => h("div.stat", h("b", v), h("small", l));
@@ -349,22 +345,26 @@ function resultPage(res, T, links) {
 // ---------- Робота над помилками ----------
 async function review() {
   const due = Object.values(state.mistakes || {}).filter((m) => m.due <= Date.now()).slice(0, 15);
-  if (!due.length) {
+  // Завдання, якого вже немає в темі (його переписали), просто прибираємо зі списку повторення
+  const tasks = [];
+  const rules = {};
+  for (const m of due) {
+    let tk = null;
+    if (topicById[m.topic]?.ready) {
+      const T = await loadTopic(m.topic);
+      Object.assign(rules, T.rules);
+      tk = T.levels.flatMap((L) => L.tasks).find((x) => x.id === m.id);
+      for (const w of monWorks(m.topic)) { if (tk) break; tk = (await loadMon(w.id)).tasks.find((x) => x.id === m.id); }
+    }
+    if (tk) tasks.push({ ...tk, topic: m.topic });
+    else await write(`mistakes/${state.uid}/${m.topic}~${m.id}`, null).catch(() => {});
+  }
+  if (!tasks.length) {
     const next = Object.values(state.mistakes || {}).sort((a, b) => a.due - b.due)[0];
     return page(h("a.back", { href: "#/" }, "← На головну"), h("section.card.center",
       h("div.result__big", "🎉"), h("h1", "Зараз нічого повторювати"),
       h("p", next ? `Наступне повторення: ${fmtDate(next.due)} о ${fmtTime(next.due)}.` : "У тебе немає помилок, які треба повторити."),
       h("p.note", "Як це працює: завдання з помилкою повертається через день. Якщо розв’язуєш правильно — ще раз через тиждень. Двічі правильно — завдання засвоєно!")));
-  }
-  const tasks = [];
-  const rules = {};
-  for (const m of due) {
-    if (!topicById[m.topic]?.ready) continue;
-    const T = await loadTopic(m.topic);
-    Object.assign(rules, T.rules);
-    let tk = T.levels.flatMap((L) => L.tasks).find((x) => x.id === m.id);
-    for (const w of monWorks(m.topic)) { if (tk) break; tk = (await loadMon(w.id)).tasks.find((x) => x.id === m.id); }
-    if (tk) tasks.push({ ...tk, topic: m.topic });
   }
   runQuiz({
     title: "Робота над помилками", subtitle: `${tasks.length} завдань`, type: "review", rules, tasks: shuffle(tasks), theory: loadTopic,
