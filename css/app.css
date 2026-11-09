@@ -904,3 +904,4 @@ a.tcard:hover { transform: none; border-color: var(--ink); box-shadow: 0 0 0 1px
 .topbar__nav a { position: relative; }
 .navcount { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--pen); color: #fff; font-size: 11px; font-weight: 700; line-height: 1; }
 @media (max-width: 760px) { .navcount { position: absolute; top: 0; right: 14%; } }
+details.deleted { margin-top: 14px; } details.deleted summary { cursor: pointer; font-weight: 600; color: var(--muted); }

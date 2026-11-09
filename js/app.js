@@ -74,6 +74,8 @@ onChange(async () => {
 
 // Оновлюємо шапку (монети, звання), коли змінюються дані
 onChange(() => { const t = $("#topbar"); if (t && state.user) t.replaceWith(topbar()); });
+// Учитель видалив профіль — виходимо
+onChange(() => { if (state.user?.deleted && !state.teacher) { toast("Цей профіль видалив учитель. Звернися до нього, якщо це помилка.", "warn", 8000); logout(); go("#/"); } });
 
 // Лінійні іконки меню (як намальовані ручкою)
 const ICON = {

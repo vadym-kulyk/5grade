@@ -73,9 +73,9 @@ function sync() {
   const tz = Session.getScriptTimeZone();
 
   // Справжнє ім’я (вписує вчитель на сайті) замість нікнейму учня
-  Object.keys(users).forEach((uid) => { const u = users[uid]; u.nick = u.name; if (u.realName) u.name = u.realName; });
+  Object.keys(users).forEach((uid) => { const u = users[uid]; u.nick = u.name; if (u.realName) u.name = u.realName; if (u.deleted) delete users[uid]; });
   const attempts = [];
-  Object.keys(attemptsRaw).forEach((uid) => Object.keys(attemptsRaw[uid]).forEach((id) => attempts.push(Object.assign({ uid: uid }, attemptsRaw[uid][id], users[uid] ? { name: users[uid].name } : {}))));
+  Object.keys(attemptsRaw).filter((uid) => users[uid]).forEach((uid) => Object.keys(attemptsRaw[uid]).forEach((id) => attempts.push(Object.assign({ uid: uid }, attemptsRaw[uid][id], users[uid] ? { name: users[uid].name } : {}))));
   attempts.sort((a, b) => b.end - a.end);
 
   // ---------- Спроби ----------

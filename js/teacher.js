@@ -1,6 +1,6 @@
 // Кабінет учителя: огляд, спроби, найдовші питання, звіт учня, налаштування.
 import { h, mount, toast, pct, bar, ring, fmtDate, fmtTime, confirmBox, today, num, groupedBars, wordmark } from "./ui.js";
-import { watchAuth, teacherLogin, teacherRegister, teacherResetPassword, logout, isTeacher, read, patch, write, r, remove, errText } from "./fb.js";
+import { watchAuth, teacherLogin, teacherRegister, teacherResetPassword, logout, isTeacher, read, write, r, remove, errText, update, ref, db } from "./fb.js";
 import { TEACHER_EMAIL, CLASSES, LEVELS_PER_TOPIC, TASKS_PER_LEVEL, halloweenOn, christmasOn } from "./config.js";
 import { SECTIONS, TOPICS, topicById, shortTitle } from "../content/index.js";
 import { rankOf, topicPct, BADGES } from "./game.js";
@@ -51,8 +51,12 @@ async function load() {
   list.sort((a, b) => b.end - a.end);
   // Справжнє ім’я (вписує вчитель) замість нікнейму, який учень обрав сам — у всьому кабінеті
   for (const u of Object.values(users || {})) { u.nick = u.name; if (u.realName) u.name = u.realName; }
-  for (const a of list) if (users?.[a.uid]) a.name = users[a.uid].name;
-  data = { users: users || {}, progress: progress || {}, attempts: list, settings: settings || {}, pins: pins || {} };
+  // Видалені учні: ховаємо з усіх вкладок, але даємо відновити
+  const deleted = {};
+  for (const [id, u] of Object.entries(users || {})) if (u.deleted) { deleted[id] = u; delete users[id]; }
+  const kept = list.filter((a) => !deleted[a.uid]);
+  for (const a of kept) if (users?.[a.uid]) a.name = users[a.uid].name;
+  data = { deleted, users: users || {}, progress: progress || {}, attempts: kept, settings: settings || {}, pins: pins || {} };
 }
 
 const students = () => Object.entries(data.users).filter(([, u]) => cls === "all" || u.cls === cls).sort((a, b) => (a[1].cls + a[1].name).localeCompare(b[1].cls + b[1].name, "uk"));
@@ -307,6 +311,30 @@ function questClassBox(cls) {
   return box;
 }
 
+// Видалення учня: знімаємо з входу, рейтингу й 3D-школи, позначаємо профіль видаленим
+async function deleteStudent(id, u) {
+  const who = u.nick && u.nick !== u.name ? `${u.name} (${u.nick})` : u.name;
+  if (!(await confirmBox(`Видалити учня ${who}, клас ${u.cls}? Він зникне зі списку входу, рейтингу, кабінету й Google Таблиці, а якщо зараз на сайті — вийде з профілю. Відновити можна в цьому ж розділі.`, "Видалити"))) return;
+  try {
+    await update(ref(db), { [`users/${id}/deleted`]: Date.now(), [`roster/${u.cls}/${id}`]: null, [`public/${id}`]: null });
+    toast(`Учня ${who} видалено`); await load(); draw();
+  } catch (e) { toast(errText(e), "warn"); }
+}
+async function restoreStudent(id, u) {
+  try {
+    await update(ref(db), { [`users/${id}/deleted`]: null, [`roster/${u.cls}/${id}`]: { name: u.nick, login: u.login }, [`public/${id}`]: { name: u.nick, cls: u.cls, xp: u.xp || 0, avatar: u.avatar || null } });
+    toast(`Учня ${u.name} відновлено`); await load(); draw();
+  } catch (e) { toast(errText(e), "warn"); }
+}
+function deletedBox() {
+  const list = Object.entries(data.deleted || {}).filter(([, u]) => cls === "all" || u.cls === cls);
+  if (!list.length) return null;
+  return h("details.deleted", h("summary", `Видалені учні (${list.length})`),
+    h("div.tablewrap", h("table.tbl", h("thead", h("tr", ["Учень", "Нікнейм", "Клас", "Видалено", ""].map((x) => h("th", x)))),
+      h("tbody", list.map(([id, u]) => h("tr", h("td", u.name), h("td", u.nick), h("td", u.cls), h("td.note", `${fmtDate(u.deleted)} ${fmtTime(u.deleted)}`),
+        h("td", h("button.btn.btn--small", { onclick: () => restoreStudent(id, u) }, "Відновити"))))))));
+}
+
 const nickNote = (u) => (u.realName && u.nick !== u.name ? h("div.note", `нікнейм: ${u.nick}`) : null);
 
 // Справжні імена: учень сам обирає нікнейм, а вчитель вписує, як його звати насправді
@@ -358,18 +386,15 @@ function settingsView() {
             h("td.center", h("input", { type: "checkbox", checked: !!ts.assigned, onchange: (e) => save(`topics/${t.id}/assigned`, e.target.checked) })),
             h("td", h("input.input.input--small", { type: "date", value: ts.deadline || "", onchange: (e) => save(`topics/${t.id}/deadline`, e.target.value || null) })));
         }))))),
-    h("section.card", h("h2", "🔑 Учні та PIN-коди"),
-      h("p.note", "Якщо учень забув PIN — подивись його тут. Учень може змінити PIN у своєму профілі."),
+    h("section.card", h("h2", "Учні та PIN-коди"),
+      h("p.note", "Якщо учень забув PIN, подивись його тут. Учень може змінити PIN у своєму профілі. «Видалити» прибирає учня зі входу, рейтингу, кабінету й Google Таблиці; його можна відновити нижче."),
       h("div.tablewrap", h("table.tbl",
         h("thead", h("tr", ["Учень", "Клас", "PIN", "Монети", ""].map((x) => h("th", x)))),
         h("tbody", st.map(([id, u]) => {
           const pinCell = h("td.mono", h("button.btn.btn--small", { onclick: () => pinCell.replaceChildren(data.pins[id] || "—") }, "показати"));
           return h("tr", h("td", u.name), h("td", u.cls), pinCell, h("td.mono", u.coins || 0),
-            h("td", h("button.btn.btn--small.btn--danger", { onclick: async () => {
-              if (!(await confirmBox(`Прибрати ${u.name} зі списку класу? Результати в таблиці залишаться.`, "Прибрати"))) return;
-              await patch("", { [`roster/${u.cls}/${id}`]: null, [`public/${id}`]: null });
-              toast("Учня прибрано зі списку входу");
-            } }, "Прибрати")));
-        }))))),
+            h("td", h("button.btn.btn--small.btn--danger", { onclick: () => deleteStudent(id, u) }, "Видалити")));
+        })))),
+      deletedBox()),
   ];
 }
