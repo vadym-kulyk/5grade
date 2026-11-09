@@ -106,6 +106,7 @@ function sync() {
   // ---------- Учні ----------
   const sU = sheet('Учні', 1);
   sU.clear(); sU.getFilter() && sU.getFilter().remove(); sU.clearConditionalFormatRules();
+  sU.getRange(1, 1, sU.getMaxRows(), sU.getMaxColumns()).clearFormat(); // скидаємо формати старих колонок (відсотки, дати)
   const colsU = ['Клас', 'Учень', 'Нікнейм', 'Звання', 'Досвід', 'Монети', 'Тем на 100 %', 'Середній % тем', 'Спроб', 'Спроб із ⚡', 'Сер. час на завдання, с', 'Серія днів (найкраща)', 'Значків', 'Остання активність'];
   header(sU, colsU, VIOLET);
   const uids = Object.keys(users).sort((a, b) => (users[a].cls + users[a].name).localeCompare(users[b].cls + users[b].name, 'uk'));
