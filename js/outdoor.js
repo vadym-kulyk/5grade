@@ -3,6 +3,8 @@
 import * as THREE from "three";
 import { petModel } from "./avatar.js";
 import { mergeStatic } from "./merge.js";
+import { VILLAGE } from "./houses.js";
+import { PK } from "./parkour.js";
 
 const R_WORLD = 175;
 const LAKES = [{ x: -70, z: 112, rx: 26, rz: 17 }, { x: 88, z: -40, rx: 16, rz: 12 }];
@@ -31,7 +33,7 @@ const FACTS = {
   duck: "🦆 Качка → каченя: суфікс -еня називає малят.",
 };
 
-export function buildOutdoor(scene, hw = false) {
+export function buildOutdoor(scene, hw = false, winter = false) {
   const M = (c, o = {}) => new THREE.MeshLambertMaterial({ color: c, ...o });
   const anim = [], spots = [], colliders = []; // colliders: [x, z, r, top]
   const stat = new THREE.Group(); scene.add(stat); // нерухоме — потім зіллємо
@@ -42,17 +44,17 @@ export function buildOutdoor(scene, hw = false) {
   // Трава
   const grass = (() => {
     const c = document.createElement("canvas"); c.width = c.height = 128; const g = c.getContext("2d");
-    g.fillStyle = hw ? "#4f6b3a" : "#8cc65a"; g.fillRect(0, 0, 128, 128);
-    for (let i = 0; i < 900; i++) { g.fillStyle = `hsla(${hw ? 95 : 90 + rnd() * 25}, 50%, ${(hw ? 28 : 42) + rnd() * 16}%, .55)`; g.fillRect(rnd() * 128, rnd() * 128, 2, 3); }
+    g.fillStyle = winter ? "#f3f7fb" : hw ? "#4f6b3a" : "#8cc65a"; g.fillRect(0, 0, 128, 128);
+    for (let i = 0; i < 900; i++) { g.fillStyle = winter ? `hsla(210, 35%, ${84 + rnd() * 12}%, .6)` : `hsla(${hw ? 95 : 90 + rnd() * 25}, 50%, ${(hw ? 28 : 42) + rnd() * 16}%, .55)`; g.fillRect(rnd() * 128, rnd() * 128, 2, 3); }
     const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(70, 70); t.colorSpace = THREE.SRGBColorSpace; return t;
   })();
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(460, 460), new THREE.MeshLambertMaterial({ map: grass }));
   ground.rotation.x = -Math.PI / 2; add(ground, 0, -0.02, 0);
   // Пагорби по краях (за межею, куди можна дійти)
-  for (let i = 0; i < 14; i++) { const a = (i / 14) * Math.PI * 2, r = 205 + rnd() * 20; const hill = new THREE.Mesh(new THREE.SphereGeometry(30 + rnd() * 20, 16, 10), M(hw ? "#3d5530" : "#79b84c")); hill.scale.y = 0.45; add(hill, Math.cos(a) * r, -4, Math.sin(a) * r); }
+  for (let i = 0; i < 14; i++) { const a = (i / 14) * Math.PI * 2, r = 205 + rnd() * 20; const hill = new THREE.Mesh(new THREE.SphereGeometry(30 + rnd() * 20, 16, 10), M(winter ? "#eef3f8" : hw ? "#3d5530" : "#79b84c")); hill.scale.y = 0.45; add(hill, Math.cos(a) * r, -4, Math.sin(a) * r); }
 
   // Доріжки
-  const pathM = M(hw ? "#8a7a62" : "#e2cfa6");
+  const pathM = M(winter ? "#d5dde8" : hw ? "#8a7a62" : "#e2cfa6");
   const path = (x1, z1, x2, z2, w = 3.2) => { const l = Math.hypot(x2 - x1, z2 - z1); const p = new THREE.Mesh(new THREE.PlaneGeometry(w, l), pathM); p.rotation.x = -Math.PI / 2; p.rotation.z = -Math.atan2(x2 - x1, z2 - z1); add(p, (x1 + x2) / 2, 0.012, (z1 + z2) / 2); };
   path(0, 36, 0, 58); path(0, 58, -48, 54); path(0, 58, -66, 132); path(0, 58, 46, 80); path(0, 58, 0, -70, 2.6); path(0, -70, 0, -110, 2.6); path(-62, -60, -62, -120, 2.4); path(0, 58, 105, 62, 2.6);
   const plaza = new THREE.Mesh(new THREE.CircleGeometry(7, 28), pathM); plaza.rotation.x = -Math.PI / 2; add(plaza, 0, 0.014, 58);
@@ -65,8 +67,8 @@ export function buildOutdoor(scene, hw = false) {
 
   // Озера з піщаним берегом
   for (const l of LAKES) {
-    const sand = new THREE.Mesh(new THREE.CircleGeometry(1, 40), M(hw ? "#7a6a52" : "#ead9a8")); sand.scale.set(l.rx + 2.5, l.rz + 2.5, 1); sand.rotation.x = -Math.PI / 2; add(sand, l.x, 0.008, l.z);
-    const water = new THREE.Mesh(new THREE.CircleGeometry(1, 40), new THREE.MeshLambertMaterial({ color: hw ? "#2d4a6b" : "#4fa8e0", emissive: "#0b2a44" })); water.scale.set(l.rx, l.rz, 1); water.rotation.x = -Math.PI / 2; add(water, l.x, 0.03, l.z);
+    const sand = new THREE.Mesh(new THREE.CircleGeometry(1, 40), M(winter ? "#e6edf4" : hw ? "#7a6a52" : "#ead9a8")); sand.scale.set(l.rx + 2.5, l.rz + 2.5, 1); sand.rotation.x = -Math.PI / 2; add(sand, l.x, 0.008, l.z);
+    const water = new THREE.Mesh(new THREE.CircleGeometry(1, 40), new THREE.MeshLambertMaterial({ color: winter ? "#cfe6f7" : hw ? "#2d4a6b" : "#4fa8e0", emissive: winter ? "#16314a" : "#0b2a44" })); water.scale.set(l.rx, l.rz, 1); water.rotation.x = -Math.PI / 2; add(water, l.x, 0.03, l.z);
     water.userData.dyn = true;
     anim.push((t) => water.material.emissive.setHSL(0.58, 0.6, 0.1 + Math.sin(t * 1.3 + l.x) * 0.025));
     // очерет
@@ -86,7 +88,7 @@ export function buildOutdoor(scene, hw = false) {
     const geo = new THREE.BufferGeometry(); const pos = [], idx = [];
     pts.forEach((x, i) => { const z = riverZ(x); pos.push(x, 0.03, z - 4.2, x, 0.03, z + 4.2); if (i) { const k = i * 2; idx.push(k - 2, k - 1, k, k - 1, k + 1, k); } });
     geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); geo.setIndex(idx); geo.computeVertexNormals();
-    const river = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: hw ? "#2d4a6b" : "#4aa3dc", emissive: "#0b2a44", side: THREE.DoubleSide })); scene.add(river);
+    const river = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: winter ? "#3d7fb3" : hw ? "#2d4a6b" : "#4aa3dc", emissive: "#0b2a44", side: THREE.DoubleSide })); scene.add(river);
     anim.push((t) => river.material.emissive.setHSL(0.57, 0.6, 0.1 + Math.sin(t * 2) * 0.03));
     for (const b of BRIDGES) {
       const z = riverZ(b.x);
@@ -98,7 +100,8 @@ export function buildOutdoor(scene, hw = false) {
   // Ліс: ялини й листяні дерева (InstancedMesh — швидко навіть на телефоні)
   const free = (x, z, pad = 2) => Math.hypot(x, z) < R_WORLD - 3 && !inRect(x, z, SCHOOL, 4) && !inLake(x, z, 4) && !inRiver(x, z, 4) && !inRect(x, z, QUEST, 2) &&
     !(Math.abs(x - FIELD.x) < FIELD.w / 2 + 4 && Math.abs(z - FIELD.z) < FIELD.d / 2 + 4) && Math.hypot(x, z - 58) > 12 && !(Math.abs(x) < 4) &&
-    Math.hypot(x - 46, z - 80) > 12 && Math.hypot(x - 108, z - 62) > 8 && Math.hypot(x + 22, z - 88) > 7 && !onPathish(x, z, pad);
+    Math.hypot(x - 46, z - 80) > 12 && Math.hypot(x - 108, z - 62) > 8 && Math.hypot(x + 22, z - 88) > 7 && !onPathish(x, z, pad) &&
+    !inRect(x, z, VILLAGE, 6) && Math.hypot(x - PK.x, z - PK.z) > PK.r + 2;
   function onPathish(x, z) { return (Math.abs(x) < 3 && z > -110 && z < 60) || (Math.abs(z - 58) < 3 && x > -50 && x < 105); }
   const pines = [], leafy = [];
   let tries = 0;
@@ -113,8 +116,8 @@ export function buildOutdoor(scene, hw = false) {
   }
   const inst = (geo, mat, list, y, sy = 1, sxz = 1) => { const im = new THREE.InstancedMesh(geo, mat, list.length); const m4 = new THREE.Matrix4(); list.forEach(([x, z, s], i) => { m4.compose(new THREE.Vector3(x, y * s, z), new THREE.Quaternion(), new THREE.Vector3(s * sxz, s * sy, s * sxz)); im.setMatrixAt(i, m4); }); scene.add(im); return im; };
   const trunkG = new THREE.CylinderGeometry(0.25, 0.35, 2, 6), trunkM = M("#7a5232");
-  inst(trunkG, trunkM, pines, 1); inst(new THREE.ConeGeometry(1.8, 4.6, 7), M(hw ? "#2f4a2a" : "#2f7d3a"), pines, 4.1); inst(new THREE.ConeGeometry(1.3, 3, 7), M(hw ? "#35562e" : "#3c9447"), pines, 6.2);
-  inst(trunkG, trunkM, leafy, 1); inst(new THREE.SphereGeometry(2.1, 8, 6), M(hw ? "#b8612a" : "#5fae3e"), leafy, 3.6);
+  inst(trunkG, trunkM, pines, 1); inst(new THREE.ConeGeometry(1.8, 4.6, 7), M(winter ? "#2b6343" : hw ? "#2f4a2a" : "#2f7d3a"), pines, 4.1); inst(new THREE.ConeGeometry(1.3, 3, 7), M(winter ? "#f4f8fc" : hw ? "#35562e" : "#3c9447"), pines, 6.2);
+  inst(trunkG, trunkM, leafy, 1); inst(new THREE.SphereGeometry(2.1, 8, 6), M(winter ? "#e9eff6" : hw ? "#b8612a" : "#5fae3e"), leafy, 3.6);
   [...pines, ...leafy].forEach(([x, z, s]) => colliders.push([x, z, 0.5 * s, 8 * s]));
   // Гриби, каміння, квіти
   const pick = (n, f) => { const out = []; let k = 0; while (out.length < n && k++ < n * 40) { const x = (rnd() - 0.5) * 2 * R_WORLD, z = (rnd() - 0.5) * 2 * R_WORLD; if (f(x, z)) out.push([x, z, 0.6 + rnd() * 0.8]); } return out; };
@@ -122,13 +125,13 @@ export function buildOutdoor(scene, hw = false) {
   inst(new THREE.CylinderGeometry(0.08, 0.1, 0.35, 6), M("#f4ead2"), shrooms, 0.17); inst(new THREE.SphereGeometry(0.28, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2), M("#e2443c"), shrooms, 0.33);
   const rocks = pick(60, (x, z) => free(x, z)); inst(new THREE.DodecahedronGeometry(0.9), M("#9a97a6"), rocks, 0.35, 0.6);
   rocks.forEach(([x, z, s]) => colliders.push([x, z, 0.8 * s, 1]));
-  const flowers = pick(700, (x, z) => free(x, z, 0) && ((x > 10 && x < 95 && z > 88 && z < 150) || (x < -20 && x > -110 && z > -70 && z < -20) || rnd() < 0.05));
+  const flowers = winter ? [] : pick(700, (x, z) => free(x, z, 0) && ((x > 10 && x < 95 && z > 88 && z < 150) || (x < -20 && x > -110 && z > -70 && z < -20) || rnd() < 0.05));
   const fcols = ["#f08fc0", "#f7c915", "#ffffff", "#9d6bdb", "#e2445c", "#58b4f0"];
-  fcols.forEach((c, k) => inst(new THREE.SphereGeometry(0.16, 6, 4), new THREE.MeshLambertMaterial({ color: c, emissive: c, emissiveIntensity: 0.15 }), flowers.filter((_, i) => i % fcols.length === k), 0.35));
-  inst(new THREE.CylinderGeometry(0.02, 0.02, 0.35, 4), M("#4f8a2a"), flowers, 0.17);
+  if (flowers.length) fcols.forEach((c, k) => inst(new THREE.SphereGeometry(0.16, 6, 4), new THREE.MeshLambertMaterial({ color: c, emissive: c, emissiveIntensity: 0.15 }), flowers.filter((_, i) => i % fcols.length === k), 0.35));
+  if (flowers.length) inst(new THREE.CylinderGeometry(0.02, 0.02, 0.35, 4), M("#4f8a2a"), flowers, 0.17);
 
   // Футбольне поле з м’ячем
-  const fieldM = M(hw ? "#3f5a30" : "#5fb24a"), lineM = new THREE.MeshBasicMaterial({ color: "#ffffff" });
+  const fieldM = M(winter ? "#dce9f4" : hw ? "#3f5a30" : "#5fb24a"), lineM = new THREE.MeshBasicMaterial({ color: winter ? "#2440c2" : "#ffffff" });
   const fp = new THREE.Mesh(new THREE.PlaneGeometry(FIELD.w, FIELD.d), fieldM); fp.rotation.x = -Math.PI / 2; add(fp, FIELD.x, 0.015, FIELD.z);
   const ln = (w, d, x, z) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), lineM); m.rotation.x = -Math.PI / 2; add(m, x, 0.02, z); };
   ln(FIELD.w, 0.15, FIELD.x, FIELD.z - FIELD.d / 2); ln(FIELD.w, 0.15, FIELD.x, FIELD.z + FIELD.d / 2); ln(0.15, FIELD.d, FIELD.x - FIELD.w / 2, FIELD.z); ln(0.15, FIELD.d, FIELD.x + FIELD.w / 2, FIELD.z); ln(0.15, FIELD.d, FIELD.x, FIELD.z);
@@ -143,7 +146,8 @@ export function buildOutdoor(scene, hw = false) {
   }
   const ball = add(new THREE.Mesh(new THREE.IcosahedronGeometry(0.4, 1), new THREE.MeshLambertMaterial({ color: "#ffffff", flatShading: true })), FIELD.x, 0.4, FIELD.z);
   ball.userData.dyn = true;
-  const bv = { x: 0, z: 0 }; let goalCd = 0, onGoal = null;
+  const bv = { x: 0, z: 0 }; let goalCd = 0, onGoal = null, onKick = null, kickT = -1;
+  const score = [0, 0];
   const resetBall = () => { ball.position.set(FIELD.x, 0.4, FIELD.z); bv.x = bv.z = 0; };
   spots.push({ x: FIELD.x, z: FIELD.z + FIELD.d / 2 + 1.5, r: 3, label: "⚽ Футбольне поле", sub: "Підбігай до м’яча — штовхай його у ворота!", info: "⚽ Підбіжи до м’яча, і він покотиться. Заб’єш гол — почуєш оплески!" });
 
@@ -202,29 +206,29 @@ export function buildOutdoor(scene, hw = false) {
     m.position.set(x, 0, z); animals.push(o); lod.push({ o: m, d: 75, out: true });
     spots.push({ ref: o, r: 2.6 * Math.max(1, scale / 1.5), label: { deer: "🦌 Олень", fox: "🦊 Лисиця", bunny: "🐰 Зайчик", hedgehog: "🦔 Їжачок", dog: "🐶 Пес Бровко", cat: "🐱 Кіт Мурчик" }[kind], info: FACTS[kind] });
   };
-  const walk = (x, z) => Math.hypot(x, z) < R_WORLD - 4 && !inLake(x, z, 1) && !inRiver(x, z, 1) && !inRect(x, z, SCHOOL, 1) && !inRect(x, z, QUEST, 1);
+  const walk = (x, z) => Math.hypot(x, z) < R_WORLD - 4 && !inLake(x, z, 1) && !inRiver(x, z, 1) && !inRect(x, z, SCHOOL, 1) && !inRect(x, z, QUEST, 1) && !inRect(x, z, VILLAGE, 2) && Math.hypot(x - PK.x, z - PK.z) > PK.r;
   for (let i = 0; i < 4; i++) animal("reindeer", "deer", 2.2, { x: 40 + i * 12, z: 120, r: 30 }, 2.2);
   for (let i = 0; i < 2; i++) animal("reindeer", "deer", 2.2, { x: -40, z: -130, r: 25 }, 2.2);
-  for (let i = 0; i < 3; i++) animal("fox", "fox", 1.7, { x: -110, z: 30 + i * 30, r: 25 }, 3);
+  for (let i = 0; i < 3; i++) animal("fox", "fox", 1.7, { x: -120, z: 100 + i * 15, r: 18 }, 3);
   for (let i = 0; i < 6; i++) animal("bunny", "bunny", 1.4, { x: 30 + (i % 3) * 25, z: 115, r: 30 }, 3.6);
-  for (let i = 0; i < 3; i++) animal("hedgehog", "hedgehog", 1.4, { x: -70 + i * 10, z: -45, r: 20 }, 1.2);
+  for (let i = 0; i < 3; i++) animal("hedgehog", "hedgehog", 1.4, { x: -35 + i * 10, z: -78, r: 14 }, 1.2);
   animal("dog", "dog", 1.6, { x: 46, z: 80, r: 14 }, 3.2);
   animal("cat", "cat", 1.4, { x: 8, z: 46, r: 9 }, 1.6);
   // Сови на деревах
   for (const [x, z] of leafy.slice(0, 5)) { const owl = petModel("owl", 1.4); owl.position.set(x, 5.4, z + 1.6); scene.add(owl); lod.push({ o: owl, d: 60, out: true }); spots.push({ x, z: z + 2.2, r: 3, label: "🦉 Сова на дереві", info: FACTS.owl }); }
   // Качки на озері
   const ducks = [];
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < (winter ? 0 : 6); i++) {
     const d = new THREE.Group();
     d.add(at(new THREE.Mesh(new THREE.SphereGeometry(0.35, 10, 8).scale(1.3, 0.8, 1), M(i === 0 ? "#f7c915" : "#8a6a4a")), 0, 0.2, 0));
     d.add(at(new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 8), M(i % 2 ? "#2f7d3a" : "#8a6a4a")), 0.38, 0.5, 0));
     d.add(at(new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.06, 0.12), M("#ff9d1a")), 0.6, 0.47, 0));
     scene.add(d); const l = LAKES[i % 2]; lod.push({ o: d, d: 90, out: true }); ducks.push({ d, l, a: rnd() * 6, r: 0.3 + rnd() * 0.5, sp: 0.08 + rnd() * 0.08 });
   }
-  spots.push({ x: -70, z: 130.5, r: 2, label: "🦆 Качки", info: FACTS.duck });
+  if (!winter) spots.push({ x: -70, z: 130.5, r: 2, label: "🦆 Качки", info: FACTS.duck });
   // Риби вистрибують із води
   const fish = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 6).scale(1.6, 0.7, 0.6), M("#f7a51a")); scene.add(fish);
-  let fishT = 0, fishP = null;
+  let fishT = winter ? Infinity : 0, fishP = null; // взимку озера замерзли — риба не стрибає
   // Птахи й хмари
   const birds = [];
   for (let i = 0; i < 9; i++) { const b = new THREE.Group(); for (const s of [-1, 1]) { const w = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.04, 0.3), M("#2a2733")); w.position.x = s * 0.45; b.add(w); } scene.add(b); birds.push({ b, cx: (i % 3) * 60 - 60, cz: -40 + Math.floor(i / 3) * 60, r: 14 + rnd() * 10, ph: rnd() * 6, h: 20 + rnd() * 8 }); }
@@ -232,7 +236,7 @@ export function buildOutdoor(scene, hw = false) {
   for (let i = 0; i < 16; i++) { const c = new THREE.Group(); for (let k = 0; k < 4; k++) { const p = new THREE.Mesh(new THREE.SphereGeometry(3 + rnd() * 3, 8, 6), new THREE.MeshLambertMaterial({ color: "#ffffff", emissive: "#bbbbbb" })); p.position.set(k * 4 - 6, rnd() * 1.5, rnd() * 3); c.add(p); } c.position.set((rnd() - 0.5) * 400, 45 + rnd() * 15, (rnd() - 0.5) * 400); scene.add(c); mergeStatic(c); clouds.push(c); }
   // Метелики біля квітів
   const butterflies = [];
-  for (let i = 0; i < 14; i++) { const b = new THREE.Group(); const c = fcols[i % fcols.length]; for (const s of [-1, 1]) { const w = new THREE.Mesh(new THREE.PlaneGeometry(0.35, 0.3), new THREE.MeshBasicMaterial({ color: c, side: THREE.DoubleSide })); w.position.x = s * 0.17; b.add(w); } scene.add(b); lod.push({ o: b, d: 55, out: true }); butterflies.push({ b, cx: 20 + rnd() * 70, cz: 95 + rnd() * 50, ph: rnd() * 6 }); }
+  for (let i = 0; i < (winter ? 0 : 14); i++) { const b = new THREE.Group(); const c = fcols[i % fcols.length]; for (const s of [-1, 1]) { const w = new THREE.Mesh(new THREE.PlaneGeometry(0.35, 0.3), new THREE.MeshBasicMaterial({ color: c, side: THREE.DoubleSide })); w.position.x = s * 0.17; b.add(w); } scene.add(b); lod.push({ o: b, d: 55, out: true }); butterflies.push({ b, cx: 20 + rnd() * 70, cz: 95 + rnd() * 50, ph: rnd() * 6 }); }
 
   // ---------- Квест «Знайди букви» ----------
   const hunt = { on: false, word: "", got: [], letters: [] };
@@ -251,7 +255,7 @@ export function buildOutdoor(scene, hw = false) {
   function blocked(x, z, y = 0) {
     if (Math.hypot(x, z) > R_WORLD) return true;
     if (y < 0.5) {
-      if (inLake(x, z) && !onPier(x, z)) return true;
+      if (!winter && inLake(x, z) && !onPier(x, z)) return true;
       if (inRiver(x, z) && !onBridge(x)) return true;
     }
     for (const [cx, cz, r, top] of colliders) if (y < top && (x - cx) ** 2 + (z - cz) ** 2 < (r + 0.4) ** 2) return true;
@@ -261,7 +265,7 @@ export function buildOutdoor(scene, hw = false) {
   function tick(t, dt, me) {
     for (const f of anim) f(t);
     // м’яч
-    if (me && me.y < 0.6 && !me.fly) { const dx = ball.position.x - me.x, dz = ball.position.z - me.z, d = Math.hypot(dx, dz); if (d < 1.1 && d > 0.01) { const k = 9 / d; bv.x = dx * k; bv.z = dz * k; } }
+    if (me && me.y < 0.6 && !me.fly) { const dx = ball.position.x - me.x, dz = ball.position.z - me.z, d = Math.hypot(dx, dz); if (d < 1.1 && d > 0.01) { const k = 9 / d; bv.x = dx * k; bv.z = dz * k; if (t - kickT > 0.25) { kickT = t; onKick?.({ x: +ball.position.x.toFixed(2), z: +ball.position.z.toFixed(2), vx: +bv.x.toFixed(2), vz: +bv.z.toFixed(2) }); } } }
     const nx = ball.position.x + bv.x * dt, nz = ball.position.z + bv.z * dt;
     if (Math.abs(nz - FIELD.z) > FIELD.d / 2 - 0.4) bv.z *= -0.7; else ball.position.z = nz;
     const inGoal = Math.abs(nz - FIELD.z) < 2;
@@ -269,7 +273,7 @@ export function buildOutdoor(scene, hw = false) {
     bv.x *= Math.pow(0.35, dt); bv.z *= Math.pow(0.35, dt);
     ball.rotation.x += bv.z * dt * 2; ball.rotation.z -= bv.x * dt * 2;
     goalCd -= dt;
-    if (inGoal && goalCd <= 0 && Math.abs(ball.position.x - FIELD.x) > FIELD.w / 2 + 0.3) { goalCd = 3; onGoal?.(); setTimeout(resetBall, 1500); }
+    if (inGoal && goalCd <= 0 && Math.abs(ball.position.x - FIELD.x) > FIELD.w / 2 + 0.3) { goalCd = 3; score[ball.position.x < FIELD.x ? 1 : 0]++; onGoal?.(score); setTimeout(resetBall, 1500); }
     // тварини
     for (const o of animals) {
       const near = me && Math.hypot(me.x - o.x, me.z - o.z) < 4 && (o.kind === "bunny" || o.kind === "deer");
@@ -302,7 +306,8 @@ export function buildOutdoor(scene, hw = false) {
   // Найближча буква — для підказки «гарячо/холодно»
   const huntNearest = (me) => Math.min(...hunt.letters.filter((l) => l.s.parent).map((l) => Math.hypot(me.x - l.x, me.z - l.z)));
   mergeStatic(stat);
-  return { lod, blocked, spots, tick, hunt, startHunt, stopHunt, huntNearest, setOnGoal: (f) => (onGoal = f), animalPos: (s) => (s.ref ? [s.ref.x, s.ref.z] : [s.x, s.z]) };
+  return { lod, blocked, spots, tick, hunt, startHunt, stopHunt, huntNearest, setOnGoal: (f) => (onGoal = f), setOnKick: (f) => (onKick = f),
+    setBall: (b) => { ball.position.set(b.x, 0.4, b.z); bv.x = b.vx; bv.z = b.vz; }, nearField: (x, z) => Math.abs(x - FIELD.x) < FIELD.w / 2 + 12 && Math.abs(z - FIELD.z) < FIELD.d / 2 + 12, animalPos: (s) => (s.ref ? [s.ref.x, s.ref.z] : [s.x, s.z]) };
 }
 
 const at = (m, x, y, z) => (m.position.set(x, y, z), m);
@@ -315,4 +320,4 @@ function textTex(lines, border = "#99cc00", w = 512, font = "bold 64px Fixel Tex
   lines.forEach((s, i) => g.fillText(s, w / 2, hgt / 2 + (i - (lines.length - 1) / 2) * (hgt / (lines.length + 0.5)), w - 24));
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
 }
-function labelSprite(text, border) { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: textTex([text], border) })); s.scale.set(3.4, 1.85, 1); return s; }
+export function labelSprite(text, border) { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: textTex([text], border) })); s.scale.set(3.4, 1.85, 1); return s; }

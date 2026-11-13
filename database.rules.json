@@ -76,6 +76,13 @@
         }
       }
     },
+    "houses": {
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "auth != null && (auth.uid === $uid || auth.token.email === 'badim1aaa@gmail.com')",
+        ".validate": "newData.hasChildren(['plot']) || !newData.exists()"
+      }
+    },
     "quest": {
       ".read": "auth != null",
       ".write": "auth != null && auth.token.email === 'badim1aaa@gmail.com'",

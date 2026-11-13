@@ -1,7 +1,7 @@
 // Кабінет учителя: огляд, спроби, найдовші питання, звіт учня, налаштування.
 import { h, mount, toast, pct, bar, ring, fmtDate, fmtTime, confirmBox, today, num, groupedBars, wordmark } from "./ui.js";
 import { watchAuth, teacherLogin, teacherRegister, teacherResetPassword, logout, isTeacher, read, write, r, remove, errText, update, ref, db } from "./fb.js";
-import { TEACHER_EMAIL, CLASSES, LEVELS_PER_TOPIC, TASKS_PER_LEVEL, halloweenOn, christmasOn } from "./config.js";
+import { TEACHER_EMAIL, CLASSES, LEVELS_PER_TOPIC, TASKS_PER_LEVEL, halloweenOn, christmasOn, winterOn } from "./config.js";
 import { SECTIONS, TOPICS, topicById, shortTitle } from "../content/index.js";
 import { rankOf, topicPct, BADGES } from "./game.js";
 import { QUEST, questId } from "../content/quest/halloween.js";
@@ -362,6 +362,7 @@ function settingsView() {
   return [
     h("section.card", h("h2", "💬 3D-школа і рейтинг"),
       sw(halloweenOn(s), (v) => save("halloween", v, v ? "🎃 Геловін у 3D-школі увімкнено" : "Геловін вимкнено"), "🎃 Геловін: прикраси в 3D-школі й вкладка геловінських речей у магазині (сам вмикається 15.10–10.11)"),
+      sw(winterOn(s), (v) => save("winter", v, v ? "❄️ Зиму в 3D-школі увімкнено" : "Зиму вимкнено"), "❄️ Зима в 3D-школі: сніг, ялинки, олені, сніжки, замерзлі озера (сама вмикається 10.11–28.02)"),
       sw(christmasOn(s), (v) => save("christmas", v, v ? "🎄 Різдвяні речі в магазині увімкнено" : "Різдво вимкнено"), "🎄 Різдво: вкладка різдвяних речей у магазині, Грінч і сани Санти з оленями (саме вмикається 1.12–20.01)"),
       sw(s.chatEnabled === true, (v) => save("chatEnabled", v, v ? "Чат увімкнено" : "Чат вимкнено"), "Дозволити учням писати в чат у 3D-школі"),
       h("p.note", "Готові фрази й емоції працюють завжди. Вільний чат — лише коли ти дозволиш. Нецензурні слова автоматично замінюються на ***."),

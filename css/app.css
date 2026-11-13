@@ -905,3 +905,23 @@ a.tcard:hover { transform: none; border-color: var(--ink); box-shadow: 0 0 0 1px
 .navcount { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--pen); color: #fff; font-size: 11px; font-weight: 700; line-height: 1; }
 @media (max-width: 760px) { .navcount { position: absolute; top: 0; right: 14%; } }
 details.deleted { margin-top: 14px; } details.deleted summary { cursor: pointer; font-weight: 600; color: var(--muted); }
+
+/* ---------- 3D-школа: стрибок, сніжки, вежа, містечко ---------- */
+.jumpbtn, .snowbtn { position: absolute; right: 16px; z-index: 6; width: 64px; height: 64px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, .92); box-shadow: 0 4px 14px rgba(0, 0, 0, .2); font-size: 26px; font-weight: 800; display: none; place-items: center; touch-action: none; }
+.jumpbtn small, .snowbtn small { display: block; font-size: 10px; font-weight: 600; margin-top: -4px; }
+.jumpbtn { bottom: 190px; } .snowbtn { bottom: 264px; }
+@media (hover: none) { .jumpbtn, .snowbtn { display: grid; } }
+.snowbtn { display: grid; }
+@media (hover: hover) { .snowbtn { bottom: 140px; width: 56px; height: 56px; } }
+.cpbtn { position: absolute; left: 50%; top: 64px; transform: translateX(-50%); z-index: 6; display: none; }
+.cpbtn.on { display: inline-flex; }
+.housebar { position: absolute; left: 50%; top: 64px; transform: translateX(-50%); z-index: 6; display: none; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: center; padding: 8px 12px; border-radius: 14px; background: rgba(255, 255, 255, .94); box-shadow: 0 6px 20px rgba(0, 0, 0, .15); max-width: calc(100% - 24px); }
+.housebar.on { display: flex; }
+.frost { position: absolute; inset: 0; pointer-events: none; z-index: 5; opacity: 0; background: radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0) 35%, rgba(230, 244, 255, .9) 100%); }
+.frost.on { animation: frostHit 1.2s ease-out; }
+@keyframes frostHit { 0% { opacity: 1; } 100% { opacity: 0; } }
+.swatches { display: flex; gap: 8px; justify-content: center; margin: 6px 0 12px; flex-wrap: wrap; }
+.swatch { width: 38px; height: 38px; border-radius: 10px; border: 2px solid var(--line); cursor: pointer; }
+.swatch.on { outline: 3px solid var(--ink); outline-offset: 2px; }
+.furngrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.furngrid .btn { display: grid; gap: 2px; justify-items: start; text-align: left; }

@@ -50,3 +50,6 @@ export const halloweenOn = (settings) => settings?.halloween ?? hwSeason();
 // 🎄 Різдво: автоматично з 1 грудня до 20 січня; учитель може ввімкнути/вимкнути вручну (settings/christmas)
 export const xmSeason = (d = new Date()) => d.getMonth() === 11 || (d.getMonth() === 0 && d.getDate() <= 20);
 export const christmasOn = (settings) => settings?.christmas ?? xmSeason();
+// ❄️ Зима в 3D-школі: сніг, ялинки, сніжки, замерзлі озера — автоматично з 10 листопада до кінця лютого
+export const winterSeason = (d = new Date()) => (d.getMonth() === 10 && d.getDate() >= 10) || d.getMonth() === 11 || d.getMonth() <= 1;
+export const winterOn = (settings) => settings?.winter ?? winterSeason();
