@@ -338,7 +338,9 @@ export function openWorld(state) {
     const inZone = parkour.zone(me.x, me.z);
     cpBtn.classList.toggle("on", inZone && run.started && run.cp > 0 && !run.done && me.grounded && me.y < 1);
     if (!me.grounded || !me.on) return;
-    if ((me.on === parkour.start && (run.cp || !run.started || run.done)) || (me.on === parkour.first && (!run.started || run.done))) { Object.assign(run, { started: true, cp: 0, done: false }); toast("❄️ Забіг почався! Стрибай з крижини на крижину до подарунка. Пробіл / ⤒ — стрибок", "info", 4500); }
+    // Забіг починається, щойно стаєш на будь-яку крижину вежі (зі старту, з першої, з другої — байдуже);
+    // після призу — новий забіг, коли знову стаєш на нижні крижини
+    if (me.on.pk && (!run.started || (run.done && me.y < 4) || (me.on === parkour.start && run.cp))) { Object.assign(run, { started: true, cp: 0, done: false }); toast("❄️ Забіг почався! Стрибай з крижини на крижину до подарунка. Пробіл / ⤒ — стрибок", "info", 4500); }
     const ci = parkour.cps.indexOf(me.on);
     if (ci >= 0 && run.started && ci + 1 > run.cp) { run.cp = ci + 1; toast(`🚩 Контрольна точка ${run.cp}! Якщо впадеш — повернешся сюди`, "win", 3000); }
     if (me.on === parkour.top && run.started && !run.done && run.cp >= parkour.cps.length) { run.done = true; claimPrize(); }
