@@ -26,8 +26,10 @@ export function buildParkour(scene, solids, labelSprite) {
   };
 
   // Старт: широка крижина біля землі й табличка
-  const start = add(PK.x, 0.35, PK.z + 24, 5, 5, "rest", { start: true });
-  const sign = labelSprite("❄️ Крижана вежа: приз 500 🪙", "#58b4f0"); sign.position.set(PK.x + 4, 5.5, PK.z + 30); sign.scale.multiplyScalar(0.8); scene.add(sign);
+  // Старт — перша сходинка спіралі (до першої платформи легко доплигнути)
+  const start = add(PK.x, 0.35, PK.z + 12, 5, 5, "rest", { start: true });
+  const sign = labelSprite("❄️ Крижана вежа: приз 500 🪙", "#58b4f0"); sign.position.set(PK.x + 3, 5.5, PK.z + 17); sign.scale.multiplyScalar(0.8); scene.add(sign);
+  let first = null;
   const cps = [];
   // Спіраль угору
   for (let i = 1; i <= N; i++) {
@@ -38,7 +40,8 @@ export function buildParkour(scene, solids, labelSprite) {
     if (i % 6 === 0) { add(x, y, z, 2.2, 2.2, "move", { amp: 1.7, per: 3.6, ph: i, a }); continue; }
     if (i % 11 === 0) { add(x, y, z, 2.4, 2.4, "blink", { ph: i }); continue; }
     const small = i % 4 === 0;
-    add(x, y, z, small ? 1.6 : 2.4, small ? 1.6 : 2.4, "still");
+    const pl = add(x, y, z, small ? 1.6 : 2.4, small ? 1.6 : 2.4, "still");
+    if (i === 1) first = pl;
   }
   // Вершина з подарунком
   const a = Math.PI / 2 + (N + 1) * 0.36, R = 11;
@@ -77,5 +80,5 @@ export function buildParkour(scene, solids, labelSprite) {
     star.rotation.y = t * 1.5; gift.rotation.y = Math.sin(t) * 0.2;
   }
   const zone = (x, z) => Math.hypot(x - PK.x, z - PK.z) < PK.r;
-  return { tick, zone, start: start.s, top: top.s, cps: cps.map((c) => c.s), cpPos: cps.map((c) => [c.x, c.y, c.z]), startPos: [start.x, start.y, start.z] };
+  return { tick, zone, start: start.s, first: first.s, top: top.s, cps: cps.map((c) => c.s), cpPos: cps.map((c) => [c.x, c.y, c.z]), startPos: [start.x, start.y, start.z] };
 }
