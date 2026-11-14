@@ -176,7 +176,7 @@ ITEMS.push(...[["red", "Червоні санчата", 0, "#c8102e"], ["blue", 
   ["pink", "Рожеві санчата", 200, "#f08fc0"], ["gold", "Золоті санчата", 600, "#f7c915"]].map(([id, n, p, color]) => C("sled", id, n, p, { color, form: "classic" })),
   C("sled", "tray", "Ледянка", 300, { color: "#58b4f0", form: "tray" }), C("sled", "tube", "Тюбінг-пончик", 800, { color: "#ff7a1a", form: "tube" }));
 // 🐾 Дикі звірі, яких можна лише приручити в 3D-лісі (не купуються)
-ITEMS.push(C("pet", "elk", "Лось Велет", 0, { style: "elk" }), C("pet", "wolf", "Вовк Сірко", 0, { style: "wolf" }), C("pet", "wildfox", "Лисичка Вогник", 0, { style: "wildfox" }));
+ITEMS.push(C("pet", "elk", "Олень Велет", 0, { style: "elk" }), C("pet", "wolf", "Вовк Сірко", 0, { style: "wolf" }), C("pet", "wildfox", "Лисичка Вогник", 0, { style: "wildfox" }));
 for (const id of ["pet.elk", "pet.wolf", "pet.wildfox"]) ITEMS.find((i) => i.id === id).tame = true;
 
 // Сани Санти: костюм Санти (шапка + костюм) + обидва олені + сани

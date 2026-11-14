@@ -215,7 +215,7 @@ export function buildOutdoor(scene, hw = false, winter = false) {
   for (let i = 0; i < 3; i++) animal("hedgehog", "hedgehog", 1.4, { x: -35 + i * 10, z: -78, r: 14 }, 1.2);
   animal("dog", "dog", 1.6, { x: 46, z: 80, r: 14 }, 3.2);
   // 🐾 Дикі звірі, яких можна приручити (E — питання поспіль)
-  for (const [style, scale, zone, sp, label] of [["elk", 3.4, { x: 60, z: -138, r: 18 }, 1.6, "🦌 Лось Велет"], ["wolf", 2.3, { x: -120, z: -105, r: 18 }, 2.6, "🐺 Вовк Сірко"], ["wildfox", 1.9, { x: 122, z: 104, r: 14 }, 3, "🦊 Лисичка Вогник"]]) {
+  for (const [style, scale, zone, sp, label] of [["elk", 3.4, { x: 60, z: -138, r: 18 }, 1.6, "🦌 Олень Велет"], ["wolf", 2.3, { x: -120, z: -105, r: 18 }, 2.6, "🐺 Вовк Сірко"], ["wildfox", 1.9, { x: 122, z: 104, r: 14 }, 3, "🦊 Лисичка Вогник"]]) {
     animal(style, "wild", scale, zone, sp);
     Object.assign(spots[spots.length - 1], { label, sub: "Натисни E — спробуй приручити!", info: null, tame: `pet.${style}` });
   }
