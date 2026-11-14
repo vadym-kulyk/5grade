@@ -116,6 +116,20 @@
         ".write": "auth != null && !data.exists() && root.child('settings/chatEnabled').val() === true",
         ".validate": "newData.child('uid').val() === auth.uid && newData.child('text').isString() && newData.child('text').val().length <= 120"
       }
+    },
+    "records": {
+      ".read": "auth != null",
+      "$kind": { "$day": { "$uid": {
+        ".write": "auth != null && auth.uid === $uid",
+        ".validate": "newData.hasChildren(['t', 'n', 'c']) && newData.child('t').isNumber() && newData.child('t').val() > 0 && newData.child('n').isString() && newData.child('n').val().length <= 30"
+      } } }
+    },
+    "snowfight": {
+      ".read": "auth != null",
+      "$day": { "$cls": { "$uid": {
+        ".write": "auth != null && auth.uid === $uid",
+        ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000"
+      } } }
     }
   }
 }

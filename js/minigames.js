@@ -13,6 +13,7 @@ export const GAMES = {
   typing: { icon: "💻", title: "Друкарик", hint: "Надрукуй слово без помилок — і далі!", sec: 60 },
   pairs: { icon: "🧠", title: "Знайди пари", hint: "Відкривай картки й шукай пари, що підходять одна до одної.", sec: 0 },
   hunt: { icon: "🔎", title: "Знайди букви" },
+  snowman: { icon: "⛄", title: "Сніговик зі слів", hint: "Зліпи сніговика: обери префікс, корінь і суфікс слова. Помилка — мінус 3 секунди.", sec: 90 },
 };
 
 // ---------- Завдання з тем ----------
@@ -38,6 +39,8 @@ function loadPool() {
     return P;
   })());
 }
+// n випадкових завдань «яка буква пропущена» (адвент-календар, приручення звірів)
+export const quiz = async (n) => shuffle([...(await loadPool()).gap]).slice(0, n);
 export const huntWord = async () => { const P = await loadPool(); const w = shuffle(P.words.filter((x) => x.length >= 4 && x.length <= 6)); return w[0] || "слово"; };
 
 // ---------- Монети й рекорди ----------
@@ -88,7 +91,7 @@ export function openGame(id) {
     body.replaceChildren(h("p.note.center", "Готуємо завдання…"));
     const P = await loadPool();
     if (G.sec) { timeEl.textContent = left; timer = setInterval(() => { left--; timeEl.textContent = left; if (left <= 0) finish(); }, 1000); }
-    ({ fish: fishGame, blitz: blitzGame, gap: gapGame, anagram: anagramGame, typing: typingGame, pairs: pairsGame })[id](ctx, P);
+    ({ fish: fishGame, blitz: blitzGame, gap: gapGame, anagram: anagramGame, typing: typingGame, pairs: pairsGame, snowman: snowmanGame })[id](ctx, P);
   }
   return close;
 }
@@ -192,4 +195,35 @@ function pairsGame(ctx, P) {
     return el;
   }));
   ctx.body.replaceChildren(h("p.note.center", "Знайди пари: слово і те, що до нього підходить."), grid);
+}
+
+// ⛄ Сніговик зі слів: три грудки — префікс, корінь, суфікс (будова слова)
+const MORPH = [["за", "сніж", "ен", "ий"], ["під", "сніж", "ник", "□"], ["при", "мор", "ськ", "ий"], ["за", "річ", "н", "ий"], ["без", "хмар", "н", "ий"],
+  ["на", "стіль", "н", "ий"], ["при", "шкіль", "н", "ий"], ["пере", "сад", "к", "а"], ["роз", "гад", "к", "а"], ["від", "гад", "к", "а"], ["на", "ліп", "к", "а"],
+  ["під", "зем", "н", "ий"], ["без", "сніж", "н", "ий"], ["за", "мороз", "к", "и"], ["за", "гад", "к", "а"], ["пере", "хід", "н", "ий"], ["до", "шкіль", "н", "ий"],
+  ["під", "ліс", "ок", "□"], ["при", "каз", "к", "а"], ["на", "гір", "н", "ий"]];
+function snowmanGame(ctx) {
+  const SLOTS = [["префікс", 0], ["корінь", 1], ["суфікс", 2]], words = shuffle([...MORPH]);
+  const pool = (k) => [...new Set(MORPH.map((w) => w[k]))];
+  let i = 0;
+  const q = h("div.mg__q"), man = h("div.snowman"), rows = h("div.snowman__rows");
+  ctx.body.replaceChildren(q, man, rows);
+  function next() {
+    const w = words[i++ % words.length], got = {};
+    q.replaceChildren("Зліпи слово ", h("b", w.slice(0, 3).join("") + (w[3] === "□" ? "" : w[3])), h("small", ` (закінчення ${w[3] === "□" ? "нульове" : "-" + w[3]})`));
+    const ball = (k) => h(`div.snowman__ball.b${k}`, got[k] ? h("b", got[k]) : "?");
+    const drawMan = () => man.replaceChildren(ball(0), ball(1), ball(2));
+    drawMan();
+    rows.replaceChildren(...SLOTS.map(([title, k]) => h("div.snowman__row", h("span.snowman__t", title),
+      ...shuffle([w[k], ...shuffle(pool(k).filter((x) => x !== w[k])).slice(0, 2)]).map((o) => {
+        const b = h("button.btn.btn--small", { onclick: () => {
+          if (got[k]) return;
+          if (o !== w[k]) { ctx.penalty(); b.classList.add("bad"); return; }
+          got[k] = o; b.classList.add("ok"); drawMan();
+          if (Object.keys(got).length === 3) { ctx.add(); man.classList.add("done"); setTimeout(() => { man.classList.remove("done"); next(); }, 700); }
+        } }, o);
+        return b;
+      }))));
+  }
+  next();
 }

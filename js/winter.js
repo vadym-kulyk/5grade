@@ -86,6 +86,12 @@ export function buildWinter(scene, solids, labelSprite) {
     const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.4), M("#5e6372")); pole.position.set(x, S.h(x) + 0.7, z); hg.add(pole);
     const fl = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.32), new THREE.MeshBasicMaterial({ color: (x / 6) % 2 < 1 ? "#d9342b" : "#58b4f0", side: THREE.DoubleSide })); fl.position.set(x - 0.25, S.h(x) + 1.25, z); hg.add(fl);
   }
+  // ворота слалому: проїжджай між стовпчиками (пропуск — штраф)
+  S.gates.forEach((q, i) => {
+    const col = M(i % 2 ? "#2440c2" : "#d9342b"), y = S.h(q.x);
+    for (const s of [-1, 1]) { const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 2.2), col); pole.position.set(q.x, y + 1.1, q.z + s * S.gateW); hg.add(pole); }
+    const ban = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.35, S.gateW * 2), col); ban.position.set(q.x, y + 2.05, q.z); hg.add(ban);
+  });
   const sign = labelSprite("🛷 Гірка", "#58b4f0"); sign.position.set((S.top0 + S.top1) / 2, S.H + 3.2, S.z1 - 1); scene.add(sign);
   for (let i = 0; i < 3; i++) { const sl = sledModel(["#c8102e", "#2440c2", "#2a8c4a"][i]); sl.position.set(S.top1 - 0.8, S.H, S.z0 + 2 + i * 1.6); sl.rotation.y = Math.PI / 2; hg.add(sl); }
   mergeStatic(hg);
@@ -107,6 +113,7 @@ export function buildWinter(scene, solids, labelSprite) {
 // Гірка: спуск у бік −x (від x0 до top0 — траса, top0…top1 — майданчик, top1…x1 — підйом)
 export const SLED = {
   x0: 106, top0: 138, top1: 144, x1: 152, z0: 4, z1: 16, H: 7,
+  gates: [{ x: 131, z: 8.4 }, { x: 124, z: 11.6 }, { x: 117, z: 8.4 }, { x: 111, z: 11.6 }], gateW: 1.5, // ворота: центр і півширина
   h(x) {
     if (x <= this.x0 || x >= this.x1) return 0;
     if (x < this.top0) return this.H * ((x - this.x0) / (this.top0 - this.x0)) ** 1.6;
@@ -119,9 +126,11 @@ SLED.h = SLED.h.bind(SLED);
 export const SLED_ZONE = { x0: 76, x1: 156, z0: 0, z1: 20 };
 
 // Санчата (полозки й сидіння); полозки — на висоті 0
-export function sledModel(color = "#c8102e") {
+export function sledModel(color = "#c8102e", form = "classic") {
   const g = new THREE.Group(); g.name = "sledrig";
-  const m = new THREE.MeshLambertMaterial({ color }), steel = new THREE.MeshLambertMaterial({ color: "#5e6372" });
+  const m = new THREE.MeshLambertMaterial({ color, emissive: color === "#f7c915" ? "#4a3800" : "#000000" }), steel = new THREE.MeshLambertMaterial({ color: "#5e6372" });
+  if (form === "tray") { const t = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.55, 0.1, 20), m); t.position.y = 0.2; g.add(t); const rim = new THREE.Mesh(new THREE.TorusGeometry(0.6, 0.04, 6, 20), m); rim.rotation.x = Math.PI / 2; rim.position.y = 0.26; g.add(rim); return g; }
+  if (form === "tube") { const t = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.2, 10, 20), m); t.rotation.x = Math.PI / 2; t.position.y = 0.22; g.add(t); return g; }
   const seat = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.08, 1.2), m); seat.position.y = 0.26; g.add(seat);
   for (const x of [-0.3, 0.3]) {
     const run = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 1.5), steel); run.position.set(x, 0.03, 0.05); g.add(run);

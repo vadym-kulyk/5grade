@@ -2,13 +2,14 @@
 import * as THREE from "three";
 import { h, mount, toast, modal } from "./ui.js";
 import { r, set, push, onValue, off, onDisconnect, remove, query, limitToLast, update, ref, db } from "./fb.js";
-import { buildAvatar, petFollower, buildSleigh, santaDressed, SLEIGH_NEEDS } from "./avatar.js";
+import { buildAvatar, petFollower, buildSleigh, santaDressed, SLEIGH_NEEDS, itemById } from "./avatar.js";
 import { awardBadges, owns } from "./store.js";
 import { SECTIONS, TOPICS, shortTitle } from "../content/index.js";
 import { rankOf } from "./game.js";
 import { halloweenOn, winterOn } from "./config.js";
 import { setupQuest } from "./hwquest.js";
-import { buildOutdoor, labelSprite } from "./outdoor.js";
+import { buildOutdoor, labelSprite, LAKES } from "./outdoor.js";
+import { recordBoard, rink, snowFight, openAdvent, openTame, giftPile, fmtT } from "./fun.js";
 import { buildWinter, hallTree, snowballs, SLED, sledModel } from "./winter.js";
 import { buildParkour } from "./parkour.js";
 import { buildVillage, HOUSE_PRICE, WALLS, ROOFS, FURN, canPlace } from "./houses.js";
@@ -90,12 +91,13 @@ export function openWorld(state) {
   const snowBtn = WINTER ? h("button.snowbtn", { onpointerdown: (e) => { e.preventDefault(); throwSnow(); } }, "❄️", h("small", "сніжка")) : null;
   const cpBtn = h("button.btn.btn--small.cpbtn", { onclick: () => toCheckpoint() }, "🚩 До контрольної точки");
   const houseBar = h("div.housebar");
+  const timerEl = h("div.world__timer");
   mount(h("div.world",
     canvasWrap,
     h("div.world__top",
       h("a.btn.btn--small", { href: "#/" }, "← Вийти зі школи"),
       flyBtn, online),
-    flyPad, jumpBtn, snowBtn, cpBtn, houseBar,
+    flyPad, jumpBtn, snowBtn, cpBtn, houseBar, timerEl,
     h("div.frost"),
     prompt,
     h("div.world__bottom",
@@ -127,6 +129,18 @@ export function openWorld(state) {
   const winter = WINTER ? buildWinter(scene, solids, labelSprite) : null;
   if (WINTER) hallTree(scene, solids);
   if (winter) doors.push({ ...winter.sledSpot, act: () => startSled() });
+  // ❄️ Зимові розваги: табла рекордів, ковзанка, бій сніжками, адвент-календар, сніговик зі слів
+  const fun = winter ? {
+    sledRec: recordBoard(scene, "sled", "🛷 Гірка — рекорди дня", "Проїдь через усі ворота якнайшвидше!", 79, 19, Math.PI * 0.75),
+    skateRec: recordBoard(scene, "skate", "⛸️ Ковзанка — найшвидше коло", "Об’їдь 4 конуси по колу озера!", LAKES[0].x + 12, LAKES[0].z - LAKES[0].rz - 5, 0),
+    rink: rink(scene, labelSprite, LAKES[0]),
+    fight: snowFight(scene, -36, 49, 0),
+  } : null;
+  if (winter) {
+    giftPile(scene, labelSprite, -11, 65);
+    doors.push({ x: -11, z: 66.5, r: 3, floor: 0, label: "🎁 Адвент-календар", sub: "Натисни E — відкрий віконце дня", act: () => openAdvent() });
+    doors.push({ x: 20, z: 66.6, r: 2.6, floor: 0, label: "⛄ Сніговик зі слів", sub: "Натисни E — зліпи сніговика з префікса, кореня й суфікса", game: "snowman" });
+  }
   const parkour = buildParkour(scene, solids, labelSprite);
   const village = buildVillage(scene, solids, labelSprite);
   const sb = snowballs(scene);
@@ -165,9 +179,16 @@ export function openWorld(state) {
         others.set(id, o);
       }
       if (p.sb && p.sb.t !== o.sbT) { sb.spawn(id, p.sb.x, p.sb.y, p.sb.z, p.sb.ry); o.sbT = p.sb.t; }
-      if (p.hit && p.hit.t !== o.hitT) { if (p.hit.by === uid) { myHits++; toast(`🎯 Влучання в ${p.name}! Усього: ${myHits}`, "win", 2500); } o.hitT = p.hit.t; }
+      if (p.hit && p.hit.t !== o.hitT) {
+        if (p.hit.by === uid) {
+          myHits++;
+          const team = fun && p.cls && u.cls && p.cls !== u.cls ? fun.fight.hit() : "";
+          toast(team ? `🎯 Влучання в ${p.name}! +1 для ${u.cls} · ${team}` : `🎯 Влучання в ${p.name}! Усього: ${myHits}`, "win", 2500);
+        }
+        o.hitT = p.hit.t;
+      }
       if (p.bl && p.bl.t !== o.blT) { o.blT = p.bl.t; out.setBall(p.bl); }
-      Object.assign(o, { tx: p.x, tz: p.z, tr: p.ry, mv: p.mv, name: p.name, ty: p.y || 0, f: p.f || 0, fly: !!p.fl, sl: p.fl === "s", sd: !!p.sd });
+      Object.assign(o, { tx: p.x, tz: p.z, tr: p.ry, mv: p.mv, name: p.name, ty: p.y || 0, f: p.f || 0, fly: !!p.fl, sl: p.fl === "s", sd: !!p.sd, sledId: p.av?.sled });
       if (p.e && p.e.t !== o.eT) { o.eT = p.e.t; if (now - p.e.t < 5000) { if (p.e.text) bubble(o.model, p.e.text); if (p.e.a) { o.action = p.e.a; o.actionT = 0; } } }
     }
     for (const [id, o] of others) if (!all[id] || now - (all[id].t || 0) > 60000) { scene.remove(o.model); o.pet?.dispose(); others.delete(id); }
@@ -242,6 +263,7 @@ export function openWorld(state) {
   function useDoor() {
     if (!nearDoor) return;
     if (nearDoor.act) return nearDoor.act();
+    if (nearDoor.tame) return openTame(nearDoor.tame);
     if (nearDoor.game) return openGame(nearDoor.game);
     if (nearDoor.hunt) return startHunt();
     if (nearDoor.info) return toast(infoText(nearDoor.info) ?? nearDoor.info, "info", 7000);
@@ -284,23 +306,49 @@ export function openWorld(state) {
   function startSled() {
     if (sled) return;
     if (me.fly) toggleFly();
-    sled = { v: 2 };
+    sled = { v: 2, time: 0, pen: 0, gate: 0, miss: 0, fin: false };
     me.x = SLED.top0 + 0.6; me.z = Math.max(SLED.z0 + 1, Math.min(SLED.z1 - 1, me.z)); me.y = SLED.H; me.vy = 0;
     me.ry = -Math.PI / 2; camYaw = me.ry + Math.PI; camPitch = 0.3;
-    toast("🛷 Поїхали! A / D (⬅️ ➡️) — кермувати", "info", 3000);
+    toast("🛷 Поїхали! A / D (⬅️ ➡️) — кермуй між воротами. Пропуск воріт — +1,5 с", "info", 3500);
     sendPresence(true);
   }
   function sledStep(dt, fx) {
     const g = SLED.h(me.x + 0.5) - SLED.h(me.x - 0.5); // > 0 — попереду спуск
-    sled.v = Math.min(16, sled.v + (g > 0.01 ? 30 * g - 1.5 : -6) * dt);
-    const onHill = me.x > SLED.x0 && me.x < SLED.x1;
-    const nz = me.z - fx * Math.sin(camYaw) * 3.5 * dt; // кермо вбік відносно камери
+    sled.v = Math.min(16, sled.v + (g > 0.01 ? 30 * g - 1.5 : -6) * dt - Math.abs(fx) * 1.8 * dt); // кермування трохи гальмує
+    if (!sled.fin) sled.time += dt;
+    const onHill = me.x > SLED.x0 && me.x < SLED.x1, px = me.x;
+    const nz = me.z - fx * Math.sin(camYaw) * 6 * dt; // кермо вбік відносно камери
     if (!collide(me.x, nz)) me.z = onHill ? Math.max(SLED.z0 + 0.5, Math.min(SLED.z1 - 0.5, nz)) : nz;
     const nx = me.x - sled.v * dt;
     if (collide(nx, me.z)) sled.v = 0; else me.x = nx;
     me.y = support(me.x, me.z, me.y + 1)[0];
     me.vy = 0; me.sup = me.y; me.grounded = true; me.on = null; me.ry = -Math.PI / 2;
+    const gt = SLED.gates[sled.gate];
+    if (gt && px > gt.x && me.x <= gt.x) { sled.gate++; if (Math.abs(me.z - gt.z) > SLED.gateW) { sled.pen += 1.5; sled.miss++; toast("❌ Пропущено ворота: +1,5 с", "warn", 1500); } }
+    if (!sled.fin && px > SLED.x0 && me.x <= SLED.x0) {
+      sled.fin = true;
+      const total = sled.time + sled.pen, gates = `ворота ${SLED.gates.length - sled.miss}/${SLED.gates.length}`;
+      fun?.sledRec.submit(total).then((r) => toast(`🏁 ${fmtT(total)} (${gates})${r.better ? " — твій рекорд дня!" : ""} · ${r.place}-е місце сьогодні`, "win", 5000));
+    }
     if (sled.v <= 0) { sled = null; toast("Ще раз? Підіймайся сходами нагору 🛷", "info", 2500); sendPresence(true); }
+  }
+  // ⛸️ Лід: ковзаємо з інерцією — розганяємося й гальмуємо поступово
+  function iceStep(dt, fx, fz, len) {
+    let wx = 0, wz = 0;
+    if (len > 0.1) { fx /= Math.max(1, len); fz /= Math.max(1, len); const sin = Math.sin(camYaw), cos = Math.cos(camYaw); wx = fx * cos + fz * sin; wz = -fx * sin + fz * cos; }
+    const k = Math.min(1, dt * (len > 0.1 ? 1.3 : 0.45));
+    me.vx = (me.vx || 0) + (wx * 10 - (me.vx || 0)) * k; me.vz = (me.vz || 0) + (wz * 10 - (me.vz || 0)) * k;
+    const nx = me.x + me.vx * dt, nz = me.z + me.vz * dt;
+    if (!collide(nx, me.z)) me.x = nx; else me.vx = 0;
+    if (!collide(me.x, nz)) me.z = nz; else me.vz = 0;
+    const v = Math.hypot(me.vx, me.vz);
+    if (v > 0.5) me.ry += angDiff(me.ry, Math.atan2(me.vx, me.vz)) * Math.min(1, dt * 6);
+    me.mv = v > 0.5 ? 1 : 0;
+  }
+  function onLap(ev, x) {
+    if (ev === "start") toast("⛸️ Коло почалося! Їдь до конусів 2 → 3 → 4 і повертайся на старт.", "info", 4000);
+    if (ev === "lost") toast("Ти зійшов з льоду — коло не зараховано. Почни знову зі старту.", "warn", 3000);
+    if (ev === "done") fun.skateRec.submit(x).then((r) => toast(`⛸️ Коло: ${fmtT(x)}${r.better ? " — твій рекорд дня!" : ""} · ${r.place}-е місце сьогодні. Наступне коло вже йде!`, "win", 5000));
   }
   // Поверхи: вище за мій ховаємо, коли я в будівлі (щоб не заважала стеля)
   const insideB = () => me.floor > 0 || school.inside(me.x, me.z, 0);
@@ -474,7 +522,10 @@ export function openWorld(state) {
     fx += joy.x; fz += joy.y;
     const len = Math.hypot(fx, fz);
     me.mv = !sled && len > 0.1 ? 1 : 0;
-    if (me.mv) {
+    const ice = !!fun && !me.fly && !sled && me.y < 0.3 && out.onIce(me.x, me.z);
+    if (ice) iceStep(dt, fx, fz, len);
+    else { me.vx = me.vz = 0; }
+    if (me.mv && !ice) {
       fx /= Math.max(1, len); fz /= Math.max(1, len);
       const sin = Math.sin(camYaw), cos = Math.cos(camYaw);
       const wx = fx * cos + fz * sin, wz = -fx * sin + fz * cos;
@@ -507,6 +558,12 @@ export function openWorld(state) {
     me.floor = school.inside(me.x, me.z, 0) ? Math.max(0, Math.min(2, Math.floor((me.y + 1.2) / FH))) : 0;
     me.base = 0;
     parkourRun();
+    if (fun) {
+      const lap = fun.rink.tick(dt, t, me, out.onIce(me.x, me.z) && me.y < 0.3 && !me.fly, onLap);
+      const txt = sled && !sled.fin ? `🛷 ${(sled.time + sled.pen).toFixed(1)} с · ворота ${sled.gate}/${SLED.gates.length}` : lap ? `⛸️ ${lap.t.toFixed(1)} с · до конуса ${lap.next ? lap.next + 1 : "старт"}` : "";
+      if (timerEl.textContent !== txt) timerEl.textContent = txt;
+      timerEl.classList.toggle("on", !!txt);
+    }
     const inHouse = village.tick(t, me.x, me.z, me.y);
     drawHouseBar(inHouse);
     winter?.tick(t, dt, cam);
@@ -519,7 +576,7 @@ export function openWorld(state) {
     me.model.rotation.y = me.ry;
     me.model.userData.animate(t, me.fly ? 0 : me.mv);
     flyPose(me.model, me.fly, t, SLEIGH && me.fly);
-    sledPose(me.model, !!sled);
+    sledPose(me.model, !!sled, u.avatar?.sled);
     me.pet?.update(dt, t, me.x, me.z, me.ry, me.fly ? me.y * 0.85 : me.sup);
     out.tick(t, dt, me.floor === 0 ? me : null);
     hwTick?.(t, me);
@@ -538,7 +595,7 @@ export function openWorld(state) {
       o.model.rotation.y = o.ry;
       o.model.userData.animate(t, o.fly ? 0 : o.mv || 0);
       flyPose(o.model, o.fly, t, o.sl && o.fly);
-      sledPose(o.model, o.sd && !o.fly);
+      sledPose(o.model, o.sd && !o.fly, o.sledId);
       o.pet?.update(dt, t, o.x, o.z, o.ry, o.fly ? o.y * 0.85 : o.y);
     }
 
@@ -577,6 +634,7 @@ export function openWorld(state) {
     removeEventListener("pointermove", pm); removeEventListener("pointerup", pu);
     removeEventListener("resize", resize);
     off(presRef); off(setsRef); off(r("chat")); off(r("houses"));
+    if (fun) { fun.sledRec.dispose(); fun.skateRec.dispose(); fun.fight.dispose(); }
     quest?.dispose();
     remove(myRef);
     renderer.dispose();
@@ -609,10 +667,10 @@ function flyPose(model, on, t, sleigh = false) {
   if (cape) cape.rotation.x = on ? -0.6 - Math.sin(t * 8) * 0.12 : 0;
 }
 // Санчата: сидимо (модель нижче на 0,5 м), ноги вперед, руки тримаються
-function sledPose(model, on) {
+function sledPose(model, on, sledId) {
   let rig = model.getObjectByName("sledrig");
   if (!rig && !on) return;
-  if (!rig) { rig = sledModel(); rig.position.y = 0.5; model.add(rig); }
+  if (!rig) { const d = itemById[sledId]?.data || {}; rig = sledModel(d.color, d.form); rig.position.y = 0.5; model.add(rig); }
   if (!on && !rig.visible) return;
   rig.visible = on;
   for (const leg of model.userData.legs) { leg.rotation.x = on ? -1.4 : 0; leg.position.y = on ? 0.5 : 0; leg.position.z = on ? 0.55 : 0; }

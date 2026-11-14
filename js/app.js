@@ -521,7 +521,7 @@ function shop() {
       ...CATEGORIES.filter((c) => c.id !== "ride" || XM || owns("ride.sleigh"))].filter(Boolean);
     tabs.replaceChildren(...T.map((c) => h(`button.chipbtn${c.id === cat ? ".on" : ""}`, { onclick: () => { cat = c.id; draw(); } }, c.icon, " ", c.title)));
     const pets = petsOf(draft);
-    const note = cat === "xm" || cat === "ride" ? h("p.note.shop__tip", "🛷 Вдягни шапку й костюм Санти, купи обох оленів (Комету й Рудольфа) та сани — і літай у 3D-школі на санях з оленями! 🦌🦌") : null;
+    const note = cat === "sled" ? h("p.note.shop__tip", "🛷 На цих санчатах ти з’їжджатимеш із гірки в 3D-школі взимку.") : cat === "xm" || cat === "ride" ? h("p.note.shop__tip", "🛷 Вдягни шапку й костюм Санти, купи обох оленів (Комету й Рудольфа) та сани — і літай у 3D-школі на санях з оленями! 🦌🦌") : null;
     if (cat === "pet") info.textContent += ` Улюбленців можна взяти до ${MAXPETS}: натисни, щоб додати або прибрати.`;
     grid.replaceChildren(...[note, ...ITEMS.filter((i) => (cat === "hw" ? i.hw : cat === "xm" ? i.xm : i.cat === cat && visible(i))).map((it) => {
       const own = isFree(it) || owns(it.id);
@@ -530,7 +530,7 @@ function shop() {
       const swatch = it.data.color && !["rainbow", "halloween", "snow"].includes(it.data.color) ? h("span.swatch", { style: { background: it.data.color } }) : null;
       return h(`button.item${on ? ".on" : ""}${own ? ".own" : ""}${locked ? ".locked" : ""}`, { onclick: () => pick(it, own, locked) },
         swatch, h("b", it.name),
-        h("span.item__p", own ? (on ? "✓ одягнено" : "твоє") : locked ? `🔒 ${RANKS[it.rank - 1].title}` : `${it.price} 🪙`));
+        h("span.item__p", own ? (on ? "✓ одягнено" : "твоє") : it.tame ? "🐾 приручи в лісі" : locked ? `🔒 ${RANKS[it.rank - 1].title}` : `${it.price} 🪙`));
     })].filter(Boolean));
     drawSlots();
   }
@@ -545,6 +545,7 @@ function shop() {
   }
   async function pick(it, own, locked) {
     if (!own) {
+      if (it.tame) return toast("🐾 Цього звіра не купиш — його можна лише приручити в лісі 3D-школи. Знайди його й натисни E!", "info", 5000);
       if (locked) return toast(`Ця річ відкривається зі званням «${RANKS[it.rank - 1].title}»`, "warn");
       if (!(it.cat === "pet" && petsOf(draft).includes(it.id))) { if (!wear(it)) return; view.set(draft); } // примірка
       if ((state.user.coins || 0) < it.price) { draw(); return toast(`Примірка 👀 Потрібно ${it.price} 🪙, у тебе ${state.user.coins || 0}.`, "info", 3000); }

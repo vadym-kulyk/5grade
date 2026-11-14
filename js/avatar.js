@@ -28,7 +28,8 @@ export const CATEGORIES = [
   { id: "back", title: "За спиною", icon: "🎒" },
   { id: "pet", title: "Улюбленець", icon: "🐾" },
   { id: "aura", title: "Сяйво", icon: "✨" },
-  { id: "ride", title: "Транспорт", icon: "🛷" },
+  { id: "ride", title: "Транспорт", icon: "🦌" },
+  { id: "sled", title: "Санчата", icon: "🛷" },
 ];
 
 export const ITEMS = [
@@ -170,6 +171,14 @@ ITEMS.push(...[
   C("aura", "snow", "Снігопад", 1000, { color: "snow" }),
 ].map((it) => (it.id === "ride.none" ? it : { ...it, xm: true })));
 
+// 🛷 Санчата для гірки (form: classic — дерев’яні з полозками, tray — ледянка, tube — надувний тюбінг)
+ITEMS.push(...[["red", "Червоні санчата", 0, "#c8102e"], ["blue", "Сині санчата", 150, "#2440c2"], ["green", "Зелені санчата", 150, "#2a8c4a"],
+  ["pink", "Рожеві санчата", 200, "#f08fc0"], ["gold", "Золоті санчата", 600, "#f7c915"]].map(([id, n, p, color]) => C("sled", id, n, p, { color, form: "classic" })),
+  C("sled", "tray", "Ледянка", 300, { color: "#58b4f0", form: "tray" }), C("sled", "tube", "Тюбінг-пончик", 800, { color: "#ff7a1a", form: "tube" }));
+// 🐾 Дикі звірі, яких можна лише приручити в 3D-лісі (не купуються)
+ITEMS.push(C("pet", "elk", "Лось Велет", 0, { style: "elk" }), C("pet", "wolf", "Вовк Сірко", 0, { style: "wolf" }), C("pet", "wildfox", "Лисичка Вогник", 0, { style: "wildfox" }));
+for (const id of ["pet.elk", "pet.wolf", "pet.wildfox"]) ITEMS.find((i) => i.id === id).tame = true;
+
 // Сани Санти: костюм Санти (шапка + костюм) + обидва олені + сани
 export const SLEIGH_NEEDS = ["pet.reindeer", "pet.rudolf", "ride.sleigh"];
 export const santaDressed = (a) => a?.hat === "hat.santa" && a?.top === "top.santa";
@@ -181,9 +190,9 @@ export const DEFAULT_AVATAR = {
   top: "top.tee-lime", bottom: "bottom.jeans", shoes: "shoes.sneakers", hat: "hat.none", glasses: "glasses.none",
   back: "back.none", pet: "pet.none", aura: "aura.none",
   eyeColor: "eyeColor.black", lashes: "lashes.none", brows: "brows.natural", lips: "lips.natural", facedeco: "facedeco.blush",
-  hairAcc: "hairAcc.none", earrings: "earrings.none", neck: "neck.none", tights: "tights.none", ride: "ride.none",
+  hairAcc: "hairAcc.none", earrings: "earrings.none", neck: "neck.none", tights: "tights.none", ride: "ride.none", sled: "sled.red",
 };
-export const isFree = (it) => it.price === 0 && !it.rank;
+export const isFree = (it) => it.price === 0 && !it.rank && !it.tame;
 export const fullAvatar = (a) => ({ ...DEFAULT_AVATAR, ...(a || {}) });
 
 // ---------- Побудова моделі ----------
@@ -659,13 +668,29 @@ function addPet(g, style) {
     }
     p.position.set(0.85, 0.05 + (p.userData.fly || 0), 0.25); p.scale.setScalar(0.9); g.add(p); return p;
   }
-  const body = { reindeer: "#8a5a3c", rudolf: "#7a4a2c", polarbear: "#f4f6fb", blackcat: "#1e1b26", cat: "#e08a3c", dog: "#c9a36b", hedgehog: "#6b4426", owl: "#8a6a4a", fox: "#e0662a", bunny: "#f4f1f9", dragon: "#99cc00", hamster: "#e8b47a", panda: "#f4f1f9", unicorn: "#fbfaf5" }[style];
+  const body = { elk: "#6b4a2e", wolf: "#8a8f99", wildfox: "#d9541e", reindeer: "#8a5a3c", rudolf: "#7a4a2c", polarbear: "#f4f6fb", blackcat: "#1e1b26", cat: "#e08a3c", dog: "#c9a36b", hedgehog: "#6b4426", owl: "#8a6a4a", fox: "#e0662a", bunny: "#f4f1f9", dragon: "#99cc00", hamster: "#e8b47a", panda: "#f4f1f9", unicorn: "#fbfaf5" }[style];
   const m = mat(body), eye = mat("#1e1b26");
   add(box(0.34, 0.24, 0.44, m), 0, 0.2, 0);
   add(box(0.28, 0.26, 0.26, m), 0, 0.42, 0.22);
   add(box(0.05, 0.05, 0.02, eye), -0.07, 0.46, 0.36); add(box(0.05, 0.05, 0.02, eye), 0.07, 0.46, 0.36);
   for (const [x, z] of [[-0.11, 0.14], [0.11, 0.14], [-0.11, -0.14], [0.11, -0.14]]) add(box(0.08, 0.1, 0.08, m), x, 0.04, z);
   if (style === "reindeer" || style === "rudolf") { const am = mat("#d9c7a8"); for (const k of [-1, 1]) { const a = box(0.03, 0.2, 0.03, am); a.rotation.z = -k * 0.3; add(a, k * 0.1, 0.64, 0.18); const b = box(0.03, 0.1, 0.03, am); b.rotation.z = -k * 1.0; add(b, k * 0.15, 0.68, 0.18); } add(new THREE.Mesh(new THREE.SphereGeometry(0.05), style === "rudolf" ? new THREE.MeshBasicMaterial({ color: "#ff2b2b" }) : mat("#1e1b26")), 0, 0.4, 0.37); add(box(0.06, 0.06, 0.12, m), 0, 0.3, -0.27); }
+  if (style === "elk") { // лось: широкі лопаті рогів, борідка, темна морда
+    const am = mat("#d9c7a8");
+    for (const k of [-1, 1]) { const b = box(0.04, 0.16, 0.04, am); b.position.set(k * 0.1, 0.62, 0.2); b.rotation.z = -k * 0.5; p.add(b); const pl = box(0.26, 0.04, 0.16, am); pl.position.set(k * 0.24, 0.72, 0.18); pl.rotation.z = -k * 0.35; p.add(pl); for (let t = 0; t < 3; t++) add(box(0.03, 0.09, 0.03, am), k * (0.15 + t * 0.08), 0.79, 0.18 + (t - 1) * 0.05); }
+    add(box(0.14, 0.12, 0.14, mat("#3a2a1a")), 0, 0.38, 0.38); add(box(0.06, 0.1, 0.05, mat("#3a2a1a")), 0, 0.22, 0.3); add(box(0.06, 0.06, 0.1, m), 0, 0.3, -0.27);
+  }
+  if (style === "wolf") { // вовк: гострі вуха, світла морда, довгий хвіст
+    for (const x of [-0.09, 0.09]) add(new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.13, 4), m), x, 0.6, 0.18);
+    add(box(0.14, 0.1, 0.12, mat("#c9ccd3")), 0, 0.38, 0.38); add(box(0.04, 0.04, 0.02, mat("#1e1b26")), 0, 0.42, 0.445);
+    const tail = box(0.07, 0.07, 0.34, m); tail.position.set(0, 0.3, -0.36); tail.rotation.x = 0.5; p.add(tail);
+  }
+  if (style === "wildfox") { // лісова лисичка: білі груди й кінчик хвоста, чорні лапки
+    for (const x of [-0.09, 0.09]) add(new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.13, 4), m), x, 0.6, 0.2);
+    add(box(0.16, 0.12, 0.04, mat("#ffffff")), 0, 0.3, 0.2); add(box(0.08, 0.06, 0.1, mat("#ffffff")), 0, 0.38, 0.38);
+    const tail = box(0.1, 0.1, 0.3, m); tail.position.set(0, 0.32, -0.34); tail.rotation.x = 0.4; p.add(tail); add(box(0.1, 0.1, 0.08, mat("#ffffff")), 0, 0.44, -0.5);
+    for (const [x, z] of [[-0.11, 0.14], [0.11, 0.14], [-0.11, -0.14], [0.11, -0.14]]) add(box(0.085, 0.05, 0.085, mat("#1e1b26")), x, 0.025, z);
+  }
   if (style === "polarbear") { for (const x of [-0.11, 0.11]) add(new THREE.Mesh(new THREE.SphereGeometry(0.05), m), x, 0.56, 0.2); add(new THREE.Mesh(new THREE.SphereGeometry(0.04), mat("#1e1b26")), 0, 0.42, 0.37); }
   if (style === "blackcat") { add(box(0.07, 0.07, 0.02, mat("#ffd54a", { emissive: "#806000" })), -0.07, 0.46, 0.365); add(box(0.07, 0.07, 0.02, mat("#ffd54a", { emissive: "#806000" })), 0.07, 0.46, 0.365); }
   if (["cat", "fox", "dog", "blackcat"].includes(style)) { add(box(0.07, 0.1, 0.05, m), -0.09, 0.59, 0.2); add(box(0.07, 0.1, 0.05, m), 0.09, 0.59, 0.2); add(box(0.06, 0.06, 0.3, style === "fox" ? mat("#fff") : m), 0, 0.3, -0.32); }

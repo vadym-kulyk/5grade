@@ -925,3 +925,28 @@ details.deleted { margin-top: 14px; } details.deleted summary { cursor: pointer;
 .swatch.on { outline: 3px solid var(--ink); outline-offset: 2px; }
 .furngrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
 .furngrid .btn { display: grid; gap: 2px; justify-items: start; text-align: left; }
+
+/* ⛄ Сніговик зі слів */
+.snowman { display: grid; justify-items: center; gap: 0; margin: 10px 0; transition: transform .3s; }
+.snowman.done { transform: scale(1.12) rotate(-3deg); }
+.snowman__ball { display: grid; place-items: center; border-radius: 50%; background: #fbfdff; border: 2px solid var(--line); box-shadow: inset -6px -6px 0 #e6eef7; color: var(--muted); font-weight: 700; margin-top: -8px; }
+.snowman__ball b { color: var(--text); font-size: 18px; }
+.snowman__ball.b0 { width: 64px; height: 64px; margin-top: 0; }
+.snowman__ball.b1 { width: 86px; height: 86px; }
+.snowman__ball.b2 { width: 108px; height: 108px; }
+.snowman__rows { display: grid; gap: 8px; }
+.snowman__row { display: flex; gap: 8px; align-items: center; justify-content: center; flex-wrap: wrap; }
+.snowman__t { width: 72px; text-align: right; color: var(--muted); font-size: 14px; }
+.snowman__row .ok { background: var(--lime); color: #fff; }
+.snowman__row .bad { opacity: .4; text-decoration: line-through; }
+/* 🎁 Адвент-календар */
+.advent__grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-top: 12px; }
+.advent__day { display: grid; gap: 2px; place-items: center; padding: 10px 4px; border-radius: 12px; border: 2px solid var(--line); background: var(--surface); font: inherit; cursor: default; }
+.advent__day b { font-size: 20px; }
+.advent__day span { font-size: 13px; color: var(--muted); }
+.advent__day.open { border-color: #d9342b; background: #fff1ef; cursor: pointer; }
+.advent__day.done { background: #eef7e6; }
+@media (max-width: 520px) { .advent__grid { grid-template-columns: repeat(4, 1fr); } }
+/* ⏱ Таймер спуску й кола в 3D */
+.world__timer { position: absolute; left: 50%; top: 130px; transform: translateX(-50%); background: var(--bg); border: 2px solid var(--line); border-radius: 999px; padding: 6px 16px; font-weight: 700; font-variant-numeric: tabular-nums; display: none; z-index: 4; }
+.world__timer.on { display: block; }

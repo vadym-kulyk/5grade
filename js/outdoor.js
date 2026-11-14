@@ -8,7 +8,7 @@ import { PK } from "./parkour.js";
 import { SLED_ZONE } from "./winter.js";
 
 const R_WORLD = 175;
-const LAKES = [{ x: -70, z: 112, rx: 26, rz: 17 }, { x: 88, z: -40, rx: 16, rz: 12 }];
+export const LAKES = [{ x: -70, z: 112, rx: 26, rz: 17 }, { x: 88, z: -40, rx: 16, rz: 12 }];
 const PIER = { x0: -71.6, x1: -68.4, z0: 112, z1: 131 }; // пристань заходить в озеро
 const riverZ = (x) => -96 + Math.sin(x / 26) * 8;
 const BRIDGES = [{ x: 0, w: 4 }, { x: -62, w: 4 }, { x: 70, w: 4 }];
@@ -214,6 +214,11 @@ export function buildOutdoor(scene, hw = false, winter = false) {
   for (let i = 0; i < 6; i++) animal("bunny", "bunny", 1.4, { x: 30 + (i % 3) * 25, z: 115, r: 30 }, 3.6);
   for (let i = 0; i < 3; i++) animal("hedgehog", "hedgehog", 1.4, { x: -35 + i * 10, z: -78, r: 14 }, 1.2);
   animal("dog", "dog", 1.6, { x: 46, z: 80, r: 14 }, 3.2);
+  // 🐾 Дикі звірі, яких можна приручити (E — питання поспіль)
+  for (const [style, scale, zone, sp, label] of [["elk", 3.4, { x: 60, z: -138, r: 18 }, 1.6, "🦌 Лось Велет"], ["wolf", 2.3, { x: -120, z: -105, r: 18 }, 2.6, "🐺 Вовк Сірко"], ["wildfox", 1.9, { x: 122, z: 104, r: 14 }, 3, "🦊 Лисичка Вогник"]]) {
+    animal(style, "wild", scale, zone, sp);
+    Object.assign(spots[spots.length - 1], { label, sub: "Натисни E — спробуй приручити!", info: null, tame: `pet.${style}` });
+  }
   animal("cat", "cat", 1.4, { x: 8, z: 46, r: 9 }, 1.6);
   // Сови на деревах
   for (const [x, z] of leafy.slice(0, 5)) { const owl = petModel("owl", 1.4); owl.position.set(x, 5.4, z + 1.6); scene.add(owl); lod.push({ o: owl, d: 60, out: true }); spots.push({ x, z: z + 2.2, r: 3, label: "🦉 Сова на дереві", info: FACTS.owl }); }
@@ -307,7 +312,7 @@ export function buildOutdoor(scene, hw = false, winter = false) {
   // Найближча буква — для підказки «гарячо/холодно»
   const huntNearest = (me) => Math.min(...hunt.letters.filter((l) => l.s.parent).map((l) => Math.hypot(me.x - l.x, me.z - l.z)));
   mergeStatic(stat);
-  return { lod, blocked, spots, tick, hunt, startHunt, stopHunt, huntNearest, setOnGoal: (f) => (onGoal = f), setOnKick: (f) => (onKick = f),
+  return { lod, blocked, spots, tick, onIce: (x, z) => winter && inLake(x, z) && !onPier(x, z), hunt, startHunt, stopHunt, huntNearest, setOnGoal: (f) => (onGoal = f), setOnKick: (f) => (onKick = f),
     setBall: (b) => { ball.position.set(b.x, 0.4, b.z); bv.x = b.vx; bv.z = b.vz; }, nearField: (x, z) => Math.abs(x - FIELD.x) < FIELD.w / 2 + 12 && Math.abs(z - FIELD.z) < FIELD.d / 2 + 12, animalPos: (s) => (s.ref ? [s.ref.x, s.ref.z] : [s.x, s.z]) };
 }
 
