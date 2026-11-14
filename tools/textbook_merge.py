@@ -7,7 +7,7 @@
 Сторінка береться з pNNNN.md (розпізнано моделлю: наголоси, виділення, таблиці).
 Якщо її немає — з текстового шару PDF (лише букви, без наголосів і виділень) з позначкою.
 """
-import os, re, subprocess, sys
+import os, re, subprocess, sys, unicodedata
 
 TITLES = {
     "onatiy": "Онатій А., Ткачук Т. Українська мова. 5 клас. — Тернопіль: Навчальна книга — Богдан, 2022",
@@ -15,6 +15,10 @@ TITLES = {
     "golub": "Голуб Н., Горошкіна О. Українська мова. 5 клас. — 2022",
     "litvinova": "Літвінова І. Українська мова. 5 клас. — Харків: Ранок, 2022",
     "voron": "Ворон А., Солопенко В. Українська мова. 5 клас. — Київ: Оріон, 2022",
+    "zabolotnyi": "Заболотний О., Заболотний В. Українська мова. 5 клас. — Київ: Генеза, 2022",
+    "hapon": "Гапон Ю. та ін. Українська мова. 5 клас. — 2022",
+    "khvorostianyi1": "Хворостяний І. та ін. Українська мова, українська та зарубіжна література (інтегрований курс). 5 клас. Частина 1. — 2022",
+    "khvorostianyi2": "Хворостяний І. та ін. Українська мова, українська та зарубіжна література (інтегрований курс). 5 клас. Частина 2. — 2022",
     "rum": "Петрук О. Українська мова. 5 клас (для шкіл з румунською мовою навчання). — Львів: Світ, 2022",
 }
 NOTE = ("Видання 2022 р., правопис 2019 р. Розпізнано з PDF (картинка сторінки + текстовий шар) "
@@ -29,11 +33,11 @@ HOMO = str.maketrans("aceiopxyABCEHIKMOPTX", "асеіорхуАВСЕНІКМО
 
 def fix_homoglyphs(t):
     def f(m):
-        w = m.group(0)
+        w = unicodedata.normalize("NFD", m.group(0))  # á → a + U+0301
         if re.search(f"[{CYR}]", w) and re.search(r"[a-zA-Z]", w) and not re.search(r"[b-df-hj-np-wzA-Z]", w.translate(HOMO)):
-            return w.translate(HOMO)
-        return w
-    return re.sub(rf"[{CYR}a-zA-Z]+", f, t)
+            return unicodedata.normalize("NFC", w.translate(HOMO))
+        return m.group(0)
+    return re.sub(rf"[{CYR}a-zA-Z\u00C0-\u024F]+", f, t)
 
 
 def pages(pdf):
@@ -52,6 +56,6 @@ for book in sys.argv[1:]:
         else:
             t = subprocess.run(["pdftotext", "-f", str(n), "-l", str(n), pdf, "-"], capture_output=True, text=True).stdout.strip()
             t, layer = "<!-- ЛИШЕ ТЕКСТОВИЙ ШАР: без наголосів і виділень -->\n\n" + t, layer + 1
-        parts.append(f"\n<!-- с. {n} (PDF) -->\n\n" + fix_homoglyphs(t) + "\n")
+        parts.append(f"\n<!-- с. {n} (PDF) -->\n\n" + unicodedata.normalize("NFC", fix_homoglyphs(t)) + "\n")
     open(f"out/{book}.md", "w", encoding="utf-8").write("".join(parts))
     print(book, f"розпізнано {ocr}, лише текстовий шар {layer},", os.path.getsize(f"out/{book}.md"), "байт")
