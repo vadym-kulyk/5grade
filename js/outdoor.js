@@ -5,6 +5,7 @@ import { petModel } from "./avatar.js";
 import { mergeStatic } from "./merge.js";
 import { VILLAGE } from "./houses.js";
 import { PK } from "./parkour.js";
+import { SLED_ZONE } from "./winter.js";
 
 const R_WORLD = 175;
 const LAKES = [{ x: -70, z: 112, rx: 26, rz: 17 }, { x: 88, z: -40, rx: 16, rz: 12 }];
@@ -101,7 +102,7 @@ export function buildOutdoor(scene, hw = false, winter = false) {
   const free = (x, z, pad = 2) => Math.hypot(x, z) < R_WORLD - 3 && !inRect(x, z, SCHOOL, 4) && !inLake(x, z, 4) && !inRiver(x, z, 4) && !inRect(x, z, QUEST, 2) &&
     !(Math.abs(x - FIELD.x) < FIELD.w / 2 + 4 && Math.abs(z - FIELD.z) < FIELD.d / 2 + 4) && Math.hypot(x, z - 58) > 12 && !(Math.abs(x) < 4) &&
     Math.hypot(x - 46, z - 80) > 12 && Math.hypot(x - 108, z - 62) > 8 && Math.hypot(x + 22, z - 88) > 7 && !onPathish(x, z, pad) &&
-    !inRect(x, z, VILLAGE, 6) && Math.hypot(x - PK.x, z - PK.z) > PK.r + 2;
+    !inRect(x, z, VILLAGE, 6) && Math.hypot(x - PK.x, z - PK.z) > PK.r + 2 && !inRect(x, z, SLED_ZONE, 2);
   function onPathish(x, z) { return (Math.abs(x) < 3 && z > -110 && z < 60) || (Math.abs(z - 58) < 3 && x > -50 && x < 105); }
   const pines = [], leafy = [];
   let tries = 0;
@@ -121,8 +122,8 @@ export function buildOutdoor(scene, hw = false, winter = false) {
   [...pines, ...leafy].forEach(([x, z, s]) => colliders.push([x, z, 0.5 * s, 8 * s]));
   // Гриби, каміння, квіти
   const pick = (n, f) => { const out = []; let k = 0; while (out.length < n && k++ < n * 40) { const x = (rnd() - 0.5) * 2 * R_WORLD, z = (rnd() - 0.5) * 2 * R_WORLD; if (f(x, z)) out.push([x, z, 0.6 + rnd() * 0.8]); } return out; };
-  const shrooms = pick(90, (x, z) => free(x, z) && Math.hypot(x, z) > 70);
-  inst(new THREE.CylinderGeometry(0.08, 0.1, 0.35, 6), M("#f4ead2"), shrooms, 0.17); inst(new THREE.SphereGeometry(0.28, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2), M("#e2443c"), shrooms, 0.33);
+  const shrooms = winter ? [] : pick(90, (x, z) => free(x, z) && Math.hypot(x, z) > 70); // узимку грибів немає
+  if (shrooms.length) inst(new THREE.CylinderGeometry(0.08, 0.1, 0.35, 6), M("#f4ead2"), shrooms, 0.17); if (shrooms.length) inst(new THREE.SphereGeometry(0.28, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2), M("#e2443c"), shrooms, 0.33);
   const rocks = pick(60, (x, z) => free(x, z)); inst(new THREE.DodecahedronGeometry(0.9), M("#9a97a6"), rocks, 0.35, 0.6);
   rocks.forEach(([x, z, s]) => colliders.push([x, z, 0.8 * s, 1]));
   const flowers = winter ? [] : pick(700, (x, z) => free(x, z, 0) && ((x > 10 && x < 95 && z > 88 && z < 150) || (x < -20 && x > -110 && z > -70 && z < -20) || rnd() < 0.05));
