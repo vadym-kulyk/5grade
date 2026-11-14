@@ -1,5 +1,6 @@
 // Перевірка тем: node tools/validate.mjs
-import { TOPICS } from "../content/index.js";
+import { TOPICS, loadTopic } from "../content/index.js";
+import { HARD } from "../content/hard/index.js";
 import { MONITORING, MON_EXTRA } from "../content/monitoring/index.js";
 import fs from "node:fs";
 let bad = 0;
@@ -27,22 +28,32 @@ function checkTask(T, w, t) {
 }
 
 for (const meta of TOPICS.filter((t) => t.ready)) {
-  const T = (await import(`../content/topics/${meta.id}.js`)).default;
+  const T = await loadTopic(meta.id);
   const ids = new Set();
   if (T.id !== meta.id) err(meta.id, "id не збігається");
   if (T.levels.length !== 5) err(meta.id, `рівнів ${T.levels.length}`);
   const blocks = new Set(T.theory.map((b) => b.id));
   for (const [k, r] of Object.entries(T.rules)) if (!blocks.has(r.block)) err(meta.id, `правило ${k} → немає блоку ${r.block}`);
+  // Повтори: однакове слово з пропуском або однакове питання з тими самими варіантами (у межах теми, обидва варіанти рівнів)
+  const seen = new Map();
+  const norm = (x) => String(x ?? "").replace(/<[^>]+>/g, "").replace(/[’ʼ]/g, "'").toLowerCase().replace(/\s+/g, " ").trim();
+  const keyOf = (t) => t.type === "gap" ? "gap:" + norm(t.word) : t.type + ":" + norm(t.q) + "|" + norm(t.text) + "|" + norm(JSON.stringify(t.options || t.pairs || t.items || t.answer));
+  if (HARD.includes(meta.id) && !T.levels.every((L) => L.hard)) err(meta.id, "складніший варіант є не для всіх рівнів");
   T.levels.forEach((L, li) => {
-    if (L.tasks.length !== 10) err(meta.id, `рівень ${li + 1}: завдань ${L.tasks.length}`);
-    for (const t of L.tasks) {
-      const w = `${meta.id}/${t.id}`;
-      if (ids.has(t.id)) err(w, "повтор id"); ids.add(t.id);
-      checkTask(T, w, t);
+    for (const [kind, list] of [["", L.tasks], ["🔥", L.hard]]) {
+      if (!list) continue;
+      if (list.length !== 10) err(meta.id, `рівень ${li + 1}${kind}: завдань ${list.length}`);
+      for (const t of list) {
+        const w = `${meta.id}/${t.id}`;
+        if (ids.has(t.id)) err(w, "повтор id"); ids.add(t.id);
+        checkTask(T, w, t);
+        const k = keyOf(t);
+        if (seen.has(k)) (kind ? err : (a, b) => console.log(`  ⚠ ${a}: ${b}`))(w, `повторює ${seen.get(k)}`); else seen.set(k, t.id);
+      }
     }
   });
   const types = {};
-  T.levels.flatMap((L) => L.tasks).forEach((t) => (types[t.type] = (types[t.type] || 0) + 1));
+  T.levels.flatMap((L) => [...L.tasks, ...(L.hard || [])]).forEach((t) => (types[t.type] = (types[t.type] || 0) + 1));
   console.log(`✓ ${meta.id}: ${ids.size} завдань`, JSON.stringify(types));
   // Моніторингова робота теми
   const monFile = new URL(`../content/monitoring/${meta.id}.js`, import.meta.url);

@@ -950,3 +950,8 @@ details.deleted { margin-top: 14px; } details.deleted summary { cursor: pointer;
 /* ⏱ Таймер спуску й кола в 3D */
 .world__timer { position: absolute; left: 50%; top: 130px; transform: translateX(-50%); background: var(--bg); border: 2px solid var(--line); border-radius: 999px; padding: 6px 16px; font-weight: 700; font-variant-numeric: tabular-nums; display: none; z-index: 4; }
 .world__timer.on { display: block; }
+/* Рівень із двома варіантами: звичайний і складніший */
+.lvl__vars { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 2px; }
+.lvl__btns { display: grid; gap: 6px; }
+.lvl__hard { border-color: #e8590c; color: #c2410c; font-weight: 700; }
+.lvl__hard:hover { background: #fff4ec; }

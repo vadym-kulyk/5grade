@@ -162,8 +162,10 @@ export async function saveSession(s) {
     attemptNo = (L.attempts || 0) + 1;
     const okNoFast = s.answers.filter((a) => a.ok && !a.fast).length;
     // Прогрес рахує всі правильні відповіді; за поспіх лише не дають монет і досвіду
-    const best = Math.max(L.best || 0, correct);
-    upd[`progress/${uid}/${s.topic}/levels/${s.level}`] = { best, attempts: attemptNo, last: correct, lastAt: end };
+    const best = Math.max(L.best || 0, correct); // у залік — найкращий результат з обох варіантів рівня
+    const bn = s.hard ? L.bn ?? (L.bh == null ? L.best : undefined) : Math.max(L.bn ?? (L.bh == null ? L.best || 0 : 0), correct);
+    const bh = s.hard ? Math.max(L.bh || 0, correct) : L.bh;
+    upd[`progress/${uid}/${s.topic}/levels/${s.level}`] = { best, attempts: attemptNo, last: correct, lastAt: end, ...(bn != null ? { bn } : {}), ...(bh != null ? { bh } : {}) };
     if (okNoFast === total) { coinsGain += ECONOMY.levelPerfect; extra.perfect = true; if (!fast) extra.careful = true; }
     // Чи стала тема 100 % саме зараз
     const levels = { ...(p.levels || {}), [s.level]: { best } };
@@ -199,7 +201,7 @@ export async function saveSession(s) {
   const avgSec = total ? Math.round((s.answers.reduce((a, b) => a + b.sec, 0) / total) * 10) / 10 : 0;
   const attempt = {
     type: s.type, topic: s.topic || null, topicTitle: s.type === "monitoring" ? s.title : s.topic ? topicById[s.topic]?.title : s.title,
-    level: s.level || null, monitoringId: s.monitoringId || null,
+    level: s.level || null, ...(s.hard ? { variant: "hard" } : {}), monitoringId: s.monitoringId || null,
     name: u.name, cls: u.cls, start: s.start, end, durSec, avgSec,
     correct, total, pct: Math.round((correct / total) * 100),
     fast, flagged: fast >= 3 || fast / total >= 0.3, hints, leaves, awaySec, coins: coinsGain, xp: xpGain, attemptNo,

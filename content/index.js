@@ -1,3 +1,4 @@
+import { HARD } from "./hard/index.js";
 // Перелік розділів і тем за підручником А. Онатій, Т. Ткачук «Українська мова. 5 клас» (2022).
 // ready: true — тема вже має теорію й 50 завдань (файл content/topics/<id>.js).
 
@@ -80,6 +81,13 @@ export const shortTitle = (t) => t.short || t.title;
 
 const cache = {};
 export async function loadTopic(id) {
-  if (!cache[id]) cache[id] = (await import(`./topics/${id}.js`)).default;
+  if (!cache[id]) {
+    const T = (await import(`./topics/${id}.js`)).default;
+    // складніший варіант кожного рівня (L.hard), якщо для теми його вже підготовлено
+    if (HARD.includes(id)) (await import(`./hard/${id}.js`)).default.forEach((tasks, i) => { if (T.levels[i]) T.levels[i].hard = tasks; });
+    cache[id] = T;
+  }
   return cache[id];
 }
+// Усі завдання теми: обидва варіанти рівнів
+export const allTasks = (T) => T.levels.flatMap((L) => [...L.tasks, ...(L.hard || [])]);

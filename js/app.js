@@ -4,7 +4,7 @@ import { watchAuth, logout, studentLogin, studentRegister, changePin, isTeacher,
 import { CLASSES, ECONOMY, LEVELS_PER_TOPIC, TASKS_PER_LEVEL, halloweenOn, christmasOn } from "./config.js";
 import { state, onChange, bindStudent, unbind, saveSession, loadAttempts, buyItem, owns, saveAvatar, savePreset, awardBadges, settleAvatar } from "./store.js";
 import { RANKS, rankOf, BADGES, badgeById, topicPct, overall } from "./game.js";
-import { SECTIONS, TOPICS, topicById, sectionById, shortTitle, loadTopic, BOOK } from "../content/index.js";
+import { SECTIONS, TOPICS, topicById, sectionById, shortTitle, loadTopic, allTasks, BOOK } from "../content/index.js";
 import { runQuiz } from "./quiz.js";
 import { CATEGORIES, ITEMS, itemById, fullAvatar, isFree, avatarPreview } from "./avatar.js";
 import { startLive, stopLive } from "./live.js";
@@ -29,7 +29,7 @@ const go = (hash) => (location.hash = hash);
 const routes = [
   [/^#\/?$/, () => home()],
   [/^#\/topic\/(\w+)$/, (id) => topicPage(id)],
-  [/^#\/play\/(\w+)\/(\d)$/, (id, lv) => playLevel(id, +lv)],
+  [/^#\/play\/(\w+)\/(\d)(\/h)?$/, (id, lv, h) => playLevel(id, +lv, !!h)],
   [/^#\/review$/, () => review()],
   [/^#\/monitoring\/(\w+)$/, (id) => monitoring(id)],
   [/^#\/shop$/, () => shop()],
@@ -266,9 +266,13 @@ async function topicPage(id) {
 
   const levels = h("div.levels", T.levels.map((L, i) => {
     const n = i + 1, st = pr.levels?.[n];
+    // два варіанти: звичайний і складніший; у залік іде найкращий результат з обох
+    const vars = L.hard ? h("div.lvl__vars",
+      h("span.note", `Звичайний: ${st?.bn ?? (st && !st.bh ? st.best : "—")}/${TASKS_PER_LEVEL}`), h("span.note", `🔥 Складніший: ${st?.bh ?? "—"}/${TASKS_PER_LEVEL}`)) : null;
     return h("div.lvl.card",
-      h("div.lvl__n", n), h("div.lvl__info", h("b", L.title), h("div.note", st ? `Найкраще: ${st.best}/${TASKS_PER_LEVEL} · спроб: ${st.attempts}` : "Ще не пройдено"), bar(((st?.best || 0) / TASKS_PER_LEVEL) * 100, st?.best === TASKS_PER_LEVEL ? "var(--right)" : "var(--lime)")),
-      h("button.btn.btn--primary", { onclick: () => go(`#/play/${id}/${n}`) }, st ? "Ще раз" : "Почати"));
+      h("div.lvl__n", n), h("div.lvl__info", h("b", L.title), h("div.note", st ? `Найкраще: ${st.best}/${TASKS_PER_LEVEL} · спроб: ${st.attempts}` : "Ще не пройдено"), vars, bar(((st?.best || 0) / TASKS_PER_LEVEL) * 100, st?.best === TASKS_PER_LEVEL ? "var(--right)" : "var(--lime)")),
+      L.hard ? h("div.lvl__btns", h("button.btn.btn--primary", { onclick: () => go(`#/play/${id}/${n}`) }, "Звичайний"), h("button.btn.lvl__hard", { onclick: () => go(`#/play/${id}/${n}/h`) }, "🔥 Складніший"))
+        : h("button.btn.btn--primary", { onclick: () => go(`#/play/${id}/${n}`) }, st ? "Ще раз" : "Почати"));
   }));
 
   page(
@@ -287,7 +291,7 @@ async function topicPage(id) {
 
 // Рекомендації: за правилами, у яких були помилки
 function recsFromTasks(T, wrongIds) {
-  const all = T.levels.flatMap((L) => L.tasks);
+  const all = allTasks(T);
   const count = {};
   wrongIds.forEach((id) => { const tk = all.find((x) => x.id === id); if (tk?.rule) count[tk.rule] = (count[tk.rule] || 0) + 1; });
   const tags = Object.entries(count).sort((a, b) => b[1] - a[1]);
@@ -300,21 +304,21 @@ function recsFromTasks(T, wrongIds) {
 }
 
 // ---------- Проходження рівня ----------
-async function playLevel(id, n) {
+async function playLevel(id, n, hard = false) {
   const t = topicById[id];
   if (!t?.ready || !topicOpen(id)) return go("#/");
   const T = await loadTopic(id);
   const L = T.levels[n - 1];
-  if (!L) return go(`#/topic/${id}`);
+  if (!L || (hard && !L.hard)) return go(`#/topic/${id}`);
   runQuiz({
-    title: shortTitle(t), subtitle: `Рівень ${n}: ${L.title}`, type: "level", rules: T.rules, theory: loadTopic,
-    tasks: shuffle(L.tasks).map((x) => ({ ...x, topic: id })),
+    title: shortTitle(t), subtitle: `Рівень ${n}: ${L.title}${hard ? " · 🔥 складніший" : ""}`, type: "level", rules: T.rules, theory: loadTopic,
+    tasks: shuffle(hard ? L.hard : L.tasks).map((x) => ({ ...x, topic: id })),
     exit: () => go(`#/topic/${id}`),
     onFinish: async (answers, start) => {
       mount(h("div.loading", "Зберігаю результат…"));
       let res;
-      try { res = await saveSession({ type: "level", topic: id, level: n, start, answers }); } catch (e) { toast(errText(e), "warn", 6000); return go(`#/topic/${id}`); }
-      resultPage(res, T, { again: `#/play/${id}/${n}`, next: n < T.levels.length ? `#/play/${id}/${n + 1}` : null, back: `#/topic/${id}` });
+      try { res = await saveSession({ type: "level", topic: id, level: n, hard, start, answers }); } catch (e) { toast(errText(e), "warn", 6000); return go(`#/topic/${id}`); }
+      resultPage(res, T, { again: `#/play/${id}/${n}${hard ? "/h" : ""}`, next: n < T.levels.length ? `#/play/${id}/${n + 1}` : null, back: `#/topic/${id}` });
     },
   });
 }
@@ -358,7 +362,7 @@ async function review() {
     if (topicById[m.topic]?.ready) {
       const T = await loadTopic(m.topic);
       Object.assign(rules, T.rules);
-      tk = T.levels.flatMap((L) => L.tasks).find((x) => x.id === m.id);
+      tk = allTasks(T).find((x) => x.id === m.id);
       for (const w of monWorks(m.topic)) { if (tk) break; tk = (await loadMon(w.id)).tasks.find((x) => x.id === m.id); }
     }
     if (tk) tasks.push({ ...tk, topic: m.topic });
