@@ -100,7 +100,7 @@ export function buildOutdoor(scene, hw = false, winter = false) {
 
   // Ліс: ялини й листяні дерева (InstancedMesh — швидко навіть на телефоні)
   const free = (x, z, pad = 2) => Math.hypot(x, z) < R_WORLD - 3 && !inRect(x, z, SCHOOL, 4) && !inLake(x, z, 4) && !inRiver(x, z, 4) && !inRect(x, z, QUEST, 2) &&
-    !(Math.abs(x - FIELD.x) < FIELD.w / 2 + 4 && Math.abs(z - FIELD.z) < FIELD.d / 2 + 4) && Math.hypot(x, z - 58) > 12 && !(Math.abs(x) < 4) &&
+    !(Math.abs(x - FIELD.x) < FIELD.w / 2 + 4 && Math.abs(z - FIELD.z) < FIELD.d / 2 + 4) && Math.hypot(x, z - 58) > 12 && Math.hypot(x + 11, z - 65) > 6 && !(Math.abs(x) < 4) &&
     Math.hypot(x - 46, z - 80) > 12 && Math.hypot(x - 108, z - 62) > 8 && Math.hypot(x + 22, z - 88) > 7 && !onPathish(x, z, pad) &&
     !inRect(x, z, VILLAGE, 6) && Math.hypot(x - PK.x, z - PK.z) > PK.r + 2 && !inRect(x, z, SLED_ZONE, 2);
   function onPathish(x, z) { return (Math.abs(x) < 3 && z > -110 && z < 60) || (Math.abs(z - 58) < 3 && x > -50 && x < 105); }

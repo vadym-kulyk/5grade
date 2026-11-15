@@ -1,6 +1,6 @@
 // 🔬 Детальна статистика учня: кожна тема → кожен рівень → кожна спроба й кожне завдання.
 import { h, pct, bar, fmtDate, fmtTime, num, today } from "./ui.js";
-import { LEVELS_PER_TOPIC, TASKS_PER_LEVEL } from "./config.js";
+import { LEVELS_PER_TOPIC, TASKS_PER_LEVEL, HARD_ICON } from "./config.js";
 import { SECTIONS, shortTitle } from "../content/index.js";
 import { topicPct, rankOf } from "./game.js";
 import { taskLabel, rightAnswer } from "./quiz.js";
@@ -40,7 +40,7 @@ function levelStats(P, at, topic, n) {
     last: L?.last ?? list[0]?.correct ?? null,
     tries: Math.max(L?.attempts || 0, list.length),
     first: list.length ? list[list.length - 1].correct : null,
-    trend: list.slice(0, 12).reverse().map((a) => a.correct + (a.variant === "hard" ? "🔥" : "")).join(" → "),
+    trend: list.slice(0, 12).reverse().map((a) => a.correct + (a.variant === "hard" ? HARD_ICON : "")).join(" → "),
     avgPct: list.length ? Math.round(list.reduce((t, a) => t + a.pct, 0) / list.length) : null,
     time: list.reduce((t, a) => t + (a.durSec || 0), 0),
     lastAt: L?.lastAt || list[0]?.end || null,

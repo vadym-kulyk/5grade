@@ -53,3 +53,6 @@ export const christmasOn = (settings) => settings?.christmas ?? xmSeason();
 // ❄️ Зима в 3D-школі: сніг, ялинки, сніжки, замерзлі озера — автоматично з 10 листопада до кінця лютого
 export const winterSeason = (d = new Date()) => (d.getMonth() === 10 && d.getDate() >= 10) || d.getMonth() === 11 || d.getMonth() <= 1;
 export const winterOn = (settings) => settings?.winter ?? winterSeason();
+
+// Позначка складнішого варіанта рівня (кнопка, назва рівня, історія спроб у вчителя)
+export const HARD_ICON = "🧗";

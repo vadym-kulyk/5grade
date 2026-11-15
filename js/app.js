@@ -1,7 +1,7 @@
 // Головний модуль: маршрути та сторінки учня.
 import { h, $, mount, toast, modal, shuffle, pct, ring, bar, fmtDate, fmtTime, say, today, num, groupedBars, wordmark } from "./ui.js";
 import { watchAuth, logout, studentLogin, studentRegister, changePin, isTeacher, read, write, errText } from "./fb.js";
-import { CLASSES, ECONOMY, LEVELS_PER_TOPIC, TASKS_PER_LEVEL, halloweenOn, christmasOn } from "./config.js";
+import { CLASSES, ECONOMY, LEVELS_PER_TOPIC, TASKS_PER_LEVEL, HARD_ICON, halloweenOn, christmasOn } from "./config.js";
 import { state, onChange, bindStudent, unbind, saveSession, loadAttempts, buyItem, owns, saveAvatar, savePreset, awardBadges, settleAvatar } from "./store.js";
 import { RANKS, rankOf, BADGES, badgeById, topicPct, overall } from "./game.js";
 import { SECTIONS, TOPICS, topicById, sectionById, shortTitle, loadTopic, allTasks, BOOK } from "../content/index.js";
@@ -266,13 +266,20 @@ async function topicPage(id) {
 
   const levels = h("div.levels", T.levels.map((L, i) => {
     const n = i + 1, st = pr.levels?.[n];
-    // два варіанти: звичайний і складніший; у залік іде найкращий результат з обох
-    const vars = L.hard ? h("div.lvl__vars",
-      h("span.note", `Звичайний: ${st?.bn ?? (st && !st.bh ? st.best : "—")}/${TASKS_PER_LEVEL}`), h("span.note", `🔥 Складніший: ${st?.bh ?? "—"}/${TASKS_PER_LEVEL}`)) : null;
-    return h("div.lvl.card",
-      h("div.lvl__n", n), h("div.lvl__info", h("b", L.title), h("div.note", st ? `Найкраще: ${st.best}/${TASKS_PER_LEVEL} · спроб: ${st.attempts}` : "Ще не пройдено"), vars, bar(((st?.best || 0) / TASKS_PER_LEVEL) * 100, st?.best === TASKS_PER_LEVEL ? "var(--right)" : "var(--lime)")),
-      L.hard ? h("div.lvl__btns", h("button.btn.btn--primary", { onclick: () => go(`#/play/${id}/${n}`) }, "Звичайний"), h("button.btn.lvl__hard", { onclick: () => go(`#/play/${id}/${n}/h`) }, "🔥 Складніший"))
-        : h("button.btn.btn--primary", { onclick: () => go(`#/play/${id}/${n}`) }, st ? "Ще раз" : "Почати"));
+    // два варіанти: звичайний і складніший; у залік іде найкращий результат з обох.
+    // Кожен варіант має свою лінію прогресу — навпроти своєї кнопки.
+    const col = (v) => (v === TASKS_PER_LEVEL ? "var(--right)" : "var(--lime)");
+    const info = (...more) => h("div.lvl__info", h("b", L.title), h("div.note", st ? `Найкраще: ${st.best}/${TASKS_PER_LEVEL} · спроб: ${st.attempts}` : "Ще не пройдено"), ...more);
+    if (!L.hard) return h("div.lvl.card",
+      h("div.lvl__n", n), info(bar(((st?.best || 0) / TASKS_PER_LEVEL) * 100, col(st?.best))),
+      h("button.btn.btn--primary", { onclick: () => go(`#/play/${id}/${n}`) }, st ? "Ще раз" : "Почати"));
+    const bn = st?.bn ?? (st && !st.bh ? st.best : null), bh = st?.bh ?? null;
+    const row = (label, v, btn) => h("div.lvl__row", h("span.note", `${label}: ${v ?? "—"}/${TASKS_PER_LEVEL}`), bar(((v || 0) / TASKS_PER_LEVEL) * 100, col(v)), btn);
+    return h("div.lvl.lvl--two.card",
+      h("div.lvl__n", n), info(),
+      h("div.lvl__rows",
+        row("Звичайний", bn, h("button.btn.btn--primary", { onclick: () => go(`#/play/${id}/${n}`) }, "Звичайний")),
+        row(`${HARD_ICON} Складніший`, bh, h("button.btn.lvl__hard", { onclick: () => go(`#/play/${id}/${n}/h`) }, `${HARD_ICON} Складніший`))));
   }));
 
   page(
@@ -311,7 +318,7 @@ async function playLevel(id, n, hard = false) {
   const L = T.levels[n - 1];
   if (!L || (hard && !L.hard)) return go(`#/topic/${id}`);
   runQuiz({
-    title: shortTitle(t), subtitle: `Рівень ${n}: ${L.title}${hard ? " · 🔥 складніший" : ""}`, type: "level", rules: T.rules, theory: loadTopic,
+    title: shortTitle(t), subtitle: `Рівень ${n}: ${L.title}${hard ? ` · ${HARD_ICON} складніший` : ""}`, type: "level", rules: T.rules, theory: loadTopic,
     tasks: shuffle(hard ? L.hard : L.tasks).map((x) => ({ ...x, topic: id })),
     exit: () => go(`#/topic/${id}`),
     onFinish: async (answers, start) => {
