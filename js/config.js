@@ -55,4 +55,4 @@ export const winterSeason = (d = new Date()) => (d.getMonth() === 10 && d.getDat
 export const winterOn = (settings) => settings?.winter ?? winterSeason();
 
 // Позначка складнішого варіанта рівня (кнопка, назва рівня, історія спроб у вчителя)
-export const HARD_ICON = "🧗";
+export const HARD_ICON = "💎";
