@@ -1,5 +1,5 @@
 // Головний модуль: маршрути та сторінки учня.
-import { h, $, mount, toast, modal, shuffle, pct, ring, bar, fmtDate, fmtTime, say, today, num, groupedBars, wordmark } from "./ui.js";
+import { h, $, mount, toast, modal, shuffle, pct, ring, bar, gem, fmtDate, fmtTime, say, today, num, groupedBars, wordmark } from "./ui.js";
 import { watchAuth, logout, studentLogin, studentRegister, changePin, isTeacher, read, write, errText } from "./fb.js";
 import { CLASSES, ECONOMY, LEVELS_PER_TOPIC, TASKS_PER_LEVEL, HARD_ICON, halloweenOn, christmasOn } from "./config.js";
 import { state, onChange, bindStudent, unbind, saveSession, loadAttempts, buyItem, owns, saveAvatar, savePreset, awardBadges, settleAvatar } from "./store.js";
@@ -274,12 +274,12 @@ async function topicPage(id) {
       h("div.lvl__n", n), info(bar(((st?.best || 0) / TASKS_PER_LEVEL) * 100, col(st?.best))),
       h("button.btn.btn--primary", { onclick: () => go(`#/play/${id}/${n}`) }, st ? "Ще раз" : "Почати"));
     const bn = st?.bn ?? (st && !st.bh ? st.best : null), bh = st?.bh ?? null;
-    const row = (label, v, btn) => h("div.lvl__row", h("span.note", `${label}: ${v ?? "—"}/${TASKS_PER_LEVEL}`), bar(((v || 0) / TASKS_PER_LEVEL) * 100, col(v)), btn);
+    const row = (label, v, btn, hard) => h("div.lvl__row", h(`span.note${hard ? ".lvl__hardlbl" : ""}`, hard ? gem(15) : null, `${label}: ${v ?? "—"}/${TASKS_PER_LEVEL}`), bar(((v || 0) / TASKS_PER_LEVEL) * 100, col(v)), btn);
     return h("div.lvl.lvl--two.card",
       h("div.lvl__n", n), info(),
       h("div.lvl__rows",
         row("Звичайний", bn, h("button.btn.btn--primary", { onclick: () => go(`#/play/${id}/${n}`) }, "Звичайний")),
-        row(`${HARD_ICON} Складніший`, bh, h("button.btn.lvl__hard", { onclick: () => go(`#/play/${id}/${n}/h`) }, `${HARD_ICON} Складніший`))));
+        row("Складніший", bh, h("button.btn.lvl__hard", { onclick: () => go(`#/play/${id}/${n}/h`) }, gem(), "Складніший"), true)));
   }));
 
   page(

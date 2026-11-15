@@ -964,5 +964,9 @@ details.deleted { margin-top: 14px; } details.deleted summary { cursor: pointer;
   .lvl__row .bar { grid-column: 1; grid-row: 2; }
   .lvl__row .btn { grid-column: 2; grid-row: 1 / 3; }
 }
-.lvl__hard { border-color: #e8590c; color: #c2410c; font-weight: 700; }
-.lvl__hard:hover { background: #fff4ec; }
+/* Складніший варіант — «молодша сестра» синьої кнопки: чорнильна рамка, світле тло, власний діамант */
+.lvl__hard { border-color: var(--ink, #2440c2); color: var(--ink, #2440c2); background: var(--ink-soft, #e8edfb); font-weight: 700; box-shadow: 0 2px 0 color-mix(in srgb, var(--ink, #2440c2) 25%, transparent); }
+.lvl__hard:hover { background: #dbe3f9; border-color: var(--ink-d, #1a2f94); color: var(--ink-d, #1a2f94); }
+.gem { display: inline-flex; line-height: 0; }
+.lvl__hardlbl { display: inline-flex; align-items: center; gap: 5px; }
+.lvl__hardlbl .gem { color: var(--ink, #2440c2); }

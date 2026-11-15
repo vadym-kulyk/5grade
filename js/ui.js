@@ -95,6 +95,11 @@ export function ring(value, size = 64, stroke = 8, color = "var(--lime)") {
     </svg><span class="ring__v">${Math.round(value)}<small>%</small></span>` });
 }
 
+// Діамант складнішого варіанта у фірмових кольорах (чорнило сайту), замість кольорового емодзі
+export function gem(size = 18) {
+  return h("span.gem", { "aria-hidden": "true", html: `<svg viewBox="0 0 24 24" width="${size}" height="${size}"><path d="M6 3h12l4 6-10 12L2 9z" fill="var(--ink-soft, #e8edfb)" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M2 9h20M9 3 7.5 9 12 21l4.5-12L15 3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>` });
+}
+
 export function bar(value, color = "var(--lime)") {
   return h("div.bar", h("div.bar__fill", { style: { width: Math.min(100, value) + "%", background: color } }));
 }
