@@ -84,7 +84,7 @@ export async function loadTopic(id) {
   if (!cache[id]) {
     const T = (await import(`./topics/${id}.js`)).default;
     // складніший варіант кожного рівня (L.hard), якщо для теми його вже підготовлено
-    if (HARD.includes(id)) (await import(`./hard/${id}.js`)).default.forEach((tasks, i) => { if (T.levels[i]) T.levels[i].hard = tasks; });
+    if (HARD.includes(id)) (await import(`./hard/${id}.js`)).default.forEach((tasks, i) => { if (T.levels[i]) T.levels[i].hard = tasks.map((x) => ({ ...x, hard: true })); });
     cache[id] = T;
   }
   return cache[id];

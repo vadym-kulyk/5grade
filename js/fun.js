@@ -1,10 +1,10 @@
 // Розваги 3D-школи: табла рекордів (гірка, ковзанка), бій сніжками клас на клас,
 // адвент-календар біля ялинки, приручення диких звірів у лісі.
 import * as THREE from "three";
-import { h, toast, modal, shuffle } from "./ui.js";
+import { h, toast, modal, shuffle, gem } from "./ui.js";
 import { r, set, onValue, off, update, ref, db } from "./fb.js";
 import { state, owns, ownKey } from "./store.js";
-import { quiz } from "./minigames.js";
+import { quiz, quizHard } from "./minigames.js";
 
 export const kyivDay = () => new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Kyiv" });
 export const fmtT = (s) => s.toFixed(2).replace(".", ",") + " с";
@@ -129,18 +129,27 @@ export function openAdvent() {
         h("b", n), h("span", done ? (got[n] ? "✓ +" + got[n] : "✗") : open ? "🎁" : "🔒"));
     })));
 }
-async function ask(n) {
-  const [q] = await quiz(1);
+// Перед віконцем учень обирає: звичайне завдання чи 💎 складніше (зі складніших рівнів) з подвійною нагородою
+function ask(n) {
+  const body = h("div.center"), close = modal(body);
+  body.append(h("div.mg__big", "🎁"), h("h2", `Віконце ${n}`), h("p", "Яке завдання береш?"),
+    h("div.row.gap.center",
+      h("button.btn.btn--primary", { onclick: () => { close(); askQ(n, false); } }, `Звичайне · +${ADVENT_COINS} 🪙`),
+      h("button.btn.lvl__hard", { onclick: () => { close(); askQ(n, true); } }, gem(), `Складніше · +${ADVENT_COINS * 2} 🪙`)),
+    h("p.note", "Складніше завдання — зі складніших варіантів рівнів. Відповідь одна: помилишся — віконце закриється без монет."));
+}
+async function askQ(n, hard) {
+  const [q] = hard ? await quizHard(1) : await quiz(1);
   if (!q) return toast("Не вдалося завантажити завдання. Спробуй ще раз.", "warn");
   const body = h("div.center");
   const close = modal(body);
   const answer = async (o) => {
-    const ok = o === q.answer, gain = ok ? ADVENT_COINS : 0, uid = state.uid;
+    const ok = o === q.answer, gain = ok ? ADVENT_COINS * (hard ? 2 : 1) : 0, uid = state.uid;
     await update(ref(db), { [`users/${uid}/advent/${n}`]: gain, ...(gain ? { [`users/${uid}/coins`]: (state.user.coins || 0) + gain } : {}) });
     body.replaceChildren(h("div.mg__big", ok ? "🎉" : "🙈"), h("h2", ok ? `Правильно! +${gain} 🪙` : "Цього разу ні"),
       h("p", "Правильно: ", h("b", solved(q))), h("button.btn.btn--primary", { onclick: close }, "Далі"));
   };
-  body.append(h("div.mg__big", "🎁"), h("h2", `Віконце ${n}`), h("p", "Яка буква пропущена?"), h("p.mg__q", q.word.replace(/_/g, "…")),
+  body.append(h("div.mg__big", hard ? gem(54) : "🎁"), h("h2", `Віконце ${n}${hard ? " · складніше" : ""}`), h("p", "Що пропущено?"), h("p.mg__q", q.word.replace(/_/g, "…")),
     h("div.row.gap.center", shuffle([...q.options]).map((o) => h("button.btn", { onclick: () => answer(o) }, o))));
 }
 

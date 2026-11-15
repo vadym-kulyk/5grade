@@ -1,7 +1,7 @@
 // Стан учня в пам’яті + збереження результатів у Firebase.
 import { db, r, ref, update, onValue, off, read, push } from "./fb.js";
 import { ECONOMY, XP, LEVELS_PER_TOPIC } from "./config.js";
-import { topicPct, newBadges, streakUpdate, badgeById } from "./game.js";
+import { topicPct, newBadges, streakUpdate, badgeById, diamondsOf } from "./game.js";
 import { topicById } from "../content/index.js";
 import { toast } from "./ui.js";
 
@@ -155,7 +155,7 @@ export async function saveSession(s) {
 
   // Рівень теми: найкращий результат
   let attemptNo = 1;
-  let topicNowPerfect = false;
+  let topicNowPerfect = false, newDiamond = false, diamonds = null;
   if (s.type === "level") {
     const p = state.progress?.[s.topic] || {};
     const L = p.levels?.[s.level] || {};
@@ -167,6 +167,12 @@ export async function saveSession(s) {
     const bh = s.hard ? Math.max(L.bh || 0, correct) : L.bh;
     upd[`progress/${uid}/${s.topic}/levels/${s.level}`] = { best, attempts: attemptNo, last: correct, lastAt: end, ...(bn != null ? { bn } : {}), ...(bh != null ? { bh } : {}) };
     if (okNoFast === total) { coinsGain += ECONOMY.levelPerfect; extra.perfect = true; if (!fast) extra.careful = true; }
+    // 💎 Діамант: уперше 10 з 10 у складнішому варіанті цього рівня
+    if (s.hard && correct === total && (L.bh || 0) < total) {
+      newDiamond = true; coinsGain += ECONOMY.diamond;
+      diamonds = diamondsOf({ ...state.progress, [s.topic]: { ...p, levels: { ...(p.levels || {}), [s.level]: { bh: total } } } });
+      upd[`public/${uid}/diamonds`] = diamonds;
+    }
     // Чи стала тема 100 % саме зараз
     const levels = { ...(p.levels || {}), [s.level]: { best } };
     const pctNow = topicPct({ levels });
@@ -214,7 +220,7 @@ export async function saveSession(s) {
   // Почекати, доки локальний стан оновиться, і видати значки
   await new Promise((res) => setTimeout(res, 150));
   const got = await awardBadges(extra);
-  return { ...attempt, streakBonus: st.bonus, streak: st.streak?.count || u.streak?.count || 0, topicNowPerfect, badges: got };
+  return { ...attempt, streakBonus: st.bonus, streak: st.streak?.count || u.streak?.count || 0, topicNowPerfect, newDiamond, diamonds, badges: got };
 }
 
 export async function loadAttempts(uid = state.uid) {

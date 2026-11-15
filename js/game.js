@@ -42,6 +42,10 @@ export const BADGES = [
   { id: "stylist", icon: "👗", title: "Стиліст", text: "Мати 15 речей" },
   { id: "explorer", icon: "🏫", title: "Дослідник школи", text: "Зайти в 3D-школу" },
   { id: "hwQuest", icon: "🎃", title: "Таємна кімната", text: "Разом із класом пройти геловінський квест" },
+  { id: "diamond1", icon: "💎", title: "Перший діамант", text: "10 з 10 у складнішому варіанті будь-якого рівня" },
+  { id: "diamond10", icon: "💍", title: "Скарбничка", text: "Зібрати 10 діамантів" },
+  { id: "diamondTopic", icon: "💠", title: "Діамантова тема", text: "Усі 5 складніших рівнів теми на 10 з 10" },
+  { id: "diamondSection", icon: "👑", title: "Діамантовий розділ", text: "Усі теми розділу — діамантові" },
 ];
 export const badgeById = Object.fromEntries(BADGES.map((b) => [b.id, b]));
 
@@ -59,6 +63,18 @@ export function overall(progress = {}) {
   const done = pcts.filter((p) => p === 100).length;
   const avg = pcts.length ? Math.round(pcts.reduce((a, b) => a + b, 0) / pcts.length) : 0;
   return { ready: ready.length, done, avg, pcts };
+}
+
+// 💎 Діаманти: рівні, складніший варіант яких пройдено на 10 з 10
+export function diamondsOf(progress = {}) {
+  let n = 0;
+  for (const t of Object.values(progress || {})) for (const L of Object.values(t?.levels || {})) if (L?.bh === TASKS_PER_LEVEL) n++;
+  return n;
+}
+export const diamondTopic = (p) => !!p?.levels && Array.from({ length: LEVELS_PER_TOPIC }, (_, i) => p.levels[i + 1]?.bh === TASKS_PER_LEVEL).every(Boolean);
+export function diamondSections(progress = {}) {
+  const secs = [...new Set(TOPICS.filter((t) => t.ready).map((t) => t.s))];
+  return secs.filter((s) => TOPICS.filter((t) => t.ready && t.s === s).every((t) => diamondTopic(progress[t.id])));
 }
 
 // Щоденна серія: повертає нову серію і бонус (якщо сьогодні перший раз)
@@ -93,6 +109,11 @@ export function newBadges(user, progress, extra = {}) {
   give("stylist", Object.keys(user.owned || {}).length >= 15);
   give("explorer", extra.explorer);
   give("hwQuest", extra.hwQuest);
+  const dm = diamondsOf(progress);
+  give("diamond1", dm >= 1);
+  give("diamond10", dm >= 10);
+  give("diamondTopic", TOPICS.some((t) => t.ready && diamondTopic(progress?.[t.id])));
+  give("diamondSection", diamondSections(progress).length >= 1);
   return got;
 }
 

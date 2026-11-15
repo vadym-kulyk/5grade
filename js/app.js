@@ -3,7 +3,7 @@ import { h, $, mount, toast, modal, shuffle, pct, ring, bar, gem, fmtDate, fmtTi
 import { watchAuth, logout, studentLogin, studentRegister, changePin, isTeacher, read, write, errText } from "./fb.js";
 import { CLASSES, ECONOMY, LEVELS_PER_TOPIC, TASKS_PER_LEVEL, HARD_ICON, halloweenOn, christmasOn } from "./config.js";
 import { state, onChange, bindStudent, unbind, saveSession, loadAttempts, buyItem, owns, saveAvatar, savePreset, awardBadges, settleAvatar } from "./store.js";
-import { RANKS, rankOf, BADGES, badgeById, topicPct, overall } from "./game.js";
+import { RANKS, rankOf, BADGES, badgeById, topicPct, overall, diamondsOf } from "./game.js";
 import { SECTIONS, TOPICS, topicById, sectionById, shortTitle, loadTopic, allTasks, BOOK } from "../content/index.js";
 import { runQuiz } from "./quiz.js";
 import { CATEGORIES, ITEMS, itemById, fullAvatar, isFree, avatarPreview } from "./avatar.js";
@@ -188,6 +188,9 @@ function home() {
   const o = overall(p);
   const rk = rankOf(u.xp);
   const assigned = TOPICS.filter((t) => state.settings?.topics?.[t.id]?.assigned && t.ready);
+  // 💎 Складніші рівні, які вчитель задав саме цьому учневі (завдання із саморозвитку)
+  const myHard = Object.values(state.settings?.selfdev || {}).filter((x) => x?.uids?.[state.uid] && topicById[x.topic]?.ready)
+    .sort((a, b) => (a.deadline || "9").localeCompare(b.deadline || "9"));
 
   const avBox = h("div.hero__av");
   page(
@@ -200,17 +203,25 @@ function home() {
           bar(rk.toNext, "var(--violet)"))),
         h("div.stats",
           stat("🪙", u.coins || 0, "монет"), stat("⭐", u.xp || 0, "досвіду"),
-          stat("🔥", u.streak?.count || 0, "днів поспіль"), stat("💯", `${o.done}/${o.ready}`, "тем на 100 %"))),
+          stat("🔥", u.streak?.count || 0, "днів поспіль"), stat("💯", `${o.done}/${o.ready}`, "тем на 100 %"), h("div.stat.stat--gem", h("b.gemstat", gem(20), diamondsOf(p)), h("small", "діамантів")))),
       h("div.hero__ring", ring(o.avg, 120, 12), h("div.note", "середній прогрес"))),
 
-    assigned.length ? h("section.card.assign",
-      h("h2", "Завдання від учителя"),
-      h("div.assign__list", assigned.map((t) => {
-        const d = state.settings.topics[t.id].deadline;
-        const tp = topicPct(p[t.id]);
-        const late = d && d < today() && tp < 100;
-        return h("a.assign__item", { href: `#/topic/${t.id}` }, h("b", shortTitle(t)), d && h(`span.${late ? "late" : "note"}`, `до ${fmtDate(d)}`), h("span.mono", tp + "%"), bar(tp));
-      }))) : null,
+    assigned.length || myHard.length ? h("section.card.assign",
+      h("h2", "Завдання із саморозвитку"),
+      h("div.assign__list",
+        assigned.map((t) => {
+          const d = state.settings.topics[t.id].deadline;
+          const tp = topicPct(p[t.id]);
+          const late = d && d < today() && tp < 100;
+          return h("a.assign__item", { href: `#/topic/${t.id}` }, h("b", shortTitle(t)), d && h(`span.${late ? "late" : "note"}`, `до ${fmtDate(d)}`), h("span.mono", tp + "%"), bar(tp));
+        }),
+        myHard.map((x) => {
+          const v = p[x.topic]?.levels?.[x.level]?.bh || 0, done = v === TASKS_PER_LEVEL;
+          const late = x.deadline && x.deadline < today() && !done;
+          return h("a.assign__item.assign__item--hard", { href: `#/play/${x.topic}/${x.level}/h` },
+            h("b", gem(16), ` ${shortTitle(topicById[x.topic])} · рівень ${x.level}, складніший`),
+            x.deadline && h(`span.${late ? "late" : "note"}`, `до ${fmtDate(x.deadline)}`), h("span.mono", done ? "💎 10/10" : `${v}/${TASKS_PER_LEVEL}`), bar(v * 10, done ? "var(--right)" : "var(--lime)"));
+        }))) : null,
 
     ...SECTIONS.map((s) => {
       const ts = TOPICS.filter((t) => t.s === s.id);
@@ -220,7 +231,10 @@ function home() {
     }),
     leaderboardBlock());
   avatarPreview(avBox, u.avatar, { size: 200 });
+  const dm = diamondsOf(p);
+  if (dmSynced !== dm) { dmSynced = dm; write(`public/${state.uid}/diamonds`, dm).catch(() => {}); }
 }
+let dmSynced = null;
 const days = (n) => (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? "дні" : n % 10 === 1 && n % 100 !== 11 ? "день" : "днів");
 const stat = (ic, v, l) => h("div.stat", h("b", v), h("small", l));
 
@@ -240,12 +254,24 @@ function leaderboardBlock() {
   read("public").then((all) => {
     const list = Object.entries(all || {}).filter(([, s]) => s.cls === state.user.cls).sort((a, b) => (b[1].xp || 0) - (a[1].xp || 0));
     const me = list.findIndex(([uid]) => uid === state.uid);
-    box.replaceChildren(h("h2", `🏆 Рейтинг класу ${state.user.cls}`),
+    box.replaceChildren(...[h("h2", `🏆 Рейтинг класу ${state.user.cls}`),
       h("ol.leader__list", list.slice(0, 5).map(([uid, s], i) => h(`li${uid === state.uid ? ".me" : ""}`, h("span.leader__n", ["🥇", "🥈", "🥉", "4", "5"][i]), h("b", s.name), h("span.note", rankOf(s.xp).title), h("span.mono", `${s.xp || 0} ⭐`)))),
       me >= 5 ? h("p", `Твоє місце: ${me + 1}. Кожне правильне завдання наближає тебе до п’ятірки лідерів!`) : null,
-      h("p.note", "Рейтинг рахує досвід: 10 ⭐ за кожне нове розв’язане завдання й 50 ⭐ за кожен значок."));
+      h("p.note", "Рейтинг рахує досвід: 10 ⭐ за кожне нове розв’язане завдання й 50 ⭐ за кожен значок."),
+      ...diamondTop(list)].filter(Boolean));
   }).catch(() => box.remove());
   return box;
+}
+
+// 💎 Діамантові учні класу: хто найбільше складніших рівнів пройшов на 10 з 10
+function diamondTop(list) {
+  const dl = list.filter(([, s]) => (s.diamonds || 0) > 0).sort((a, b) => b[1].diamonds - a[1].diamonds);
+  if (!dl.length) return [];
+  const me = dl.findIndex(([uid]) => uid === state.uid);
+  return [h("h3.gemtitle", gem(20), " Діамантові учні"),
+    h("ol.leader__list", dl.slice(0, 5).map(([uid, s], i) => h(`li${uid === state.uid ? ".me" : ""}`, h("span.leader__n", i + 1), h("b", s.name), h("span"), h("span.mono.gemstat", gem(15), s.diamonds)))),
+    me >= 5 ? h("p", `Твоє місце серед діамантових: ${me + 1}.`) : null,
+    h("p.note", "Діамант — складніший варіант рівня, пройдений на 10 з 10.")];
 }
 
 // ---------- Сторінка теми ----------
@@ -279,7 +305,7 @@ async function topicPage(id) {
       h("div.lvl__n", n), info(),
       h("div.lvl__rows",
         row("Звичайний", bn, h("button.btn.btn--primary", { onclick: () => go(`#/play/${id}/${n}`) }, "Звичайний")),
-        row("Складніший", bh, h("button.btn.lvl__hard", { onclick: () => go(`#/play/${id}/${n}/h`) }, gem(), "Складніший"), true)));
+        row("Складніший", bh, h(`button.btn.lvl__hard${(bn || 0) >= TASKS_PER_LEVEL - 1 && (bh || 0) < TASKS_PER_LEVEL ? ".lvl__hard--hint" : ""}`, { onclick: () => go(`#/play/${id}/${n}/h`), title: "Готовий до складнішого? За 10 з 10 — діамант" }, gem(), "Складніший"), true)));
   }));
 
   page(
@@ -325,7 +351,10 @@ async function playLevel(id, n, hard = false) {
       mount(h("div.loading", "Зберігаю результат…"));
       let res;
       try { res = await saveSession({ type: "level", topic: id, level: n, hard, start, answers }); } catch (e) { toast(errText(e), "warn", 6000); return go(`#/topic/${id}`); }
-      resultPage(res, T, { again: `#/play/${id}/${n}${hard ? "/h" : ""}`, next: n < T.levels.length ? `#/play/${id}/${n + 1}` : null, back: `#/topic/${id}` });
+      // 💎 Після 9–10 зі 10 у звичайному варіанті пропонуємо складніший (якщо його ще не пройдено на 10 з 10)
+      const bh = state.progress?.[id]?.levels?.[n]?.bh || 0;
+      const tryHard = !hard && L.hard && res.correct >= TASKS_PER_LEVEL - 1 && bh < TASKS_PER_LEVEL ? `#/play/${id}/${n}/h` : null;
+      resultPage(res, T, { again: `#/play/${id}/${n}${hard ? "/h" : ""}`, next: n < T.levels.length ? `#/play/${id}/${n + 1}` : null, back: `#/topic/${id}`, tryHard });
     },
   });
 }
@@ -344,8 +373,13 @@ function resultPage(res, T, links) {
         stat("🐢", `${num(res.avgSec)} с`, "на завдання")),
       res.streakBonus ? h("p.win", res.streak > 1 ? `🔥 ${res.streak} ${days(res.streak)} поспіль! Бонус +${res.streakBonus} 🪙` : `🔥 Перший день серії! Бонус +${res.streakBonus} 🪙. Приходь завтра — бонус зросте.`) : null,
       res.topicNowPerfect ? h("p.win", `💯 Тему опановано на 100 %! Бонус +${ECONOMY.topicPerfect} 🪙`) : null,
+      res.newDiamond ? h("p.win.gemwin", gem(22), ` Новий діамант! +${ECONOMY.diamond} 🪙 · у тебе діамантів: ${res.diamonds}`) : null,
       res.leaves ? h("p.warnbox", `👀 Ти виходив(-ла) зі сторінки ${res.leaves} раз(и), разом ${res.awaySec} с. Учитель це бачить. Наступного разу не відволікайся 🙂`) : null,
       res.fast ? h("p.warnbox", `⚡ ${res.fast} відповідей були занадто швидкими. За них не нараховано монет і досвіду, а вчитель бачить позначку швидкості. Читай кожне завдання уважно!`) : null),
+    links.tryHard ? h("section.card.tryhard",
+      h("div.tryhard__gem", gem(44)),
+      h("div.tryhard__txt", h("h2", "Готовий до складнішого?"), h("p", "У тебе чудовий результат. Спробуй складніший варіант цього рівня: за 10 з 10 отримаєш ", h("b", "діамант"), ` і +${ECONOMY.diamond} 🪙.`)),
+      h("a.btn.lvl__hard.btn--big", { href: links.tryHard }, gem(), "Спробувати складніший")) : null,
     T && h("section.card.recs",
       h("h2", "🔎 Рекомендації"),
       wrong.length ? [h("p", "Зверни увагу на ці правила:"), recsFromTasks(T, wrong.map((a) => a.id)),
@@ -590,7 +624,7 @@ async function profile() {
       h("button.btn.btn--small", { onclick: () => { logout(); go("#/"); } }, "Вийти")),
     h("div.stats.stats--profile",
       stat("📈", o.avg + "%", "середній прогрес"), stat("💯", `${o.done}/${o.ready}`, "тем на 100 %"),
-      stat("⭐", u.xp || 0, "досвіду"), stat("🪙", u.coins || 0, "монет"), stat("🔥", u.streak?.best || 0, "найдовша серія"), stat("🏅", `${got.length}/${BADGES.length}`, "значків")),
+      stat("⭐", u.xp || 0, "досвіду"), stat("🪙", u.coins || 0, "монет"), stat("🔥", u.streak?.best || 0, "найдовша серія"), stat("🏅", `${got.length}/${BADGES.length}`, "значків"), h("div.stat", h("b.gemstat", gem(20), diamondsOf(state.progress)), h("small", "діамантів"))),
     h("section.card.rankcard",
       h("div.rankcard__top", h("b", `${rk.icon} ${rk.title}`), h("span.note", rk.next ? `до «${rk.next.title}»: ${rk.next.xp - (u.xp || 0)} ⭐` : "Найвище звання!")),
       bar(rk.toNext, "var(--violet)"),

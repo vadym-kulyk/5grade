@@ -1,5 +1,6 @@
 // Рушій завдань: показ, перевірка, пояснення, захист від швидкого проходження, підказки.
-import { h, mount, toast, shuffle, confirmBox, modal, num } from "./ui.js";
+import { h, mount, toast, shuffle, confirmBox, modal, num, gem } from "./ui.js";
+import { r, push, set } from "./fb.js";
 import { SPEED, ECONOMY } from "./config.js";
 import { state, coinsFor, buyHint, coins } from "./store.js";
 
@@ -231,10 +232,11 @@ export function runQuiz(opts) {
     const check = h("button.btn.btn--primary.btn--big", { onclick: submit }, "Перевірити");
     const hintBtn = opts.noHints ? h("span") : h("button.btn.btn--hint", { onclick: hint }, `Підказка за ${ECONOMY.hintPrice} 🪙`);
     const card = h("div.task",
-      h("div.task__kind", kindLabel(t)),
+      h("div.task__kind", t.hard && opts.type !== "level" ? h("span.task__hard", gem(15), " складніше · ") : null, kindLabel(t)),
       t.q && h("h2.task__q", { html: t.q }),
       view.el, hintBox,
-      h("div.task__actions", hintBtn, view.autoSubmit ? null : check));
+      h("div.task__actions", hintBtn, view.autoSubmit ? null : check),
+      h("button.task__report", { onclick: () => reportTask(t, view, opts), title: "Повідомити вчителеві про помилку в цьому завданні" }, "⚑ Помилка в завданні?"));
     body.replaceChildren(card);
     view.focus?.();
     view.input?.addEventListener("keydown", (e) => { if (e.key === "Enter") submit(); });
@@ -298,6 +300,30 @@ export function runQuiz(opts) {
   }
 
   show();
+}
+
+// ⚑ Учень повідомляє про помилку в завданні: reports/{id} → вкладка «⚑ Помилки в завданнях» у кабінеті вчителя
+function reportTask(t, view, opts) {
+  const kinds = ["неправильна «правильна» відповідь", "помилка в тексті чи слові", "незрозуміле завдання", "інше"];
+  let kind = kinds[0];
+  const text = h("textarea.input", { rows: 3, maxlength: 400, placeholder: "Що саме не так? Наприклад: «Правильна відповідь — б, бо…»" });
+  const err = h("p.err");
+  const close = modal(h("div.report",
+    h("h2", "⚑ Помилка в завданні"),
+    h("p.note", "Учитель побачить твоє повідомлення й перевірить завдання. Дякуємо, що допомагаєш робити сайт кращим!"),
+    h("div.report__kinds", kinds.map((k) => h("label.radio", h("input", { type: "radio", name: "rk", checked: k === kind, onchange: () => (kind = k) }), " ", k))),
+    text, err,
+    h("div.row.gap", h("button.btn.btn--primary", { onclick: send }, "Надіслати"), h("button.btn", { onclick: () => close() }, "Скасувати"))));
+  async function send() {
+    const msg = text.value.trim();
+    if (kind === "інше" && msg.length < 3) return (err.textContent = "Напиши кілька слів, що не так.");
+    let given = ""; try { given = plain(view.value() || "").slice(0, 120); } catch {}
+    try {
+      await set(push(r("reports")), { uid: state.uid, name: state.user?.name || "", cls: state.user?.cls || "", topic: t.topic || "", id: t.id, q: taskLabel(t).slice(0, 200),
+        hard: !!t.hard, where: opts.type || "", kind, text: msg.slice(0, 400), given, at: Date.now() });
+      close(); toast("⚑ Дякуємо! Учитель перевірить це завдання.", "win", 3500);
+    } catch (e) { err.textContent = "Не вдалося надіслати. Спробуй ще раз."; }
+  }
 }
 
 const praise = ["Правильно!", "Чудово!", "Так тримати!", "Влучно!", "Молодець!", "Бездоганно!"];

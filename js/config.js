@@ -28,6 +28,7 @@ export const ECONOMY = {
   hintPrice: 400,      // підказка — дуже дорога
   streakPerDay: 20,    // щоденна серія: 20 × днів (до 7)
   reviewSolve: 5,      // правильна відповідь у «Роботі над помилками»
+  diamond: 100,        // 💎 перший раз 10 з 10 у складнішому варіанті рівня
 };
 
 export const XP = { solve: 10, badge: 50, monitoringPerfect: 100 };

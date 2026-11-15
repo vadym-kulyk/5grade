@@ -124,6 +124,14 @@
         ".validate": "newData.hasChildren(['t', 'n', 'c']) && newData.child('t').isNumber() && newData.child('t').val() > 0 && newData.child('n').isString() && newData.child('n').val().length <= 30"
       } } }
     },
+    "reports": {
+      ".read": "auth != null && auth.token.email === 'badim1aaa@gmail.com'",
+      ".write": "auth != null && auth.token.email === 'badim1aaa@gmail.com'",
+      "$r": {
+        ".write": "auth != null && !data.exists() && newData.child('uid').val() === auth.uid",
+        ".validate": "newData.hasChildren(['uid', 'id', 'kind', 'at']) && newData.child('id').isString() && newData.child('kind').isString() && newData.child('kind').val().length <= 60 && (!newData.child('text').exists() || (newData.child('text').isString() && newData.child('text').val().length <= 400))"
+      }
+    },
     "snowfight": {
       ".read": "auth != null",
       "$day": { "$cls": { "$uid": {

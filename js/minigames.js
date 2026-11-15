@@ -1,8 +1,9 @@
 // Міні-ігри в 3D-школі. Завдання беруться з тем сайту. За гру — монети (не більше DAY_CAP на день).
-import { h, toast, shuffle } from "./ui.js";
+import { h, toast, shuffle, gem } from "./ui.js";
 import { state } from "./store.js";
 import { db, ref, update } from "./fb.js";
 import { TOPICS } from "../content/index.js";
+import { HARD } from "../content/hard/index.js";
 
 const DAY_CAP = 40;
 export const GAMES = {
@@ -13,7 +14,7 @@ export const GAMES = {
   typing: { icon: "💻", title: "Друкарик", hint: "Надрукуй слово без помилок — і далі!", sec: 60 },
   pairs: { icon: "🧠", title: "Знайди пари", hint: "Відкривай картки й шукай пари, що підходять одна до одної.", sec: 0 },
   hunt: { icon: "🔎", title: "Знайди букви" },
-  snowman: { icon: "⛄", title: "Сніговик зі слів", hint: "Зліпи сніговика: обери префікс, корінь і суфікс слова. Помилка — мінус 3 секунди.", sec: 90 },
+  snowman: { icon: "⛄", title: "Сніговик зі слів", hint: "Зліпи сніговика: обери префікс, корінь і суфікс слова. Помилка — мінус 3 секунди.", sec: 90, hard: "Складніші слова й більше варіантів — монети ×2." },
 };
 
 // ---------- Завдання з тем ----------
@@ -41,15 +42,26 @@ function loadPool() {
 }
 // n випадкових завдань «яка буква пропущена» (адвент-календар, приручення звірів)
 export const quiz = async (n) => shuffle([...(await loadPool()).gap]).slice(0, n);
+// 💎 Завдання «яка буква пропущена» зі складніших варіантів рівнів (адвент: складніше віконце)
+let hardP = null;
+const loadHardPool = () => (hardP ??= (async () => {
+  const out = [];
+  await Promise.all(shuffle([...HARD]).slice(0, 18).map(async (id) => {
+    const lv = (await import(`../content/hard/${id}.js`)).default;
+    for (const tasks of lv) for (const t of tasks) if (t.type === "gap" && /_/.test(t.word) && !/[<>]/.test(t.word) && t.options?.length <= 4 && t.word.length <= 30) out.push({ word: t.word, options: t.options, answer: t.answer });
+  }));
+  return out;
+})());
+export const quizHard = async (n) => shuffle([...(await loadHardPool())]).slice(0, n);
 export const huntWord = async () => { const P = await loadPool(); const w = shuffle(P.words.filter((x) => x.length >= 4 && x.length <= 6)); return w[0] || "слово"; };
 
 // ---------- Монети й рекорди ----------
 const today = () => new Date().toISOString().slice(0, 10);
-export async function reward(game, score) {
+export async function reward(game, score, mult = 1) {
   const u = state.user; if (!u || !state.uid) return { gain: 0, best: score, left: 0 };
   const mini = u.mini || {};
   const got = mini.day === today() ? mini.got || 0 : 0;
-  const gain = Math.max(0, Math.min(DAY_CAP - got, Math.floor(score / 2)));
+  const gain = Math.max(0, Math.min(DAY_CAP - got, Math.floor((score * mult) / 2)));
   const best = Math.max(mini.best?.[game] || 0, score);
   const upd = { [`users/${state.uid}/mini/day`]: today(), [`users/${state.uid}/mini/got`]: got + gain, [`users/${state.uid}/mini/best/${game}`]: best };
   if (gain) upd[`users/${state.uid}/coins`] = (u.coins || 0) + gain;
@@ -66,7 +78,7 @@ export function openGame(id) {
     h("div.mg__head", h("span.mg__t", `${G.icon} ${G.title}`), h("span.mg__stat", "⭐ ", scoreEl), G.sec ? h("span.mg__stat", "⏱ ", timeEl) : null, h("button.btn.btn--small", { onclick: () => close() }, "✕")),
     body));
   document.body.append(box);
-  let timer = null, done = false, score = 0, left = G.sec, keyFn = null;
+  let timer = null, done = false, score = 0, left = G.sec, keyFn = null, hard = false;
   const close = () => { clearInterval(timer); if (keyFn) removeEventListener("keydown", keyFn); box.remove(); document.body.classList.remove("mg-open"); };
   const ctx = {
     body,
@@ -78,20 +90,25 @@ export function openGame(id) {
   async function finish() {
     if (done) return; done = true; clearInterval(timer); if (keyFn) removeEventListener("keydown", keyFn);
     body.replaceChildren(h("p.note.center", "Рахуємо…"));
-    const r = await reward(id, score);
+    const r = await reward(hard ? `${id}_h` : id, score, hard ? 2 : 1); // 💎 складніший режим: окремий рекорд і монети ×2
     body.replaceChildren(h("div.mg__end",
       h("div.mg__big", score >= 20 ? "🏆" : score >= 10 ? "🎉" : "👍"),
       h("h2", `Рахунок: ${score}`),
       h("p", r.newBest ? "🔥 Новий рекорд!" : `Твій рекорд: ${r.best}`),
       h("p", r.gain ? `+${r.gain} 🪙` : r.left <= 0 ? "Монети за ігри на сьогодні вже зібрано — грай для рекорду!" : "Набери більше, щоб отримати монети"),
       h("div.row.gap.center", h("button.btn.btn--primary", { onclick: () => { close(); openGame(id); } }, "Ще раз"), h("button.btn", { onclick: close }, "Вийти"))));
+    if (hard) body.querySelector("h2")?.prepend(gem(22), " ");
   }
-  body.replaceChildren(h("div.mg__intro", h("div.mg__big", G.icon), h("p", G.hint), h("button.btn.btn--primary", { onclick: start }, "Почати")));
-  async function start() {
+  body.replaceChildren(h("div.mg__intro", h("div.mg__big", G.icon), h("p", G.hint),
+    h("div.row.gap.center", h("button.btn.btn--primary", { onclick: () => start(false) }, "Почати"),
+      G.hard ? h("button.btn.lvl__hard", { onclick: () => start(true), title: G.hard }, gem(), "Складніший · 🪙×2") : null),
+    G.hard ? h("p.note", G.hard) : null));
+  async function start(h_ = false) {
+    hard = h_;
     body.replaceChildren(h("p.note.center", "Готуємо завдання…"));
     const P = await loadPool();
     if (G.sec) { timeEl.textContent = left; timer = setInterval(() => { left--; timeEl.textContent = left; if (left <= 0) finish(); }, 1000); }
-    ({ fish: fishGame, blitz: blitzGame, gap: gapGame, anagram: anagramGame, typing: typingGame, pairs: pairsGame, snowman: snowmanGame })[id](ctx, P);
+    ({ fish: fishGame, blitz: blitzGame, gap: gapGame, anagram: anagramGame, typing: typingGame, pairs: pairsGame, snowman: snowmanGame })[id](ctx, P, hard);
   }
   return close;
 }
@@ -202,9 +219,13 @@ const MORPH = [["за", "сніж", "ен", "ий"], ["під", "сніж", "н�
   ["на", "стіль", "н", "ий"], ["при", "шкіль", "н", "ий"], ["пере", "сад", "к", "а"], ["роз", "гад", "к", "а"], ["від", "гад", "к", "а"], ["на", "ліп", "к", "а"],
   ["під", "зем", "н", "ий"], ["без", "сніж", "н", "ий"], ["за", "мороз", "к", "и"], ["за", "гад", "к", "а"], ["пере", "хід", "н", "ий"], ["до", "шкіль", "н", "ий"],
   ["під", "ліс", "ок", "□"], ["при", "каз", "к", "а"], ["на", "гір", "н", "ий"]];
-function snowmanGame(ctx) {
-  const SLOTS = [["префікс", 0], ["корінь", 1], ["суфікс", 2]], words = shuffle([...MORPH]);
-  const pool = (k) => [...new Set(MORPH.map((w) => w[k]))];
+// 💎 Складніший режим: менш очевидні слова й по 4 варіанти в кожному ряду
+const MORPH_HARD = [["без", "люд", "н", "ий"], ["над", "вод", "н", "ий"], ["за", "смаг", "л", "ий"], ["пере", "біж", "чик", "□"], ["під", "берез", "ник", "□"],
+  ["по", "дорож", "н", "ій"], ["над", "зем", "н", "ий"], ["від", "важ", "н", "ий"], ["на", "сміш", "к", "а"], ["роз", "бій", "ник", "□"],
+  ["у", "сміш", "к", "а"], ["при", "тул", "ок", "□"], ["за", "хис", "ник", "□"], ["пере", "мож", "ець", "□"]];
+function snowmanGame(ctx, P, hard = false) {
+  const SLOTS = [["префікс", 0], ["корінь", 1], ["суфікс", 2]], words = shuffle([...(hard ? MORPH_HARD : MORPH)]);
+  const pool = (k) => [...new Set([...MORPH, ...(hard ? MORPH_HARD : [])].map((w) => w[k]))];
   let i = 0;
   const q = h("div.mg__q"), man = h("div.snowman"), rows = h("div.snowman__rows");
   ctx.body.replaceChildren(q, man, rows);
@@ -215,7 +236,7 @@ function snowmanGame(ctx) {
     const drawMan = () => man.replaceChildren(ball(0), ball(1), ball(2));
     drawMan();
     rows.replaceChildren(...SLOTS.map(([title, k]) => h("div.snowman__row", h("span.snowman__t", title),
-      ...shuffle([w[k], ...shuffle(pool(k).filter((x) => x !== w[k])).slice(0, 2)]).map((o) => {
+      ...shuffle([w[k], ...shuffle(pool(k).filter((x) => x !== w[k])).slice(0, hard ? 3 : 2)]).map((o) => {
         const b = h("button.btn.btn--small", { onclick: () => {
           if (got[k]) return;
           if (o !== w[k]) { ctx.penalty(); b.classList.add("bad"); return; }

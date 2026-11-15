@@ -14,7 +14,7 @@ export function focusDetail(uid, topic, level) {
 }
 
 const topicCache = {};
-const loadT = (id) => (topicCache[id] ??= import(`../content/topics/${id}.js`).then((m) => m.default));
+const loadT = (id) => (topicCache[id] ??= import("../content/index.js").then((m) => m.loadTopic(id))); // разом зі складнішим варіантом
 const LV = Array.from({ length: LEVELS_PER_TOPIC }, (_, i) => i + 1);
 const sec = (x) => Math.min(x.sec || 0, 180); // довше — учень, мабуть, відійшов
 const dur = (s) => (s >= 60 ? `${Math.floor(s / 60)} хв ${String(Math.round(s % 60)).padStart(2, "0")} с` : `${Math.round(s)} с`);
@@ -83,7 +83,7 @@ export function detailView({ students, data, ready, redraw }) {
   function levelPanel(x, l) {
     const box = h("div.dlv__tasks", h("p.note", "Завантаження завдань рівня…"));
     loadT(x.t.id).then((T) => {
-      const tasks = T.levels[l.n - 1]?.tasks || [];
+      const tasks = [...(T.levels[l.n - 1]?.tasks || []), ...(T.levels[l.n - 1]?.hard || [])]; // спершу звичайні, потім 💎 складніші
       const ansOf = (id) => at.flatMap((a) => (a.answers || []).filter((y) => y.topic === x.t.id && y.id === id).map((y) => ({ ...y, end: a.end, type: a.type }))); // нові спочатку
       box.replaceChildren(h("h4", `Кожне завдання рівня ${l.n} (${T.levels[l.n - 1]?.title || ""})`), h("div.tablewrap", h("table.tbl.dtask",
         h("thead", h("tr", ["№", "Завдання", "Правильна відповідь", "Статус", "Відповідав", "Правильно", "Сер. час", "Підказки", "⚡", "👀", "Відповіді учня (останні)"].map((c) => h("th", c)))),
@@ -91,7 +91,7 @@ export function detailView({ students, data, ready, redraw }) {
           const A = ansOf(t.id), s = sum(A);
           const status = x.P.solved?.[t.id] ? h("span.dtag.ok", "✓ розв’язано") : x.P.seen?.[t.id] ? h("span.dtag.bad", "✗ ще не розв’язано") : h("span.dtag", "не бачив");
           return h(`tr${!A.length ? ".muted" : s.ok < s.n ? ".warnrow" : ""}`,
-            h("td.mono.center", k + 1), h("td", taskLabel(t)), h("td.dright", rightAnswer(t)), h("td", status),
+            h("td.mono.center", t.hard ? `${HARD_ICON}${k + 1 - (T.levels[l.n - 1]?.tasks || []).length}` : k + 1), h("td", taskLabel(t)), h("td.dright", rightAnswer(t)), h("td", status),
             h("td.mono.center", s.n || ""), h("td.mono.center", s.n ? `${s.ok} (${s.okp}%)` : ""),
             h("td.mono", s.n ? `${num(Math.round((s.sec / s.n) * 10) / 10)} с` : ""), h("td.mono.center", s.hints || ""), h("td.mono.center", s.fast || ""), h("td.mono.center", s.leaves ? `${s.leaves} · ${awayFmt(s.away)}` : ""),
             h("td.dgiven", A.slice(0, 4).map((y) => h(`div${y.ok ? ".ok" : ".bad"}`, { title: when(y.end) + (y.type === "review" ? " · робота над помилками" : y.type === "monitoring" ? " · моніторингова" : "") }, `${y.ok ? "✓" : "✗"} ${y.given || "—"}`))));
@@ -101,7 +101,7 @@ export function detailView({ students, data, ready, redraw }) {
       l.list.length ? h("div.tablewrap", h("table.tbl",
         h("thead", h("tr", ["Спроба", "Дата й час", "Результат", "Тривалість", "Сер. на завдання", "Підказки", "⚡", "👀 Виходи", "Відповіді по завданнях"].map((c) => h("th", c)))),
         h("tbody", l.list.map((a, i) => h(`tr${a.flagged ? ".flag" : ""}`,
-          h("td.mono.center", `№${a.attemptNo || l.list.length - i}`), h("td", when(a.end)),
+          h("td.mono.center", `№${a.attemptNo || l.list.length - i}${a.variant === "hard" ? ` ${HARD_ICON}` : ""}`), h("td", when(a.end)),
           h("td", { style: { background: heat(a.pct) } }, h("b", `${a.correct}/${a.total}`), ` · ${a.pct}%`),
           h("td.mono", dur(a.durSec || 0)), h("td.mono", `${num(a.avgSec)} с`), h("td.mono.center", a.hints || ""), h("td.mono.center", a.fast || ""),
           h("td.mono.center", a.leaves ? `${a.leaves} · ${awayFmt(a.awaySec)}` : ""),
@@ -117,6 +117,7 @@ export function detailView({ students, data, ready, redraw }) {
       l.tries ? [
         h("span.dcell__big", `${l.best}/${TASKS_PER_LEVEL}`),
         h("small", `спроб: ${l.tries} · остання ${l.last}/${TASKS_PER_LEVEL}`),
+        l.L?.bh != null ? h("small", `звичайний ${l.L.bn ?? "—"} · ${HARD_ICON} складніший ${l.L.bh}${l.L.bh === TASKS_PER_LEVEL ? " (діамант)" : ""}`) : null,
         l.trend ? h("small", `динаміка: ${l.trend}`) : null,
         h("small", `час: ${dur(l.time)} · ${l.ans ? num(Math.round((l.sec / l.ans) * 10) / 10) : 0} с/завд.`),
         (l.hints || l.fast || l.leaves) ? h("small", [l.hints ? `💡${l.hints}` : "", l.fast ? `⚡${l.fast}` : "", l.leaves ? `👀${l.leaves}` : ""].filter(Boolean).join(" ")) : null,

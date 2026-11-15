@@ -1,9 +1,10 @@
 // Кабінет учителя: огляд, спроби, найдовші питання, звіт учня, налаштування.
-import { h, mount, toast, pct, bar, ring, fmtDate, fmtTime, confirmBox, today, num, groupedBars, wordmark } from "./ui.js";
+import { h, mount, toast, pct, bar, ring, fmtDate, fmtTime, confirmBox, today, num, groupedBars, wordmark, gem, modal } from "./ui.js";
 import { watchAuth, teacherLogin, teacherRegister, teacherResetPassword, logout, isTeacher, read, write, r, remove, errText, update, ref, db } from "./fb.js";
-import { TEACHER_EMAIL, CLASSES, LEVELS_PER_TOPIC, TASKS_PER_LEVEL, halloweenOn, christmasOn, winterOn } from "./config.js";
-import { SECTIONS, TOPICS, topicById, shortTitle } from "../content/index.js";
-import { rankOf, topicPct, BADGES } from "./game.js";
+import { TEACHER_EMAIL, CLASSES, LEVELS_PER_TOPIC, TASKS_PER_LEVEL, HARD_ICON, halloweenOn, christmasOn, winterOn } from "./config.js";
+import { SECTIONS, TOPICS, topicById, shortTitle, loadTopic, allTasks } from "../content/index.js";
+import { rankOf, topicPct, BADGES, diamondsOf } from "./game.js";
+import { taskLabel, rightAnswer } from "./quiz.js";
 import { QUEST, questId } from "../content/quest/halloween.js";
 import { previewView, liveView, startTeacherLive, stageBar, boardView, monitoringView, awayFmt, awayDetail } from "./teacher-extra.js";
 import { monWorks } from "../content/monitoring/index.js";
@@ -45,7 +46,7 @@ function loginView(u) {
 }
 
 async function load() {
-  const [users, progress, attempts, settings, pins] = await Promise.all(["users", "progress", "attempts", "settings", "pins"].map((p) => read(p)));
+  const [users, progress, attempts, settings, pins, reports] = await Promise.all(["users", "progress", "attempts", "settings", "pins", "reports"].map((p) => read(p).catch(() => null)));
   const list = [];
   for (const [uid, a] of Object.entries(attempts || {})) for (const [id, x] of Object.entries(a)) list.push({ ...x, uid, id });
   list.sort((a, b) => b.end - a.end);
@@ -56,7 +57,7 @@ async function load() {
   for (const [id, u] of Object.entries(users || {})) if (u.deleted) { deleted[id] = u; delete users[id]; }
   const kept = list.filter((a) => !deleted[a.uid]);
   for (const a of kept) if (users?.[a.uid]) a.name = users[a.uid].name;
-  data = { deleted, users: users || {}, progress: progress || {}, attempts: kept, settings: settings || {}, pins: pins || {} };
+  data = { deleted, users: users || {}, progress: progress || {}, attempts: kept, settings: settings || {}, pins: pins || {}, reports: reports || {} };
 }
 
 const students = () => Object.entries(data.users).filter(([, u]) => cls === "all" || u.cls === cls).sort((a, b) => (a[1].cls + a[1].name).localeCompare(b[1].cls + b[1].name, "uk"));
@@ -64,7 +65,7 @@ const ready = () => TOPICS.filter((t) => t.ready);
 const heat = (v) => `hsl(${Math.round(v * 1.1)}, 70%, ${v ? 88 - v * 0.25 : 96}%)`;
 
 function draw() {
-  const tabs = [["overview", "Огляд"], ["attempts", "Спроби"], ["topic", "Тема"], ["mon", "Моніторингові"], ["live", "Питання"], ["preview", "Завдання"], ["board", "Дошка"], ["slow", "Найдовші питання"], ["student", "Учень"], ["detail", "Детально"], ["settings", "Налаштування"]];
+  const tabs = [["overview", "Огляд"], ["attempts", "Спроби"], ["topic", "Тема"], ["mon", "Моніторингові"], ["live", "Питання"], ["preview", "Завдання"], ["board", "Дошка"], ["slow", "Найдовші питання"], ["student", "Учень"], ["detail", "Детально"], ["reports", `⚑ Помилки${Object.keys(data.reports || {}).length ? ` (${Object.keys(data.reports).length})` : ""}`], ["settings", "Налаштування"]];
   mount(
     h("header.topbar.topbar--teacher",
       h("a.topbar__logo", { href: "#/teacher" }, wordmark()),
@@ -74,7 +75,7 @@ function draw() {
         h("button.btn.btn--small", { onclick: async () => { await load(); draw(); toast("Оновлено"); } }, "↻"),
         h("button.btn.btn--small", { onclick: () => logout() }, "Вийти"))),
     stageBar(() => cls),
-    h("main.page.page--wide", { overview, attempts: attemptsView, topic: topicView, mon: () => monitoringView({ students, data, redraw: () => draw(), openStudent: (id) => { studentId = id; tab = "student"; draw(); } }), live: () => liveView({ students, ready }), preview: () => previewView({ ready, getCls: () => cls }), board: () => boardView({ ready, getCls: () => cls }), slow, student: studentView, detail: () => detailView({ students, data, ready, redraw: draw }), settings: settingsView }[tab]()));
+    h("main.page.page--wide", { overview, attempts: attemptsView, topic: topicView, mon: () => monitoringView({ students, data, redraw: () => draw(), openStudent: (id) => { studentId = id; tab = "student"; draw(); } }), live: () => liveView({ students, ready }), preview: () => previewView({ ready, getCls: () => cls }), board: () => boardView({ ready, getCls: () => cls }), slow, student: studentView, detail: () => detailView({ students, data, ready, redraw: draw }), reports: reportsView, settings: settingsView }[tab]()));
 }
 
 // ---------- Огляд ----------
@@ -97,13 +98,14 @@ function overview() {
     h("section.card", h("h2", "Теплова карта: учень × тема"),
       h("p.note", "Клітинка — відсоток теми. Натисни на ім’я — звіт учня, на клітинку — детально по рівнях цієї теми."),
       h("div.tablewrap", h("table.tbl.heat",
-        h("thead", h("tr", h("th", "Учень"), h("th", "Клас"), h("th", "Звання"), rt.map((t) => h("th.rot", h("span", shortTitle(t)))), h("th", "Спроб"), h("th", "⚡"), h("th", "Активність"))),
+        h("thead", h("tr", h("th", "Учень"), h("th", "Клас"), h("th", "Звання"), rt.map((t) => h("th.rot", h("span", shortTitle(t)))), h("th", { title: "Діаманти: складніші рівні, пройдені на 10 з 10" }, HARD_ICON), h("th", "Спроб"), h("th", "⚡"), h("th", "Активність"))),
         h("tbody", st.map(([id, u]) => {
           const mine = at.filter((a) => a.uid === id);
           return h("tr",
             h("td", h("a", { href: "#/teacher", onclick: (e) => { e.preventDefault(); studentId = id; tab = "student"; draw(); } }, u.name), nickNote(u)),
             h("td", u.cls), h("td", `${rankOf(u.xp).icon} ${rankOf(u.xp).title}`),
             rt.map((t) => { const v = topicPct(data.progress[id]?.[t.id]); return h("td.mono.center.clk", { style: { background: heat(v) }, title: "Детально по рівнях", onclick: () => openDetail(id, t.id) }, v); }),
+            h("td.mono.center", diamondsOf(data.progress[id]) || ""),
             h("td.mono.center", mine.length), h("td.mono.center", mine.filter((a) => a.flagged).length || ""),
             h("td.note", u.lastSeen ? `${fmtDate(u.lastSeen)} ${fmtTime(u.lastSeen)}` : "—"));
         }))))),
@@ -119,6 +121,108 @@ function activityChart(at) {
   const max = Math.max(1, ...Object.values(cnt));
   return h("section.card", h("h2", "Активність за 4 тижні (спроб на день)"),
     h("div.cols", days.map((d) => h("div.cols__c", { title: `${fmtDate(d)}: ${cnt[d]}` }, h("div.cols__b", { style: { height: (cnt[d] / max) * 100 + "%" } }), h("small", d.slice(8))))));
+}
+
+// ---------- 💎 Складніший рівень окремим учням — як завдання із саморозвитку ----------
+// settings/selfdev/{key} = { topic, level, uids: {uid: true}, deadline, at }
+const sd = { topic: null, level: 1, deadline: "", uids: new Set() };
+function selfdevCard(s, save) {
+  const rt = ready();
+  if (!sd.topic || !topicById[sd.topic]) sd.topic = rt[0]?.id;
+  const st = students();
+  const lvOf = (id, n) => data.progress[id]?.[sd.topic]?.levels?.[n];
+  const tag = (id) => { const L = lvOf(id, sd.level); return L ? `звич. ${L.bn ?? (L.bh == null ? L.best : "—")} · ${HARD_ICON} ${L.bh ?? "—"}` : "не проходив"; };
+  const readyIds = st.filter(([id]) => { const L = lvOf(id, sd.level); return L && (L.bn ?? L.best) >= TASKS_PER_LEVEL - 1 && L.bh !== TASKS_PER_LEVEL; }).map(([id]) => id);
+  const list = Object.entries(s.selfdev || {}).sort((a, b) => (b[1].at || 0) - (a[1].at || 0));
+  const add = async () => {
+    if (!sd.uids.size) return toast("Познач хоча б одного учня", "warn");
+    const key = `${sd.topic}_${sd.level}_${Date.now().toString(36)}`, uids = [...sd.uids];
+    sd.uids.clear();
+    await save(`selfdev/${key}`, { topic: sd.topic, level: sd.level, uids: Object.fromEntries(uids.map((u) => [u, true])), deadline: sd.deadline || null, at: Date.now() },
+      `${HARD_ICON} Задано учням: ${uids.length}`);
+  };
+  return h("section.card.selfdev",
+    h("h2.gemtitle", gem(22), " Складніший рівень окремим учням"),
+    h("p.note", "Задай складніший варіант рівня як завдання із саморозвитку лише тим, кому він по силі. Учні побачать його на головній у блоці «Завдання із саморозвитку». Виконано, коли учень набрав 10 з 10 (отримав діамант)."),
+    h("div.filters",
+      h("select.select", { onchange: (e) => { sd.topic = e.target.value; sd.uids.clear(); draw(); } }, rt.map((t) => h("option", { value: t.id, selected: t.id === sd.topic }, shortTitle(t)))),
+      h("select.select", { onchange: (e) => { sd.level = +e.target.value; sd.uids.clear(); draw(); } }, Array.from({ length: LEVELS_PER_TOPIC }, (_, i) => h("option", { value: i + 1, selected: sd.level === i + 1 }, `Рівень ${i + 1}`))),
+      h("label.note", "Дедлайн ", h("input.input.input--small", { type: "date", value: sd.deadline, onchange: (e) => (sd.deadline = e.target.value) })),
+      h("button.btn.btn--small", { onclick: () => { readyIds.forEach((id) => sd.uids.add(id)); draw(); } }, `Позначити готових (${readyIds.length})`),
+      h("button.btn.btn--small", { onclick: () => { sd.uids.clear(); draw(); } }, "Зняти позначки")),
+    h("p.note", "«Готові» — мають 9–10 у звичайному варіанті цього рівня, але ще не отримали діамант."),
+    h("div.selfdev__students", st.map(([id, u]) => h(`label.selfdev__st${readyIds.includes(id) ? ".ready" : ""}`,
+      h("input", { type: "checkbox", checked: sd.uids.has(id), onchange: (e) => (e.target.checked ? sd.uids.add(id) : sd.uids.delete(id)) }),
+      h("span", h("b", u.name), h("small.note", ` ${u.cls} · ${tag(id)}`))))),
+    h("button.btn.btn--primary", { onclick: add }, gem(), " Задати складніший рівень позначеним учням"),
+    list.length ? [h("h3.selfdev__h", "Задано"), h("div.tablewrap", h("table.tbl",
+      h("thead", h("tr", ["Тема й рівень", "Учні (результат складнішого)", "Дедлайн", ""].map((c) => h("th", c)))),
+      h("tbody", list.map(([key, x]) => h("tr",
+        h("td", `${topicById[x.topic] ? shortTitle(topicById[x.topic]) : x.topic} · Р${x.level} ${HARD_ICON}`),
+        h("td", Object.keys(x.uids || {}).filter((id) => data.users[id]).map((id) => { const v = data.progress[id]?.[x.topic]?.levels?.[x.level]?.bh; return h(`span.sdchip${v === TASKS_PER_LEVEL ? ".done" : ""}`, `${data.users[id].name}: ${v == null ? "—" : v === TASKS_PER_LEVEL ? `${HARD_ICON} 10` : v}`); })),
+        h("td.note", x.deadline ? fmtDate(x.deadline) : "—"),
+        h("td", h("button.btn.btn--small.btn--danger", { onclick: async () => { if (await confirmBox("Прибрати це завдання із саморозвитку?")) save(`selfdev/${key}`, null, "Прибрано"); } }, "Прибрати")))))))] : null);
+}
+
+// ---------- ⚑ Повідомлення учнів про помилки в завданнях ----------
+function reportsView() {
+  const ids = new Set(students().map(([id]) => id));
+  const list = Object.entries(data.reports || {}).map(([key, x]) => ({ key, ...x })).filter((x) => cls === "all" || ids.has(x.uid)).sort((a, b) => b.at - a.at);
+  const byTask = {};
+  list.forEach((x) => (byTask[`${x.topic}~${x.id}`] ??= []).push(x));
+  const close = async (keys) => {
+    await update(ref(db), Object.fromEntries(keys.map((k) => [`reports/${k}`, null])));
+    keys.forEach((k) => delete data.reports[k]); toast("Позначено як перевірене"); draw();
+  };
+  const show = async (x) => {
+    let tk = null;
+    try { tk = topicById[x.topic]?.ready ? allTasks(await loadTopic(x.topic)).find((t) => t.id === x.id) : null; } catch {}
+    modal(h("div.report",
+      h("h2", `Завдання ${x.id}${tk?.hard ? ` · ${HARD_ICON} складніший варіант` : ""}`),
+      h("p.note", `${topicById[x.topic] ? shortTitle(topicById[x.topic]) : x.topic} · файл: content/${tk?.hard ? "hard" : "topics"}/${x.topic}.js`),
+      tk ? [h("p", h("b", "Завдання: "), taskLabel(tk)), h("p", h("b", "Правильна відповідь у системі: "), rightAnswer(tk)), h("div.explain", { html: tk.explain || "" })]
+        : h("p.warnbox", "Цього завдання вже немає в темі (його, мабуть, уже переписано)."),
+      h("p.note", "Щоб виправити завдання, перешли його номер і коментар учня розробникові сайту.")), { wide: true });
+  };
+  if (!list.length) return h("section.card.center", h("div.result__big", "✅"), h("h2", "Повідомлень немає"),
+    h("p.note", "Учні можуть натиснути «⚑ Помилка в завданні?» під будь-яким завданням. Їхні повідомлення з’являться тут."));
+  return [
+    h("section.card", h("h2", `⚑ Повідомлення про помилки в завданнях: ${list.length}`),
+      h("p.note", "Згруповано за завданням: що більше учнів поскаржилося, то вище. Перевір завдання й натисни «Перевірено», щоб прибрати повідомлення."),
+      h("div.tablewrap", h("table.tbl",
+        h("thead", h("tr", ["Завдання", "Тема", "Учнів", "Що не так (учні)", "Відповідь учня", "Коли", ""].map((c) => h("th", c)))),
+        h("tbody", Object.values(byTask).sort((a, b) => b.length - a.length || b[0].at - a[0].at).map((g) => {
+          const x = g[0];
+          return h("tr",
+            h("td", h("b.mono", x.id), x.hard ? h("span.gemstat", " ", gem(14)) : null, h("div.note", x.q)),
+            h("td", topicById[x.topic] ? shortTitle(topicById[x.topic]) : x.topic || "—"),
+            h("td.mono.center", g.length),
+            h("td", g.map((y) => h("div", h("b", `${y.name}${y.cls ? ` (${y.cls})` : ""}: `), y.kind, y.text ? ` — «${y.text}»` : ""))),
+            h("td.note", g.map((y) => y.given).filter(Boolean).join(" · ") || "—"),
+            h("td.note", `${fmtDate(x.at)} ${fmtTime(x.at)}`),
+            h("td", h("div.row.gap", h("button.btn.btn--small", { onclick: () => show(x) }, "Переглянути"), h("button.btn.btn--small", { onclick: () => close(g.map((y) => y.key)) }, "✓ Перевірено"))));
+        }))))),
+  ];
+}
+
+// 💎 Звичайний і складніший варіанти рівнів теми: хто пробує, з яким результатом
+function hardStats(rows, lv) {
+  const stat = (n) => {
+    const L = rows.map((x) => x.p.levels?.[n]).filter(Boolean);
+    const nv = L.map((l) => l.bn ?? (l.bh == null ? l.best : null)).filter((v) => v != null), hv = L.map((l) => l.bh).filter((v) => v != null);
+    const avg = (a) => (a.length ? num(Math.round((a.reduce((s, v) => s + v, 0) / a.length) * 10) / 10) : "—");
+    return { n, nTried: nv.length, nAvg: avg(nv), hTried: hv.length, hAvg: avg(hv), gems: hv.filter((v) => v === TASKS_PER_LEVEL).length,
+      ready: rows.filter((x) => { const l = x.p.levels?.[n]; return l && (l.bn ?? l.best) >= TASKS_PER_LEVEL - 1 && l.bh == null; }) };
+  };
+  const S = lv.map(stat);
+  const onlyNormal = rows.filter((x) => Object.values(x.p.levels || {}).some((l) => l) && !Object.values(x.p.levels || {}).some((l) => l?.bh != null));
+  return h("section.card", h("h2.gemtitle", gem(22), " Звичайний і складніший варіанти"),
+    h("p.note", "Скільки учнів проходили кожен варіант і з яким середнім результатом. «Готові спробувати» — мають 9–10 у звичайному, але складніший ще не пробували: їм можна задати складніший рівень як завдання із саморозвитку (Налаштування)."),
+    h("div.tablewrap", h("table.tbl",
+      h("thead", h("tr", ["Рівень", "Звичайний: учнів", "сер.", `${HARD_ICON} Складніший: учнів`, "сер.", "Діамантів (10/10)", "Готові спробувати складніший"].map((c) => h("th", c)))),
+      h("tbody", S.map((x) => h("tr", h("td.mono.center", `Р${x.n}`), h("td.mono.center", x.nTried || ""), h("td.mono.center", x.nAvg), h("td.mono.center", x.hTried || ""), h("td.mono.center", x.hAvg),
+        h("td.mono.center", x.gems || ""), h("td.note", x.ready.map((r) => r.u.name).join(", ") || "—")))))),
+    onlyNormal.length ? h("p.note", `Проходять лише звичайний варіант (жодного разу не пробували складніший): ${onlyNormal.map((x) => x.u.name).join(", ")}.`) : null);
 }
 
 // ---------- Спроби ----------
@@ -155,10 +259,12 @@ function topicView() {
         h("tbody", rows.map(({ id, u, p, v, mine, avgSec }) => h("tr",
           h("td", h("a", { href: "#/teacher", onclick: (e) => { e.preventDefault(); studentId = id; tab = "student"; draw(); } }, u.name), nickNote(u)),
           h("td", u.cls), h("td.mono.center", { style: { background: heat(v) } }, v + "%"),
-          lv.map((n) => { const L = p.levels?.[n]; return h("td.mono.center.clk", { title: "Кожна спроба й кожне завдання рівня", onclick: () => openDetail(id, topicId, n), style: { background: L ? heat((L.best / TASKS_PER_LEVEL) * 100) : "" } }, L ? `${L.best}` : "—"); }),
+          lv.map((n) => { const L = p.levels?.[n]; return h("td.mono.center.clk", { title: "Найкраще · звичайний / складніший. Натисни — кожна спроба й кожне завдання рівня", onclick: () => openDetail(id, topicId, n), style: { background: L ? heat((L.best / TASKS_PER_LEVEL) * 100) : "" } },
+            L ? [h("b", `${L.best}`), L.bh != null ? h("small.tvar", ` ${L.bn ?? "—"}/${HARD_ICON}${L.bh}`) : null] : "—"); }),
           h("td.mono.center", mine.length || ""), h("td.mono.center", mine.filter((a) => a.flagged).length || ""),
           h("td.mono", avgSec == null ? "—" : `${num(avgSec)} с`),
           h("td.note", mine[0] ? `${fmtDate(mine[0].end)} ${fmtTime(mine[0].end)}` : "—"))))))),
+    hardStats(rows, lv),
     h("section.card", h("h2", "🧩 Де найчастіше помиляються"),
       hard.length ? h("div.tablewrap", h("table.tbl", h("thead", h("tr", ["Завдання", "Відповідей", "% правильних"].map((x) => h("th", x)))),
         h("tbody", hard.map((g) => h("tr", h("td", g.q), h("td.mono.center", g.n), h("td.mono.center", pct(g.ok, g.n) + "%"))))))
@@ -377,9 +483,10 @@ function settingsView() {
       h("h3", "За темами (складні, без підказок)"),
       h("p.note", "Кожна робота закрита, доки ти її не відкриєш. Учні побачать її на головній і на сторінці теми. Переглянути завдання можна у вкладці «📖 Завдання»."),
       TOPICS.filter((t) => t.ready).flatMap((t) => monWorks(t.id).map((w) => sw(s.monitoring?.[`t_${w.id}`]?.open === true, (v) => save(`monitoring/t_${w.id}/open`, v), shortTitle(t) + (w.n > 1 ? ` · варіант ${w.n}` : ""))))),
-    h("section.card", h("h2", "📌 Теми: відкрити, закрити, задати з дедлайном"),
+    selfdevCard(s, save),
+    h("section.card", h("h2", "📌 Теми: відкрити, закрити, задати як завдання із саморозвитку з дедлайном"),
       h("div.tablewrap", h("table.tbl",
-        h("thead", h("tr", ["Тема", "Готова", "Відкрита", "Задано", "Дедлайн"].map((x) => h("th", x)))),
+        h("thead", h("tr", ["Тема", "Готова", "Відкрита", "Завдання із саморозвитку", "Дедлайн"].map((x) => h("th", x)))),
         h("tbody", TOPICS.map((t) => {
           const ts = s.topics?.[t.id] || {};
           return h("tr", h("td", shortTitle(t)), h("td.center", t.ready ? "✅" : "—"),
