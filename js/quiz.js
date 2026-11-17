@@ -4,7 +4,7 @@ import { r, push, set } from "./fb.js";
 import { SPEED, ECONOMY } from "./config.js";
 import { state, coinsFor, buyHint, coins } from "./store.js";
 
-const norm = (s) => String(s ?? "").toLowerCase().replace(/[ʼ'`´‘]/g, "’").replace(/\s+/g, " ").replace(/[.!?]$/, "").trim();
+const norm = (s) => String(s ?? "").toLowerCase().replace(/[ʼ'`´‘]/g, "’").replace(/[«»"„“”]/g, "").replace(/\s+/g, " ").replace(/[.!?]$/, "").trim();
 
 // Скільки тексту в завданні → мінімальний розумний час на відповідь
 function minSecFor(t) {
@@ -317,7 +317,7 @@ function reportTask(t, view, opts) {
   async function send() {
     const msg = text.value.trim();
     if (kind === "інше" && msg.length < 3) return (err.textContent = "Напиши кілька слів, що не так.");
-    let given = ""; try { given = plain(view.value() || "").slice(0, 120); } catch {}
+    let given = ""; try { if (view.ready()) given = plain(view.value() || "").slice(0, 120); } catch {}
     try {
       await set(push(r("reports")), { uid: state.uid, name: state.user?.name || "", cls: state.user?.cls || "", topic: t.topic || "", id: t.id, q: taskLabel(t).slice(0, 200),
         hard: !!t.hard, where: opts.type || "", kind, text: msg.slice(0, 400), given, at: Date.now() });
