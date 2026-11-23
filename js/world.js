@@ -469,13 +469,19 @@ export function openWorld(state) {
   let barKey = "";
   function drawHouseBar(ins) {
     const mine = ins && ins.uid === uid;
-    const key = mine ? `m${ins.f}` : ins ? "g" : "";
+    if (carry && !mine) cancelMove();
+    const key = mine ? `m${ins.f}${carry ? "c" : ""}` : ins ? "g" : "";
     if (key === barKey) return; barKey = key;
     houseBar.classList.toggle("on", !!ins);
     if (!ins) return houseBar.replaceChildren();
     if (!mine) return houseBar.replaceChildren(h("b", `🏡 У гостях: ${ins.b.h.name}`));
+    if (carry) return houseBar.replaceChildren(h("b", `✋ Несеш: ${FURN[carry.it.k]?.name || "річ"}`),
+      h("button.btn.btn--small.btn--primary", { onclick: dropItem }, "📍 Поставити тут"),
+      h("button.btn.btn--small", { onclick: () => { carry.ry = (carry.ry + Math.PI / 2) % (Math.PI * 2); } }, "↻ Повернути"),
+      h("button.btn.btn--small", { onclick: cancelMove }, "✖ Скасувати"));
     houseBar.replaceChildren(h("b", `🏡 Мій дім · ${ins.f + 1} поверх`),
       h("button.btn.btn--small.btn--primary", { onclick: furnitureDialog }, "🛋️ Меблі"),
+      h("button.btn.btn--small", { onclick: () => editNearest("move") }, "✋ Перемістити"),
       h("button.btn.btn--small", { onclick: () => editNearest("rotate") }, "↻ Повернути"),
       h("button.btn.btn--small", { onclick: () => editNearest("remove") }, "🗑 Прибрати"));
   }
@@ -502,9 +508,44 @@ export function openWorld(state) {
     if (!items.length) return toast("Тут ще немає меблів", "info");
     const [id, it] = items.sort((a, b) => Math.hypot(a[1].x - ins.lx, a[1].z - ins.lz) - Math.hypot(b[1].x - ins.lx, b[1].z - ins.lz))[0];
     if (mode === "rotate") return update(ref(db), { [`houses/${uid}/items/${id}/ry`]: +(((it.ry || 0) + Math.PI / 2) % (Math.PI * 2)).toFixed(3) });
+    if (mode === "move") return pickUp(id, it);
     const back = Math.floor((FURN[it.k]?.price || 0) / 2);
     await update(ref(db), { [`houses/${uid}/items/${id}`]: null, [`users/${uid}/coins`]: (state.user.coins || 0) + back });
     toast(`Прибрано. Повернуто ${back} 🪙`, "info");
+  }
+  // ✋ Перенесення меблів: річ «їде» перед тобою, поки не натиснеш «Поставити тут» (безкоштовно)
+  let carry = null; // { id, it, mesh, sol, ry }
+  function pickUp(id, it) {
+    const house = village.built.get(uid)?.house;
+    const mesh = house && [...house.items.children, ...house.upper.children].find((m) => m.userData.id === id);
+    if (!mesh) return;
+    const sol = solids.filter((s) => s.furn === id);
+    for (const s of sol) solids.splice(solids.indexOf(s), 1);
+    carry = { id, it, mesh, sol, ry: it.ry || 0 }; barKey = "";
+    toast("Іди туди, де хочеш поставити річ, і натисни «📍 Поставити тут»", "info", 4000);
+  }
+  function carryStep(ins) {
+    if (!carry || !ins) return;
+    const f = FURN[carry.it.k], dist = 0.7 + Math.max(f.w, f.d) / 2;
+    carry.mesh.position.x = ins.lx + Math.sin(me.ry) * dist; carry.mesh.position.z = ins.lz + Math.cos(me.ry) * dist;
+    carry.mesh.rotation.y = carry.ry;
+  }
+  function cancelMove() {
+    if (!carry) return;
+    const { mesh, it, sol } = carry;
+    mesh.position.x = it.x; mesh.position.z = it.z; mesh.rotation.y = it.ry || 0;
+    solids.push(...sol); carry = null; barKey = "";
+  }
+  async function dropItem() {
+    const ins = village.at(me.x, me.z, me.y); if (!carry || !ins || ins.uid !== uid) return;
+    if (ins.f !== (carry.it.f || 0)) return toast(`Цю річ можна переставити лише на ${(carry.it.f || 0) + 1} поверсі`, "warn");
+    const { x, z } = carry.mesh.position;
+    const err = canPlace(carry.it.k, x, z, ins.f); if (err) return toast(err, "warn");
+    const { id, ry } = carry;
+    try {
+      await update(ref(db), { [`houses/${uid}/items/${id}/x`]: +x.toFixed(2), [`houses/${uid}/items/${id}/z`]: +z.toFixed(2), [`houses/${uid}/items/${id}/ry`]: +ry.toFixed(3) });
+      carry = null; barKey = ""; toast("📍 Поставлено!", "win");
+    } catch { toast("Не вдалося переставити", "warn"); }
   }
   try { if (!localStorage.getItem("winter26")) { localStorage.setItem("winter26", "1"); setTimeout(() => toast("🆕 Сходи на 2-й і 3-й поверх тепер справжні — просто йди ними (ліворуч від літери Ї). Надворі: 🏡 містечко (будуй дім!), ❄️ Крижана вежа з призом, сніжки (Q) і стрибки (пробіл)!", "info", 9000), 1500); } } catch {}
 
@@ -566,7 +607,7 @@ export function openWorld(state) {
       timerEl.classList.toggle("on", !!txt);
     }
     const inHouse = village.tick(t, me.x, me.z, me.y);
-    drawHouseBar(inHouse);
+    drawHouseBar(inHouse); carryStep(inHouse);
     winter?.tick(t, dt, cam);
     sb.tick(dt, (x, z, y) => support(x, z, y)[0], snowHit);
     const inB = insideB();
