@@ -92,6 +92,7 @@ export function openWorld(state) {
   const cpBtn = h("button.btn.btn--small.cpbtn", { onclick: () => toCheckpoint() }, "🚩 До контрольної точки");
   const houseBar = h("div.housebar");
   const timerEl = h("div.world__timer");
+  unzoom(); visualViewport?.addEventListener("resize", onZoom);
   mount(h("div.world",
     canvasWrap,
     h("div.world__top",
@@ -969,4 +970,15 @@ function decorateHalloween(scene, doors) {
   banner(["Не бійся помилок —", "бійся не вчитися!"], 8.5, -S + 0.25, 0, "#2a1f3d", "#ffb347");
 
   return (t) => anim.forEach((f) => f(t));
+}
+
+// Якщо браузер встиг збільшити сторінку (подвійний тап на iPhone/iPad), повертаємо звичайний масштаб.
+function onZoom() {
+  if (!document.querySelector(".world")) return visualViewport.removeEventListener("resize", onZoom);
+  unzoom();
+}
+function unzoom() {
+  if (!(visualViewport?.scale > 1.01)) return;
+  const vp = document.querySelector('meta[name="viewport"]'), c = vp.content;
+  vp.content = c + ", maximum-scale=1"; setTimeout(() => (vp.content = c), 300);
 }

@@ -352,7 +352,7 @@ a.tcard:hover { transform: translateY(-2px); border-color: var(--lime); box-shad
 
 /* 3D-школа */
 body.in-world { overflow: hidden; }
-.world { position: fixed; inset: 0; background: #eef5ff; user-select: none; -webkit-user-select: none; }
+.world { position: fixed; inset: 0; background: #eef5ff; user-select: none; -webkit-user-select: none; touch-action: manipulation; } /* без збільшення від подвійного тапу */
 .world__canvas { position: absolute; inset: 0; touch-action: none; }
 .world__canvas canvas { display: block; }
 .world__top { position: absolute; top: 12px; left: 12px; right: 12px; display: flex; justify-content: space-between; gap: 8px; pointer-events: none; }
