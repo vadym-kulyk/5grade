@@ -92,7 +92,7 @@ export function openWorld(state) {
   const cpBtn = h("button.btn.btn--small.cpbtn", { onclick: () => toCheckpoint() }, "🚩 До контрольної точки");
   const houseBar = h("div.housebar");
   const timerEl = h("div.world__timer");
-  unzoom(); visualViewport?.addEventListener("resize", onZoom);
+  const zoomGuard = guardZoom();
   mount(h("div.world",
     canvasWrap,
     h("div.world__top",
@@ -246,7 +246,7 @@ export function openWorld(state) {
   renderer.domElement.addEventListener("pointerdown", (e) => { drag = { x: e.clientX, y: e.clientY, id: e.pointerId }; });
   const pm = (e) => { if (!drag || drag.id !== e.pointerId) return; camYaw -= (e.clientX - drag.x) * 0.006; camPitch = Math.max(0.05, Math.min(1.1, camPitch + (e.clientY - drag.y) * 0.004)); drag.x = e.clientX; drag.y = e.clientY; };
   const pu = (e) => { if (drag?.id === e.pointerId) drag = null; };
-  addEventListener("pointermove", pm); addEventListener("pointerup", pu);
+  addEventListener("pointermove", pm); addEventListener("pointerup", pu); addEventListener("pointercancel", pu);
   // Джойстик
   const joy = { x: 0, y: 0, id: null };
   stick.addEventListener("pointerdown", (e) => { joy.id = e.pointerId; stick.setPointerCapture(e.pointerId); moveJoy(e); });
@@ -673,8 +673,9 @@ export function openWorld(state) {
     alive = false;
     removeEventListener("hashchange", cleanup);
     removeEventListener("keydown", kd); removeEventListener("keyup", ku);
-    removeEventListener("pointermove", pm); removeEventListener("pointerup", pu);
+    removeEventListener("pointermove", pm); removeEventListener("pointerup", pu); removeEventListener("pointercancel", pu);
     removeEventListener("resize", resize);
+    zoomGuard();
     off(presRef); off(setsRef); off(r("chat")); off(r("houses"));
     if (fun) { fun.sledRec.dispose(); fun.skateRec.dispose(); fun.fight.dispose(); }
     quest?.dispose();
@@ -1013,13 +1014,24 @@ function decorateHalloween(scene, doors) {
   return (t) => anim.forEach((f) => f(t));
 }
 
-// Якщо браузер встиг збільшити сторінку (подвійний тап на iPhone/iPad), повертаємо звичайний масштаб.
-function onZoom() {
-  if (!document.querySelector(".world")) return visualViewport.removeEventListener("resize", onZoom);
-  unzoom();
-}
-function unzoom() {
-  if (!(visualViewport?.scale > 1.01)) return;
-  const vp = document.querySelector('meta[name="viewport"]'), c = vp.content;
-  vp.content = c + ", maximum-scale=1"; setTimeout(() => (vp.content = c), 300);
+// iPad/iPhone: Safari може збільшити сторінку від швидких тапів. У 3D-світі просимо його не збільшувати,
+// а якщо все ж збільшив — показуємо кнопку «Звичайний масштаб» (і двома пальцями на сцені теж можна зменшити).
+function guardZoom() {
+  const vp = document.querySelector('meta[name="viewport"]'), base = vp.content;
+  const strict = `${base}, minimum-scale=1, maximum-scale=1, user-scalable=no`;
+  vp.content = strict;
+  const vv = window.visualViewport;
+  const btn = h("button.btn.btn--primary.zoomback", { onclick: reset }, "🔍 Звичайний масштаб");
+  document.body.append(btn);
+  function reset() {
+    vp.content = `${base}, initial-scale=1, minimum-scale=1, maximum-scale=1`; scrollTo(0, 0);
+    setTimeout(() => { vp.content = strict; place(); }, 400);
+  }
+  function place() {
+    const s = vv?.scale || 1, on = s > 1.05;
+    btn.style.display = on ? "block" : "none";
+    if (on) btn.style.transform = `translate(${vv.offsetLeft + 12}px, ${vv.offsetTop + vv.height - 12}px) scale(${1 / s}) translateY(-100%)`;
+  }
+  vv?.addEventListener("resize", place); vv?.addEventListener("scroll", place); place();
+  return () => { vv?.removeEventListener("resize", place); vv?.removeEventListener("scroll", place); btn.remove(); vp.content = base; };
 }
