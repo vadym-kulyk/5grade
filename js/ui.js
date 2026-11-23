@@ -126,3 +126,17 @@ export function groupedBars(groups, { color = (v) => (v === 100 ? "var(--right)"
         h("span.gtile__l", x.label), h("b.gtile__v.mono", x.v + "%"), bar(x.v, color(x.v)), x.sub ? h("small.gtile__s", x.sub) : null))));
   }));
 }
+
+// iPhone/iPad: другий швидкий тап Safari перетворює на збільшення екрана (CSS touch-action там спрацьовує не завжди).
+// Скасовуємо збільшення, а сам натиск виконуємо як звичайне клацання.
+let lastTap = 0, tapX = 0, tapY = 0;
+document.addEventListener("touchstart", (e) => { tapX = e.touches[0].clientX; tapY = e.touches[0].clientY; }, { passive: true });
+document.addEventListener("touchend", (e) => {
+  const t = e.target, now = e.timeStamp, p = e.changedTouches[0];
+  const still = Math.hypot(p.clientX - tapX, p.clientY - tapY) < 10;
+  if (still && now - lastTap < 350 && e.touches.length === 0 && e.changedTouches.length === 1 && t instanceof Element && !t.closest("input, textarea, select, [contenteditable]")) {
+    e.preventDefault();
+    if (t.tagName !== "CANVAS") t.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
+  }
+  lastTap = still ? now : 0;
+}, { passive: false });
