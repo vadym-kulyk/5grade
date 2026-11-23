@@ -233,7 +233,7 @@ export function openWorld(state) {
   const kd = (e) => { if (e.target.tagName === "INPUT" || document.body.classList.contains("mg-open")) return; keys.add(e.code); if (e.code === "KeyE" || e.code === "Enter") useDoor(); if (e.code === "KeyF" && canFly) toggleFly(); if (e.code === "KeyG") quest?.throwLight(); if (e.code === "Space") { e.preventDefault(); if (!me.fly) jumpReq = true; } if (e.code === "KeyQ") throwSnow(); };
   function toggleFly() {
     sled = null;
-    me.fly = !me.fly;
+    me.fly = !me.fly; me.jumping = false;
     flyBtn.textContent = me.fly ? "🛬 Приземлитися" : `${flyIcon} Летіти`;
     flyPad.classList.toggle("on", me.fly);
     if (me.fly && parkour.zone(me.x, me.z)) { me.fly = false; flyBtn.textContent = `${flyIcon} Летіти`; flyPad.classList.remove("on"); return toast("❄️ Біля Крижаної вежі літати не можна — тільки стрибати!", "warn", 3500); }
@@ -530,7 +530,7 @@ export function openWorld(state) {
       fx /= Math.max(1, len); fz /= Math.max(1, len);
       const sin = Math.sin(camYaw), cos = Math.cos(camYaw);
       const wx = fx * cos + fz * sin, wz = -fx * sin + fz * cos;
-      const sp = (me.fly ? flyCfg.speed : insideB() ? 5.5 : 7) * dt;
+      const sp = (me.fly ? flyCfg.speed : insideB() ? 5.5 : 7) * (me.jumping ? 1.5 : 1) * dt; // у стрибку летимо в 1,5 раза далі
       const nx = me.x + wx * sp, nz = me.z + wz * sp;
       if (!collide(nx, me.z)) me.x = nx;
       if (!collide(me.x, nz)) me.z = nz;
@@ -547,10 +547,10 @@ export function openWorld(state) {
       me.grounded = false; me.on = null; me.vy = 0; me.sup = sup;
       if (parkour.zone(me.x, me.z)) toggleFly();
     } else {
-      if (jumpReq && me.grounded) { me.vy = 9.5; me.grounded = false; }
+      if (jumpReq && me.grounded) { me.vy = 9.5; me.grounded = false; me.jumping = true; }
       me.vy -= 25 * dt; me.y += me.vy * dt;
       const [sup, on] = support(me.x, me.z, me.y);
-      if (me.y <= sup) { me.y = sup; me.vy = 0; me.grounded = true; me.on = on; } else { me.grounded = false; me.on = null; }
+      if (me.y <= sup) { me.y = sup; me.vy = 0; me.grounded = true; me.on = on; me.jumping = false; } else { me.grounded = false; me.on = null; }
       if (me.grounded && me.on && (me.on.dx || me.on.dz)) { const nx = me.x + me.on.dx, nz = me.z + me.on.dz; if (!collide(nx, me.z)) me.x = nx; if (!collide(me.x, nz)) me.z = nz; }
       me.sup = sup;
       if (me.y < -20) { me.y = 0; me.x = 0; me.z = 8; } // про всяк випадок
