@@ -12,6 +12,7 @@ import { buildOutdoor, labelSprite, LAKES } from "./outdoor.js";
 import { recordBoard, rink, snowFight, openAdvent, openTame, giftPile, fmtT } from "./fun.js";
 import { buildWinter, hallTree, snowballs, SLED, sledModel } from "./winter.js";
 import { buildParkour } from "./parkour.js";
+import { buildBigHill, buildBigRink, BIG } from "./bigfun.js";
 import { buildVillage, HOUSE_PRICE, WALLS, ROOFS, FURN, canPlace } from "./houses.js";
 import { mergeStatic } from "./merge.js";
 import { openGame, huntWord, reward, GAMES } from "./minigames.js";
@@ -130,11 +131,15 @@ export function openWorld(state) {
   const winter = WINTER ? buildWinter(scene, solids, labelSprite) : null;
   if (WINTER) hallTree(scene, solids);
   if (winter) doors.push({ ...winter.sledSpot, act: () => startSled() });
+  const big = winter ? buildBigHill(scene, solids, labelSprite) : null;
+  if (big) doors.push({ ...big.sledSpot, act: () => startSled(BIG) });
+  const bigRink = winter ? buildBigRink(scene, labelSprite) : null;
   // ❄️ Зимові розваги: табла рекордів, ковзанка, бій сніжками, адвент-календар, сніговик зі слів
   const fun = winter ? {
     sledRec: recordBoard(scene, "sled", "🛷 Гірка — рекорди дня", "Проїдь через усі ворота якнайшвидше!", 79, 19, Math.PI * 0.75),
     skateRec: recordBoard(scene, "skate", "⛸️ Ковзанка — найшвидше коло", "Об’їдь 4 конуси по колу озера!", LAKES[0].x + 12, LAKES[0].z - LAKES[0].rz - 5, 0),
     rink: rink(scene, labelSprite, LAKES[0]),
+    bigRec: recordBoard(scene, "sledbig", "🏔️ Велика гірка — рекорди дня", "Проїдь 5 воріт якнайшвидше!", 52, 46, Math.PI * 0.75),
     fight: snowFight(scene, -36, 49, 0),
   } : null;
   if (winter) {
@@ -236,7 +241,7 @@ export function openWorld(state) {
     me.fly = !me.fly; me.jumping = false;
     flyBtn.textContent = me.fly ? "🛬 Приземлитися" : `${flyIcon} Летіти`;
     flyPad.classList.toggle("on", me.fly);
-    if (me.fly && parkour.zone(me.x, me.z)) { me.fly = false; flyBtn.textContent = `${flyIcon} Летіти`; flyPad.classList.remove("on"); return toast("❄️ Біля Крижаної вежі літати не можна — тільки стрибати!", "warn", 3500); }
+    if (me.fly && noFly()) { me.fly = false; flyBtn.textContent = `${flyIcon} Летіти`; flyPad.classList.remove("on"); return toast(`❄️ Біля ${big?.noFly(me.x, me.z) ? "Великої гірки" : "Крижаної вежі"} літати не можна — тільки стрибати!`, "warn", 3500); }
     if (me.fly) { me.y = Math.max(me.y, me.sup + 1.2); toast(`Пробіл / ⬆️ — вгору, C / ⬇️ — вниз, WASD — у будь-який бік, F — приземлитися. Висота до ${flyCfg.maxY} м${u.avatar?.back === "back.broom" ? " — на мітлі найвище!" : ""}`, "info", 4500); }
     sendPresence(true);
   }
@@ -304,18 +309,20 @@ export function openWorld(state) {
     return [top, on];
   }
   // 🛷 Санчата: з вершини гірки котимося вниз (у бік −x); A/D — кермо; на рівному гальмуємо
-  function startSled() {
+  const noFly = () => parkour.zone(me.x, me.z) || !!big?.noFly(me.x, me.z);
+  function startSled(H = SLED) {
     if (sled) return;
     if (me.fly) toggleFly();
-    sled = { v: 2, time: 0, pen: 0, gate: 0, miss: 0, fin: false };
-    me.x = SLED.top0 + 0.6; me.z = Math.max(SLED.z0 + 1, Math.min(SLED.z1 - 1, me.z)); me.y = SLED.H; me.vy = 0;
+    sled = { v: 2, time: 0, pen: 0, gate: 0, miss: 0, fin: false, hill: H };
+    me.x = H.top0 + 0.6; me.z = Math.max(H.z0 + 1, Math.min(H.z1 - 1, me.z)); me.y = H.H; me.vy = 0;
     me.ry = -Math.PI / 2; camYaw = me.ry + Math.PI; camPitch = 0.3;
     toast("🛷 Поїхали! A / D (⬅️ ➡️) — кермуй між воротами. Пропуск воріт — +1,5 с", "info", 3500);
     sendPresence(true);
   }
   function sledStep(dt, fx) {
+    const SLED = sled.hill;
     const g = SLED.h(me.x + 0.5) - SLED.h(me.x - 0.5); // > 0 — попереду спуск
-    sled.v = Math.min(16, sled.v + (g > 0.01 ? 30 * g - 1.5 : -6) * dt - Math.abs(fx) * 1.8 * dt); // кермування трохи гальмує
+    sled.v = Math.min(SLED.vmax || 16, sled.v + (g > 0.01 ? 30 * g - 1.5 : -6) * dt - Math.abs(fx) * 1.8 * dt); // кермування трохи гальмує
     if (!sled.fin) sled.time += dt;
     const onHill = me.x > SLED.x0 && me.x < SLED.x1, px = me.x;
     const nz = me.z - fx * Math.sin(camYaw) * 6 * dt; // кермо вбік відносно камери
@@ -329,9 +336,9 @@ export function openWorld(state) {
     if (!sled.fin && px > SLED.x0 && me.x <= SLED.x0) {
       sled.fin = true;
       const total = sled.time + sled.pen, gates = `ворота ${SLED.gates.length - sled.miss}/${SLED.gates.length}`;
-      fun?.sledRec.submit(total).then((r) => toast(`🏁 ${fmtT(total)} (${gates})${r.better ? " — твій рекорд дня!" : ""} · ${r.place}-е місце сьогодні`, "win", 5000));
+      (SLED === BIG ? fun?.bigRec : fun?.sledRec)?.submit(total).then((r) => toast(`🏁 ${fmtT(total)} (${gates})${r.better ? " — твій рекорд дня!" : ""} · ${r.place}-е місце сьогодні`, "win", 5000));
     }
-    if (sled.v <= 0) { sled = null; toast("Ще раз? Підіймайся сходами нагору 🛷", "info", 2500); sendPresence(true); }
+    if (sled.v <= 0) { sled = null; toast(SLED === BIG ? "Ще раз? Нагору — стрибками по крижинах 🏔️" : "Ще раз? Підіймайся сходами нагору 🛷", "info", 2500); sendPresence(true); }
   }
   // ⛸️ Лід: ковзаємо з інерцією — розганяємося й гальмуємо поступово
   function iceStep(dt, fx, fz, len) {
@@ -345,6 +352,19 @@ export function openWorld(state) {
     const v = Math.hypot(me.vx, me.vz);
     if (v > 0.5) me.ry += angDiff(me.ry, Math.atan2(me.vx, me.vz)) * Math.min(1, dt * 6);
     me.mv = v > 0.5 ? 1 : 0;
+  }
+  // ⭐ Велика ковзанка: 15 зірок за 90 с — приз один раз
+  async function onStars(ev, x) {
+    if (ev === "start") toast(`⭐ Забіг почався! Збери всі ${bigRink.STARS} зірок за ${bigRink.RINK_TIME} с і не сходь з льоду`, "info", 4000);
+    if (ev === "lost") toast("Ти зійшов з льоду — зірки повернулися на місця. Спробуй ще раз!", "warn", 3500);
+    if (ev === "time") toast(`⏱️ Час вийшов: зібрано ${x} з ${bigRink.STARS}. Спробуй ще раз!`, "warn", 4000);
+    if (ev !== "done") return;
+    emote("⭐ Усі зірки мої!", "dance");
+    if (state.user.rinkPrize) return toast(`⭐ Усі зірки за ${fmtT(x)}! Приз ти вже отримав(-ла) раніше — але це круто!`, "win", 5000);
+    try {
+      await update(ref(db), { [`users/${uid}/coins`]: (state.user.coins || 0) + bigRink.RINK_PRIZE, [`users/${uid}/rinkPrize`]: Date.now() });
+      toast(`🏆 Усі зірки за ${fmtT(x)}! +${bigRink.RINK_PRIZE} 🪙`, "win", 7000);
+    } catch { toast("Не вдалося записати приз. Спробуй ще раз пізніше.", "warn"); }
   }
   function onLap(ev, x) {
     if (ev === "start") toast("⛸️ Коло почалося! Їдь до конусів 2 → 3 → 4 і повертайся на старт.", "info", 4000);
@@ -384,7 +404,7 @@ export function openWorld(state) {
       toast(`🎉 Слово «${w}» зібрано!${r.gain ? ` +${r.gain} 🪙` : ""}`, "win", 5000);
     }
   };
-  if (location.search.includes("emu=1")) window.__w = { me, goFloor, out, school, startHunt, renderer, collide, solids, parkour, village, support, get throwSnow() { return throwSnow; }, get run() { return run; }, get sled() { return sled; }, startSled: () => startSled(), get myHits() { return myHits; }, setCam: (y, p) => { camYaw = y; camPitch = p; } }; // лише для тестів в емуляторі
+  if (location.search.includes("emu=1")) window.__w = { me, big, bigRink, goFloor, out, school, startHunt, renderer, collide, solids, parkour, village, support, get throwSnow() { return throwSnow; }, get run() { return run; }, get sled() { return sled; }, startSled: () => startSled(), get myHits() { return myHits; }, setCam: (y, p) => { camYaw = y; camPitch = p; } }; // лише для тестів в емуляторі
   out.setOnGoal((sc) => { toast(`⚽ ГОЛ! Рахунок ${sc[0]} : ${sc[1]}`, "win", 3000); if (out.nearField(me.x, me.z)) emote("⚽ Гол!", "jump"); });
   // Спільний м’яч: хто вдарив — той розсилає стан м’яча, решта його підхоплює
   out.setOnKick((b) => { me.bl = { ...b, t: Date.now() }; sendPresence(true); });
@@ -414,7 +434,7 @@ export function openWorld(state) {
   const run = { started: false, cp: 0, done: false };
   function parkourRun() {
     const inZone = parkour.zone(me.x, me.z);
-    cpBtn.classList.toggle("on", inZone && run.started && run.cp > 0 && !run.done && me.grounded && me.y < 1);
+    cpBtn.classList.toggle("on", (inZone && run.started && run.cp > 0 && !run.done && me.grounded && me.y < 1) || bigRun());
     if (!me.grounded || !me.on) return;
     // Забіг починається, щойно стаєш на будь-яку крижину вежі (зі старту, з першої, з другої — байдуже);
     // після призу — новий забіг, коли знову стаєш на нижні крижини
@@ -425,7 +445,14 @@ export function openWorld(state) {
     else if (me.on === parkour.top && !run.done && !run.hinted) { run.hinted = true; toast(`Щоб отримати приз, пройди вежу від старту через обидві контрольні точки з прапорцями (зараз пройдено: ${run.started ? run.cp : 0} з ${parkour.cps.length})`, "info", 6000); }
     if (me.on !== parkour.top) run.hinted = false;
   }
+  let bigSlip = 0, bigCp = false;
+  function bigRun() {
+    if (!big || !me.grounded) return false;
+    if (me.on === big.cp && !bigCp) { bigCp = true; toast("🚩 Контрольна точка Великої гірки! Якщо впадеш — кнопка поверне сюди", "win", 3500); }
+    return bigCp && big.noFly(me.x, me.z) && me.y < 1;
+  }
   function toCheckpoint() {
+    if (big?.noFly(me.x, me.z) && bigCp) { const [x, y, z] = big.cpPos; me.x = x; me.z = z; me.y = y + 0.05; me.vy = 0; sendPresence(true); return; }
     const [x, y, z] = parkour.cpPos[run.cp - 1] || parkour.startPos;
     me.x = x; me.z = z; me.y = y + 0.05; me.vy = 0; sendPresence(true);
   }
@@ -549,6 +576,7 @@ export function openWorld(state) {
   }
   try { if (!localStorage.getItem("winter26")) { localStorage.setItem("winter26", "1"); setTimeout(() => toast("🆕 Сходи на 2-й і 3-й поверх тепер справжні — просто йди ними (ліворуч від літери Ї). Надворі: 🏡 містечко (будуй дім!), ❄️ Крижана вежа з призом, сніжки (Q) і стрибки (пробіл)!", "info", 9000), 1500); } } catch {}
 
+  try { if (winter && !localStorage.getItem("big26")) { localStorage.setItem("big26", "1"); setTimeout(() => toast("🆕 🏔️ Велика гірка біля вітряка (18 м!) — нагору лише стрибками по крижинах. ⛸️ А за річкою — велика ковзанка: збери 15 зірок за 90 с і отримай 300 🪙!", "info", 9000), 20000); } } catch {}
   try { if (winter && !localStorage.getItem("sled26")) { localStorage.setItem("sled26", "1"); setTimeout(() => toast("🆕 На сході за школою — 🛷 гірка! Підіймись сходами нагору й натисни E, щоб з’їхати на санчатах.", "info", 8000), 11000); } } catch {}
 
   const lods = [...school.lod, ...out.lod], tmpV = new THREE.Vector3(); let lodT = -1;
@@ -564,7 +592,7 @@ export function openWorld(state) {
     fx += joy.x; fz += joy.y;
     const len = Math.hypot(fx, fz);
     me.mv = !sled && len > 0.1 ? 1 : 0;
-    const ice = !!fun && !me.fly && !sled && me.y < 0.3 && out.onIce(me.x, me.z);
+    const ice = !!fun && !me.fly && !sled && me.y < 0.3 && (out.onIce(me.x, me.z) || bigRink.onIce(me.x, me.z));
     if (ice) iceStep(dt, fx, fz, len);
     else { me.vx = me.vz = 0; }
     if (me.mv && !ice) {
@@ -579,22 +607,26 @@ export function openWorld(state) {
       me.ry += angDiff(me.ry, target) * Math.min(1, dt * 12);
     }
     // Вертикаль: політ або гравітація + стрибок; на рухомій платформі їдемо разом із нею
-    parkour.tick(t);
+    parkour.tick(t); big?.tick(t);
     if (sled) sledStep(dt, fx);
     else if (me.fly) {
       const vy = (keys.has("Space") || pad.up ? 1 : 0) - (keys.has("KeyC") || keys.has("ShiftLeft") || pad.down ? 1 : 0);
       const [sup] = support(me.x, me.z, me.y);
       me.y = Math.max(sup, Math.min(insideB() ? (me.floor + 1) * FH - 2.4 : flyCfg.maxY, me.y + vy * 4 * dt));
       me.grounded = false; me.on = null; me.vy = 0; me.sup = sup;
-      if (parkour.zone(me.x, me.z)) toggleFly();
+      if (noFly()) toggleFly();
     } else {
-      if (jumpReq && me.grounded) { me.vy = 9.5; me.grounded = false; me.jumping = true; }
+      if (jumpReq && me.grounded && !big?.slope(me)) { me.vy = 9.5; me.grounded = false; me.jumping = true; }
       me.vy -= 25 * dt; me.y += me.vy * dt;
       const [sup, on] = support(me.x, me.z, me.y);
       if (me.y <= sup) { me.y = sup; me.vy = 0; me.grounded = true; me.on = on; me.jumping = false; } else { me.grounded = false; me.on = null; }
       if (me.grounded && me.on && (me.on.dx || me.on.dz)) { const nx = me.x + me.on.dx, nz = me.z + me.on.dz; if (!collide(nx, me.z)) me.x = nx; if (!collide(me.x, nz)) me.z = nz; }
       me.sup = sup;
       if (me.y < -20) { me.y = 0; me.x = 0; me.z = 8; } // про всяк випадок
+      if (me.grounded && big?.slope(me)) { // 🏔️ слизький схил Великої гірки: з’їжджаємо вниз
+        const nx = me.x - 10 * dt; if (!collide(nx, me.z)) me.x = nx;
+        if (t - (bigSlip || -99) > 8) { bigSlip = t; toast("🏔️ Схил слизький! На вершину — лише стрибками по крижинах біля вітряка", "info", 4000); }
+      }
     }
     jumpReq = false;
     me.floor = school.inside(me.x, me.z, 0) ? Math.max(0, Math.min(2, Math.floor((me.y + 1.2) / FH))) : 0;
@@ -602,7 +634,8 @@ export function openWorld(state) {
     parkourRun();
     if (fun) {
       const lap = fun.rink.tick(dt, t, me, out.onIce(me.x, me.z) && me.y < 0.3 && !me.fly, onLap);
-      const txt = sled && !sled.fin ? `🛷 ${(sled.time + sled.pen).toFixed(1)} с · ворота ${sled.gate}/${SLED.gates.length}` : lap ? `⛸️ ${lap.t.toFixed(1)} с · до конуса ${lap.next ? lap.next + 1 : "старт"}` : "";
+      const stars = bigRink.tick(dt, t, me, bigRink.onIce(me.x, me.z) && me.y < 0.3 && !me.fly, onStars);
+      const txt = stars ? `⭐ ${stars.n}/${bigRink.STARS} · ${Math.max(0, bigRink.RINK_TIME - stars.t).toFixed(0)} с` : sled && !sled.fin ? `🛷 ${(sled.time + sled.pen).toFixed(1)} с · ворота ${sled.gate}/${sled.hill.gates.length}` : lap ? `⛸️ ${lap.t.toFixed(1)} с · до конуса ${lap.next ? lap.next + 1 : "старт"}` : "";
       if (timerEl.textContent !== txt) timerEl.textContent = txt;
       timerEl.classList.toggle("on", !!txt);
     }
@@ -677,7 +710,7 @@ export function openWorld(state) {
     removeEventListener("resize", resize);
     zoomGuard();
     off(presRef); off(setsRef); off(r("chat")); off(r("houses"));
-    if (fun) { fun.sledRec.dispose(); fun.skateRec.dispose(); fun.fight.dispose(); }
+    if (fun) { fun.sledRec.dispose(); fun.skateRec.dispose(); fun.bigRec.dispose(); fun.fight.dispose(); }
     quest?.dispose();
     remove(myRef);
     renderer.dispose();

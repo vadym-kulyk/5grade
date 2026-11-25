@@ -6,6 +6,7 @@ import { mergeStatic } from "./merge.js";
 import { VILLAGE } from "./houses.js";
 import { PK } from "./parkour.js";
 import { SLED_ZONE } from "./winter.js";
+import { BIG_ZONE, inRink } from "./bigfun.js";
 
 const R_WORLD = 175;
 export const LAKES = [{ x: -70, z: 112, rx: 26, rz: 17 }, { x: 88, z: -40, rx: 16, rz: 12 }];
@@ -102,7 +103,7 @@ export function buildOutdoor(scene, hw = false, winter = false) {
   const free = (x, z, pad = 2) => Math.hypot(x, z) < R_WORLD - 3 && !inRect(x, z, SCHOOL, 4) && !inLake(x, z, 4) && !inRiver(x, z, 4) && !inRect(x, z, QUEST, 2) &&
     !(Math.abs(x - FIELD.x) < FIELD.w / 2 + 4 && Math.abs(z - FIELD.z) < FIELD.d / 2 + 4) && Math.hypot(x, z - 58) > 12 && Math.hypot(x + 11, z - 65) > 6 && !(Math.abs(x) < 4) &&
     Math.hypot(x - 46, z - 80) > 12 && Math.hypot(x - 108, z - 62) > 8 && Math.hypot(x + 22, z - 88) > 7 && !onPathish(x, z, pad) &&
-    !inRect(x, z, VILLAGE, 6) && Math.hypot(x - PK.x, z - PK.z) > PK.r + 2 && !inRect(x, z, SLED_ZONE, 2);
+    !inRect(x, z, VILLAGE, 6) && Math.hypot(x - PK.x, z - PK.z) > PK.r + 2 && !inRect(x, z, SLED_ZONE, 2) && !inRect(x, z, BIG_ZONE, 2) && !inRink(x, z, 5);
   function onPathish(x, z) { return (Math.abs(x) < 3 && z > -110 && z < 60) || (Math.abs(z - 58) < 3 && x > -50 && x < 105); }
   const pines = [], leafy = [];
   let tries = 0;
@@ -207,7 +208,7 @@ export function buildOutdoor(scene, hw = false, winter = false) {
     m.position.set(x, 0, z); animals.push(o); lod.push({ o: m, d: 75, out: true });
     spots.push({ ref: o, r: 2.6 * Math.max(1, scale / 1.5), label: { deer: "🦌 Олень", fox: "🦊 Лисиця", bunny: "🐰 Зайчик", hedgehog: "🦔 Їжачок", dog: "🐶 Пес Бровко", cat: "🐱 Кіт Мурчик" }[kind], info: FACTS[kind] });
   };
-  const walk = (x, z) => Math.hypot(x, z) < R_WORLD - 4 && !inLake(x, z, 1) && !inRiver(x, z, 1) && !inRect(x, z, SCHOOL, 1) && !inRect(x, z, QUEST, 1) && !inRect(x, z, VILLAGE, 2) && Math.hypot(x - PK.x, z - PK.z) > PK.r;
+  const walk = (x, z) => Math.hypot(x, z) < R_WORLD - 4 && !inLake(x, z, 1) && !inRiver(x, z, 1) && !inRect(x, z, SCHOOL, 1) && !inRect(x, z, QUEST, 1) && !inRect(x, z, VILLAGE, 2) && Math.hypot(x - PK.x, z - PK.z) > PK.r && !inRect(x, z, BIG_ZONE, 1) && !inRink(x, z, 2);
   for (let i = 0; i < 4; i++) animal("reindeer", "deer", 2.2, { x: 40 + i * 12, z: 120, r: 30 }, 2.2);
   for (let i = 0; i < 2; i++) animal("reindeer", "deer", 2.2, { x: -40, z: -130, r: 25 }, 2.2);
   for (let i = 0; i < 3; i++) animal("fox", "fox", 1.7, { x: -120, z: 100 + i * 15, r: 18 }, 3);
