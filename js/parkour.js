@@ -28,7 +28,7 @@ export function buildParkour(scene, solids, labelSprite) {
   // Старт: широка крижина біля землі й табличка
   // Старт — перша сходинка спіралі (до першої платформи легко доплигнути)
   const start = add(PK.x, 0.35, PK.z + 12, 5, 5, "rest", { start: true });
-  const sign = labelSprite("❄️ Крижана вежа: приз 500 🪙", "#58b4f0"); sign.position.set(PK.x + 3, 5.5, PK.z + 17); sign.scale.multiplyScalar(0.8); scene.add(sign);
+  const sign = labelSprite("❄️ Крижана вежа: приз 1000 🪙", "#58b4f0"); sign.position.set(PK.x + 3, 5.5, PK.z + 17); sign.scale.multiplyScalar(0.8); scene.add(sign);
   const cps = [];
   // Спіраль угору
   for (let i = 1; i <= N; i++) {
@@ -50,7 +50,7 @@ export function buildParkour(scene, solids, labelSprite) {
   gift.add(new THREE.Mesh(new THREE.BoxGeometry(0.25, 1.02, 1.25), M("#ffd43b")));
   gift.position.set(0, 0.5, 0); top.g.add(gift);
   const star = new THREE.Mesh(new THREE.OctahedronGeometry(0.5), new THREE.MeshBasicMaterial({ color: "#ffd43b" })); star.position.y = 2.2; top.g.add(star);
-  const prizeSign = labelSprite("🎁 Приз 500 🪙", "#ffd43b"); prizeSign.position.set(0, 5.5, -2); prizeSign.scale.multiplyScalar(0.8); top.g.add(prizeSign);
+  const prizeSign = labelSprite("🎁 Приз 1000 🪙", "#ffd43b"); prizeSign.position.set(0, 5.5, -2); prizeSign.scale.multiplyScalar(0.8); top.g.add(prizeSign);
 
   function flag(p) {
     const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 2.2), M("#5e6372")); pole.position.set(p.w / 2 - 0.4, 1.1, p.d / 2 - 0.4); p.g.add(pole);

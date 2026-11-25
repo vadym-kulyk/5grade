@@ -2,7 +2,6 @@
 // Також сніжки: летять дугою, розбиваються об землю; хто влучив — дізнається.
 import * as THREE from "three";
 import { buildAvatar, buildSleigh, petModel } from "./avatar.js";
-import { mergeStatic } from "./merge.js";
 
 export function buildWinter(scene, solids, labelSprite) {
   const M = (c, o = {}) => new THREE.MeshLambertMaterial({ color: c, ...o });
@@ -61,42 +60,6 @@ export function buildWinter(scene, solids, labelSprite) {
     rig.userData.deer.forEach((d, k) => (d.position.y = 0.1 + Math.sin(t * 6 + k) * 0.12));
   });
 
-  // 🛷 Гірка: з одного боку крутий підйом зі сходинками, зверху майданчик, з іншого — довгий спуск
-  const S = SLED;
-  const hg = new THREE.Group(); scene.add(hg); // нерухоме — потім зіллємо в кілька мешів
-  const hill = new THREE.Shape();
-  hill.moveTo(S.x0, 0);
-  for (let x = S.x0 + 1; x <= S.top0; x++) hill.lineTo(x, S.h(x));
-  hill.lineTo(S.top1, S.H); hill.lineTo(S.x1, 0); hill.lineTo(S.x0, 0);
-  const hillM = new THREE.Mesh(new THREE.ExtrudeGeometry(hill, { depth: S.z1 - S.z0, bevelEnabled: false }), M("#f7fbff"));
-  hillM.position.z = S.z0; hg.add(hillM);
-  // крижана доріжка посередині спуску (щоб схил було видно на білому снігу)
-  {
-    const L = S.top0 - S.x0 + 14, seg = Math.round(L), tg = new THREE.PlaneGeometry(L, 3.2, seg, 1);
-    tg.rotateX(-Math.PI / 2); tg.translate(S.x0 - 14 + L / 2, 0, (S.z0 + S.z1) / 2);
-    const pa = tg.attributes.position; for (let i = 0; i < pa.count; i++) pa.setY(i, S.h(pa.getX(i)) + 0.03);
-    tg.computeVertexNormals();
-    hg.add(new THREE.Mesh(tg, M("#bfe1f7", { emissive: "#10304a" })));
-  }
-  solids.push({ x0: S.x0, x1: S.x1, z0: S.z0, z1: S.z1, b: 0, t: S.H, h: (x) => S.h(x) });
-  // сходинки на підйомі, прапорці вздовж траси, табличка й санчата нагорі
-  const wood = M("#a0703f");
-  for (let x = S.top1 + 0.25; x < S.x1; x += 0.5) { const st = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.08, 3), wood); st.position.set(x, S.h(x) + 0.04, (S.z0 + S.z1) / 2); hg.add(st); }
-  for (let x = S.x0 + 4; x < S.top0; x += 6) for (const z of [S.z0 + 0.4, S.z1 - 0.4]) {
-    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.4), M("#5e6372")); pole.position.set(x, S.h(x) + 0.7, z); hg.add(pole);
-    const fl = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.32), new THREE.MeshBasicMaterial({ color: (x / 6) % 2 < 1 ? "#d9342b" : "#58b4f0", side: THREE.DoubleSide })); fl.position.set(x - 0.25, S.h(x) + 1.25, z); hg.add(fl);
-  }
-  // ворота слалому: проїжджай між стовпчиками (пропуск — штраф)
-  S.gates.forEach((q, i) => {
-    const col = M(i % 2 ? "#2440c2" : "#d9342b"), y = S.h(q.x);
-    for (const s of [-1, 1]) { const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 2.2), col); pole.position.set(q.x, y + 1.1, q.z + s * S.gateW); hg.add(pole); }
-    const ban = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.35, S.gateW * 2), col); ban.position.set(q.x, y + 2.05, q.z); hg.add(ban);
-  });
-  const sign = labelSprite("🛷 Гірка", "#58b4f0"); sign.position.set((S.top0 + S.top1) / 2, S.H + 3.2, S.z1 - 1); scene.add(sign);
-  for (let i = 0; i < 3; i++) { const sl = sledModel(["#c8102e", "#2440c2", "#2a8c4a"][i]); sl.position.set(S.top1 - 0.8, S.H, S.z0 + 2 + i * 1.6); sl.rotation.y = Math.PI / 2; hg.add(sl); }
-  mergeStatic(hg);
-  const sledSpot = { x: (S.top0 + S.top1) / 2, z: (S.z0 + S.z1) / 2, r: 4, floor: 0, label: "🛷 Гірка", sub: "Натисни E — з’їхати на санчатах!" };
-
   function tick(t, dt, cam) {
     const p = geo.attributes.position.array;
     for (let i = 0; i < N; i++) {
@@ -107,23 +70,8 @@ export function buildWinter(scene, solids, labelSprite) {
     snow.position.set(Math.round(cam.position.x / 10) * 10, Math.max(0, cam.position.y - hgt / 2), Math.round(cam.position.z / 10) * 10);
     for (const f of anim) f(t);
   }
-  return { tick, sledSpot };
+  return { tick };
 }
-
-// Гірка: спуск у бік −x (від x0 до top0 — траса, top0…top1 — майданчик, top1…x1 — підйом)
-export const SLED = {
-  x0: 106, top0: 138, top1: 144, x1: 152, z0: 4, z1: 16, H: 7,
-  gates: [{ x: 131, z: 8.4 }, { x: 124, z: 11.6 }, { x: 117, z: 8.4 }, { x: 111, z: 11.6 }], gateW: 1.5, // ворота: центр і півширина
-  h(x) {
-    if (x <= this.x0 || x >= this.x1) return 0;
-    if (x < this.top0) return this.H * ((x - this.x0) / (this.top0 - this.x0)) ** 1.6;
-    if (x <= this.top1) return this.H;
-    return this.H * (this.x1 - x) / (this.x1 - this.top1);
-  },
-};
-SLED.h = SLED.h.bind(SLED);
-// Місце без дерев і каміння: гірка й довгий виїзд після спуску
-export const SLED_ZONE = { x0: 76, x1: 156, z0: 0, z1: 20 };
 
 // Санчата (полозки й сидіння); полозки — на висоті 0
 export function sledModel(color = "#c8102e", form = "classic") {
