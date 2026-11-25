@@ -1,6 +1,6 @@
 // Кабінет учителя: огляд, спроби, найдовші питання, звіт учня, налаштування.
 import { h, mount, toast, pct, bar, ring, fmtDate, fmtTime, confirmBox, today, num, groupedBars, wordmark, gem, modal } from "./ui.js";
-import { watchAuth, teacherLogin, teacherRegister, teacherResetPassword, logout, isTeacher, read, write, r, remove, errText, update, ref, db } from "./fb.js";
+import { watchAuth, teacherLogin, teacherRegister, teacherResetPassword, logout, isTeacher, read, write, r, remove, errText, update, ref, db, runTransaction } from "./fb.js";
 import { TEACHER_EMAIL, CLASSES, LEVELS_PER_TOPIC, TASKS_PER_LEVEL, HARD_ICON, halloweenOn, christmasOn, winterOn } from "./config.js";
 import { SECTIONS, TOPICS, topicById, shortTitle, loadTopic, allTasks } from "../content/index.js";
 import { rankOf, topicPct, BADGES, diamondsOf } from "./game.js";
@@ -500,9 +500,33 @@ function settingsView() {
         h("thead", h("tr", ["Учень", "Клас", "PIN", "Монети", ""].map((x) => h("th", x)))),
         h("tbody", st.map(([id, u]) => {
           const pinCell = h("td.mono", h("button.btn.btn--small", { onclick: () => pinCell.replaceChildren(data.pins[id] || "—") }, "показати"));
-          return h("tr", h("td", u.name), h("td", u.cls), pinCell, h("td.mono", u.coins || 0),
-            h("td", h("button.btn.btn--small.btn--danger", { onclick: () => deleteStudent(id, u) }, "Видалити")));
+          const coinCell = h("td.mono", u.coins || 0);
+          return h("tr", h("td", u.name), h("td", u.cls), pinCell, coinCell,
+            h("td", h("div.row.gap", h("button.btn.btn--small", { onclick: () => giftCoins(id, u, coinCell) }, "🎁 Подарувати"),
+              h("button.btn.btn--small.btn--danger", { onclick: () => deleteStudent(id, u) }, "Видалити"))));
         })))),
       deletedBox()),
   ];
+}
+
+// 🎁 Учитель дарує учневі монети (атомарно, щоб не загубити покупки учня в цю ж мить)
+function giftCoins(id, u, cell) {
+  const amount = h("input.input", { type: "number", min: 1, max: 1000, value: 50 });
+  const note = h("input.input", { type: "text", maxlength: 60, placeholder: "За що? Наприклад: «За активність на уроці» (необов’язково)" });
+  const close = modal(h("div",
+    h("h2", `🎁 Монети для: ${u.name}`),
+    h("p.note", "Учень побачить повідомлення про подарунок, щойно відкриє сайт."),
+    h("label", h("b", "Скільки монет (1–1000)"), amount), h("label", h("b", "Підпис"), note),
+    h("div.row.gap", h("button.btn.btn--primary", { onclick: send }, "Подарувати"), h("button.btn", { onclick: () => close() }, "Скасувати"))));
+  async function send() {
+    const n = Math.round(+amount.value);
+    if (!(n >= 1 && n <= 1000)) return toast("Введи число від 1 до 1000", "warn");
+    try {
+      const res = await runTransaction(r(`users/${id}/coins`), (c) => (c || 0) + n);
+      await update(r(`users/${id}`), { gift: { n, note: note.value.trim().slice(0, 60), at: Date.now() } });
+      const now = res.snapshot.val();
+      if (data.users[id]) data.users[id].coins = now;
+      cell.textContent = now; close(); toast(`🎁 ${u.name}: +${n} 🪙 (тепер ${now})`, "win");
+    } catch (e) { toast("Не вдалося подарувати: " + errText(e), "warn", 5000); }
+  }
 }

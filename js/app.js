@@ -74,6 +74,14 @@ onChange(async () => {
 
 // Оновлюємо шапку (монети, звання), коли змінюються дані
 onChange(() => { const t = $("#topbar"); if (t && state.user) t.replaceWith(topbar()); });
+// 🎁 Подарунок від учителя: показуємо один раз
+onChange(() => {
+  const g = state.user?.gift; if (!g?.at || state.teacher) return;
+  let seen = 0; try { seen = +localStorage.getItem(`gift-${state.uid}`) || 0; } catch {}
+  if (g.at <= seen) return;
+  try { localStorage.setItem(`gift-${state.uid}`, g.at); } catch {}
+  toast(`🎁 Учитель подарував тобі ${g.n} 🪙${g.note ? ` — «${g.note}»` : ""}!`, "win", 7000);
+});
 // Учитель видалив профіль — виходимо
 onChange(() => { if (state.user?.deleted && !state.teacher) { toast("Цей профіль видалив учитель. Звернися до нього, якщо це помилка.", "warn", 8000); logout(); go("#/"); } });
 
