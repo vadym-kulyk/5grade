@@ -118,15 +118,56 @@ export async function awardBadges(extra) {
 
 // Зберігає результат проходження (рівень, робота над помилками, моніторингова)
 // s: { type, topic, level, start, answers:[{id, topic, q, ok, sec, fast, hint, coins}], monitoringId }
+// Спільна частина запису спроби (і для незавершеної, і для завершеної)
+function attemptRecord(s, end) {
+  const u = state.user, answered = s.answers.length;
+  const total = Math.max(answered, s.planned || 0) || answered;
+  const correct = s.answers.filter((a) => a.ok).length, fast = s.answers.filter((a) => a.fast).length;
+  return {
+    type: s.type, topic: s.topic || null, topicTitle: s.type === "monitoring" ? s.title : s.topic ? topicById[s.topic]?.title : s.title,
+    level: s.level || null, ...(s.hard ? { variant: "hard" } : {}), monitoringId: s.monitoringId || null,
+    name: u.name, cls: u.cls, start: s.start, end, durSec: Math.round((end - s.start) / 1000),
+    avgSec: answered ? Math.round((s.answers.reduce((a, b) => a + b.sec, 0) / answered) * 10) / 10 : 0,
+    correct, total, pct: total ? Math.round((correct / total) * 100) : 0,
+    fast, flagged: fast >= 3 || (answered > 0 && fast / answered >= 0.3), hints: s.answers.filter((a) => a.hint).length,
+    leaves: s.answers.reduce((n, a) => n + (a.leaves || 0), 0), awaySec: s.answers.reduce((n, a) => n + (a.away || 0), 0),
+    answers: s.answers.map((a) => ({ id: a.id, topic: a.topic, q: a.q, ok: a.ok, sec: a.sec, fast: !!a.fast, hint: !!a.hint, given: a.given ?? null, ...(a.leaves ? { leaves: a.leaves, away: a.away || 0 } : {}) })),
+  };
+}
+
+// 📝 Кожна відповідь записується одразу: незавершена спроба (unfinished) з першої відповіді,
+// номер спроби й помилки — теж одразу. Оновлення сторінки посеред рівня не стирає помилок.
+export function liveAttempt(s) {
+  const uid = state.uid, u = state.user;
+  if (!uid || !u || !s.answers.length) return;
+  const upd = {}, now = Date.now();
+  if (!s.key) {
+    s.key = push(r(`attempts/${uid}`)).key;
+    if (s.type === "level") {
+      const L = state.progress?.[s.topic]?.levels?.[s.level] || {};
+      s.attemptNo = (L.attempts || 0) + 1;
+      upd[`progress/${uid}/${s.topic}/levels/${s.level}/attempts`] = s.attemptNo;
+    } else {
+      const k = (s.type === "monitoring" ? `monitoring/${s.monitoringId}` : s.type).replace("/", "_");
+      s.attemptNo = (u.counters?.[k] || 0) + 1;
+      upd[`users/${uid}/counters/${k}`] = s.attemptNo;
+    }
+  }
+  const a = s.answers[s.answers.length - 1];
+  if (!a.ok) upd[`mistakes/${uid}/${a.topic}~${a.id}`] = { topic: a.topic, id: a.id, box: 0, due: now + 864e5, q: a.q };
+  upd[`attempts/${uid}/${s.key}`] = { ...attemptRecord(s, now), coins: 0, xp: 0, attemptNo: s.attemptNo, unfinished: true, answered: s.answers.length };
+  const write = () => update(ref(db), upd).catch(() => { s.liveFailed = true; }); // старі правила бази: друга відповідь не перезапише — тоді збережемо в кінці окремо
+  s.p = (s.p || Promise.resolve()).then(write);
+}
+
 export async function saveSession(s) {
+  if (s.p) await s.p; // дочекатися запису останньої відповіді, щоб він не перекрив підсумок
   const uid = state.uid, u = state.user;
   const end = Date.now();
   const correct = s.answers.filter((a) => a.ok).length;
   const total = s.answers.length;
   const fast = s.answers.filter((a) => a.fast).length;
   const hints = s.answers.filter((a) => a.hint).length;
-  const leaves = s.answers.reduce((n, a) => n + (a.leaves || 0), 0);
-  const awaySec = s.answers.reduce((n, a) => n + (a.away || 0), 0);
   let coinsGain = s.answers.reduce((a, b) => a + (b.coins || 0), 0);
   let xpGain = 0;
   const upd = {};
@@ -159,7 +200,7 @@ export async function saveSession(s) {
   if (s.type === "level") {
     const p = state.progress?.[s.topic] || {};
     const L = p.levels?.[s.level] || {};
-    attemptNo = (L.attempts || 0) + 1;
+    attemptNo = s.attemptNo || (L.attempts || 0) + 1;
     const okNoFast = s.answers.filter((a) => a.ok && !a.fast).length;
     // Прогрес рахує всі правильні відповіді; за поспіх лише не дають монет і досвіду
     const best = Math.max(L.best || 0, correct); // у залік — найкращий результат з обох варіантів рівня
@@ -185,7 +226,7 @@ export async function saveSession(s) {
     upd[`progress/${uid}/${s.topic}/pct`] = pctNow;
   } else {
     const prevKey = s.type === "monitoring" ? `monitoring/${s.monitoringId}` : s.type;
-    attemptNo = ((u.counters?.[prevKey.replace("/", "_")]) || 0) + 1;
+    attemptNo = s.attemptNo || ((u.counters?.[prevKey.replace("/", "_")]) || 0) + 1;
     upd[`users/${uid}/counters/${prevKey.replace("/", "_")}`] = attemptNo;
     if (s.type === "monitoring") {
       extra.monitoringPct = Math.round((correct / total) * 100);
@@ -203,19 +244,18 @@ export async function saveSession(s) {
   upd[`users/${uid}/lastSeen`] = end;
   upd[`public/${uid}/xp`] = xp;
 
-  const durSec = Math.round((end - s.start) / 1000);
-  const avgSec = total ? Math.round((s.answers.reduce((a, b) => a + b.sec, 0) / total) * 10) / 10 : 0;
-  const attempt = {
-    type: s.type, topic: s.topic || null, topicTitle: s.type === "monitoring" ? s.title : s.topic ? topicById[s.topic]?.title : s.title,
-    level: s.level || null, ...(s.hard ? { variant: "hard" } : {}), monitoringId: s.monitoringId || null,
-    name: u.name, cls: u.cls, start: s.start, end, durSec, avgSec,
-    correct, total, pct: Math.round((correct / total) * 100),
-    fast, flagged: fast >= 3 || fast / total >= 0.3, hints, leaves, awaySec, coins: coinsGain, xp: xpGain, attemptNo,
-    answers: s.answers.map((a) => ({ id: a.id, topic: a.topic, q: a.q, ok: a.ok, sec: a.sec, fast: !!a.fast, hint: !!a.hint, given: a.given ?? null, ...(a.leaves ? { leaves: a.leaves, away: a.away || 0 } : {}) })),
-  };
-  const key = push(r(`attempts/${uid}`)).key;
+  const attempt = { ...attemptRecord({ ...s, planned: 0 }, end), coins: coinsGain, xp: xpGain, attemptNo };
+  // Та сама спроба, що записувалась по відповідях (знімаємо позначку «перервано»);
+  // якщо правила бази ще старі й не дають її дописати — зберігаємо як нову
+  const key = s.key && !s.liveFailed ? s.key : push(r(`attempts/${uid}`)).key;
   upd[`attempts/${uid}/${key}`] = attempt;
-  await update(ref(db), upd);
+  try { await update(ref(db), upd); }
+  catch (e) {
+    if (key !== s.key) throw e;
+    delete upd[`attempts/${uid}/${key}`];
+    upd[`attempts/${uid}/${push(r(`attempts/${uid}`)).key}`] = attempt;
+    await update(ref(db), upd);
+  }
 
   // Почекати, доки локальний стан оновиться, і видати значки
   await new Promise((res) => setTimeout(res, 150));

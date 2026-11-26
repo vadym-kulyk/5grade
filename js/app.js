@@ -2,7 +2,7 @@
 import { h, $, mount, toast, modal, shuffle, pct, ring, bar, gem, fmtDate, fmtTime, say, today, num, groupedBars, wordmark } from "./ui.js";
 import { watchAuth, logout, studentLogin, studentRegister, changePin, isTeacher, read, write, errText } from "./fb.js";
 import { CLASSES, ECONOMY, LEVELS_PER_TOPIC, TASKS_PER_LEVEL, HARD_ICON, halloweenOn, christmasOn } from "./config.js";
-import { state, onChange, bindStudent, unbind, saveSession, loadAttempts, buyItem, owns, saveAvatar, savePreset, awardBadges, settleAvatar } from "./store.js";
+import { state, onChange, bindStudent, unbind, saveSession, liveAttempt, loadAttempts, buyItem, owns, saveAvatar, savePreset, awardBadges, settleAvatar } from "./store.js";
 import { RANKS, rankOf, BADGES, badgeById, topicPct, overall, diamondsOf } from "./game.js";
 import { SECTIONS, TOPICS, topicById, sectionById, shortTitle, loadTopic, allTasks, BOOK } from "../content/index.js";
 import { runQuiz } from "./quiz.js";
@@ -351,14 +351,17 @@ async function playLevel(id, n, hard = false) {
   const T = await loadTopic(id);
   const L = T.levels[n - 1];
   if (!L || (hard && !L.hard)) return go(`#/topic/${id}`);
+  const tasks = shuffle(hard ? L.hard : L.tasks).map((x) => ({ ...x, topic: id }));
+  const live = { type: "level", topic: id, level: n, hard, planned: tasks.length };
   runQuiz({
     title: shortTitle(t), subtitle: `Рівень ${n}: ${L.title}${hard ? ` · ${HARD_ICON} складніший` : ""}`, type: "level", rules: T.rules, theory: loadTopic,
-    tasks: shuffle(hard ? L.hard : L.tasks).map((x) => ({ ...x, topic: id })),
+    tasks,
     exit: () => go(`#/topic/${id}`),
+    onAnswer: (answers, start) => liveAttempt(Object.assign(live, { answers, start })),
     onFinish: async (answers, start) => {
       mount(h("div.loading", "Зберігаю результат…"));
       let res;
-      try { res = await saveSession({ type: "level", topic: id, level: n, hard, start, answers }); } catch (e) { toast(errText(e), "warn", 6000); return go(`#/topic/${id}`); }
+      try { res = await saveSession(Object.assign(live, { answers, start })); } catch (e) { toast(errText(e), "warn", 6000); return go(`#/topic/${id}`); }
       // 💎 Після 9–10 зі 10 у звичайному варіанті пропонуємо складніший (якщо його ще не пройдено на 10 з 10)
       const bh = state.progress?.[id]?.levels?.[n]?.bh || 0;
       const tryHard = !hard && L.hard && res.correct >= TASKS_PER_LEVEL - 1 && bh < TASKS_PER_LEVEL ? `#/play/${id}/${n}/h` : null;
@@ -460,12 +463,15 @@ async function monitoring(sid) {
     h("p.warnbox", "👀 Не виходь зі сторінки, доки пишеш роботу: учитель бачить, скільки разів і на скільки ти перемикався на інші вкладки чи застосунки."),
     h("button.btn.btn--primary.btn--big", { onclick: start }, "Почати")));
   function start() {
+    const list = shuffle(tasks).slice(0, isDiag ? 30 : 25);
+    const live = { type: "monitoring", monitoringId: sid, title, planned: list.length };
     runQuiz({
-      title, type: "monitoring", rules, tasks: shuffle(tasks).slice(0, isDiag ? 30 : 25),
+      title, type: "monitoring", rules, tasks: list,
       exit: () => go("#/"),
+      onAnswer: (answers, st) => liveAttempt(Object.assign(live, { answers, start: st })),
       onFinish: async (answers, st) => {
         mount(h("div.loading", "Зберігаю…"));
-        const res = await saveSession({ type: "monitoring", monitoringId: sid, title, start: st, answers });
+        const res = await saveSession(Object.assign(live, { answers, start: st }));
         resultPage(res, null, { back: "#/" });
       },
     });
@@ -488,12 +494,15 @@ async function topicMonitoring(wid) {
     h("p.warnbox", "👀 Не виходь зі сторінки, доки пишеш роботу: учитель бачить, скільки разів і на скільки ти перемикався на інші вкладки чи застосунки."),
     h("button.btn.btn--primary.btn--big", { onclick: start }, "Почати")));
   function start() {
+    const list = shuffle(tasks);
+    const live = { type: "monitoring", monitoringId: `t_${wid}`, topic: id, title, planned: list.length };
     runQuiz({
-      title, type: "monitoring", rules: T.rules, tasks: shuffle(tasks), noHints: true,
+      title, type: "monitoring", rules: T.rules, tasks: list, noHints: true,
       exit: () => go(`#/topic/${id}`),
+      onAnswer: (answers, st) => liveAttempt(Object.assign(live, { answers, start: st })),
       onFinish: async (answers, st) => {
         mount(h("div.loading", "Зберігаю…"));
-        const res = await saveSession({ type: "monitoring", monitoringId: `t_${wid}`, topic: id, title, start: st, answers });
+        const res = await saveSession(Object.assign(live, { answers, start: st }));
         resultPage(res, null, { back: `#/topic/${id}` });
       },
     });
@@ -661,7 +670,7 @@ async function profile() {
   const what = (a) => a.type === "level" ? `${shortTitle(topicById[a.topic] || { title: a.topicTitle })}, рівень ${a.level}` : a.topicTitle;
   attemptsBox.replaceChildren(at.length ? h("div.hist", at.slice(0, 50).map((a) => h("div.hist__row",
     h("span.hist__pct.mono", { style: { background: a.pct >= 80 ? "#e3f1cf" : a.pct >= 60 ? "#fdf2c8" : "#fbe3df" } }, a.pct + "%"),
-    h("div.hist__main", h("b", what(a)), h("span.note", `${fmtDate(a.end)} ${fmtTime(a.end)} · ${a.correct}/${a.total} · ${Math.max(1, Math.round(a.durSec / 60))} хв${a.flagged ? " · ⚡" : ""}`)),
+    h("div.hist__main", h("b", what(a)), h("span.note", `${fmtDate(a.end)} ${fmtTime(a.end)} · ${a.correct}/${a.total} · ${Math.max(1, Math.round(a.durSec / 60))} хв${a.flagged ? " · ⚡" : ""}${a.unfinished ? ` · ⚠️ перервано на ${a.answered ?? 0}-му завданні` : ""}`)),
     h("span.hist__coins.mono", `+${a.coins} 🪙`)))) : h("p.note", "Ще немає спроб."));
 }
 

@@ -101,7 +101,7 @@ export function detailView({ students, data, ready, redraw }) {
       l.list.length ? h("div.tablewrap", h("table.tbl",
         h("thead", h("tr", ["Спроба", "Дата й час", "Результат", "Тривалість", "Сер. на завдання", "Підказки", "⚡", "👀 Виходи", "Відповіді по завданнях"].map((c) => h("th", c)))),
         h("tbody", l.list.map((a, i) => h(`tr${a.flagged ? ".flag" : ""}`,
-          h("td.mono.center", `№${a.attemptNo || l.list.length - i}${a.variant === "hard" ? ` ${HARD_ICON}` : ""}`), h("td", when(a.end)),
+          h("td.mono.center", `№${a.attemptNo || l.list.length - i}${a.variant === "hard" ? ` ${HARD_ICON}` : ""}`, a.unfinished ? h("div.note", `⚠️ перервано (${a.answered ?? 0} з ${a.total})`) : null), h("td", when(a.end)),
           h("td", { style: { background: heat(a.pct) } }, h("b", `${a.correct}/${a.total}`), ` · ${a.pct}%`),
           h("td.mono", dur(a.durSec || 0)), h("td.mono", `${num(a.avgSec)} с`), h("td.mono.center", a.hints || ""), h("td.mono.center", a.fast || ""),
           h("td.mono.center", a.leaves ? `${a.leaves} · ${awayFmt(a.awaySec)}` : ""),

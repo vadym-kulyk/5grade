@@ -307,7 +307,7 @@ function attemptsView() {
   drawT();
   return view;
 }
-const what = (a) => (a.type === "level" ? `${shortTitle(topicById[a.topic] || { title: a.topicTitle })} · рівень ${a.level}` : a.topicTitle);
+const what = (a) => (a.type === "level" ? `${shortTitle(topicById[a.topic] || { title: a.topicTitle })} · рівень ${a.level}` : a.topicTitle) + (a.unfinished ? ` · ⚠️ перервано (${a.answered ?? a.answers?.length ?? 0} з ${a.total})` : "");
 
 function csv(rows) {
   const head = ["Дата", "Час", "Учень", "Клас", "Тип", "Тема", "Рівень", "Спроба", "Правильно", "Усього", "%", "Тривалість, с", "Сер. на завдання, с", "Швидких", "Позначка", "Підказок", "Монети", "Виходів зі сторінки", "Поза сторінкою, с"];

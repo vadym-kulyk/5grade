@@ -86,7 +86,7 @@ function sync() {
   header(sA, colsA);
   const rowsA = attempts.map((a) => [
     Utilities.formatDate(new Date(a.end), tz, 'dd.MM.yyyy'), Utilities.formatDate(new Date(a.end), tz, 'HH:mm'),
-    a.cls, a.name, TYPE[a.type] || a.type, a.topic ? (TOPIC_TITLE[a.topic] || a.topicTitle) : a.topicTitle, a.level || '', a.attemptNo || 1,
+    a.cls, a.name, (TYPE[a.type] || a.type) + (a.unfinished ? ' (перервано)' : ''), a.topic ? (TOPIC_TITLE[a.topic] || a.topicTitle) : a.topicTitle, a.level || '', a.attemptNo || 1,
     a.correct, a.total, (a.pct || 0) / 100, Math.round((a.durSec || 0) / 6) / 10, a.avgSec, a.fast || 0, a.flagged ? '⚡ швидко' : '', a.hints || 0, a.coins || 0, a.xp || 0,
     a.leaves || 0, Math.round((a.awaySec || 0) / 6) / 10,
     (a.answers || []).map((x, k) => x.leaves ? '№' + (k + 1) + ': ' + x.leaves + '× ' + (x.away || 0) + ' с' : '').filter(String).join('; ')]);

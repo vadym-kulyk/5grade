@@ -42,7 +42,7 @@
       ".read": "auth != null && auth.token.email === 'badim1aaa@gmail.com'",
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
-        "$attempt": { ".write": "auth != null && auth.uid === $uid && !data.exists()" }
+        "$attempt": { ".write": "auth != null && auth.uid === $uid && newData.exists() && (!data.exists() || data.child('unfinished').val() === true)" }
       }
     },
     "mistakes": {

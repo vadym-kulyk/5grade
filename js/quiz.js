@@ -269,6 +269,7 @@ export function runQuiz(opts) {
       } else fastStreak = 0;
       const earned = ok && !hintUsed ? coinsFor(t.topic, t.id, { fast, review: opts.type === "review" }) : 0;
       answers.push({ id: t.id, topic: t.topic, q: taskLabel(t), ok, sec, fast, hint: hintUsed, coins: earned, given: plain(view.value()).slice(0, 120) });
+      opts.onAnswer?.(answers, start);
       hintBtn.remove(); check.remove();
       const next = h("button.btn.btn--primary.btn--big", { onclick: goNext }, i + 1 < tasks.length ? "Далі →" : "Завершити");
       card.append(h(`div.verdict.verdict--${ok ? "ok" : "bad"}`,
