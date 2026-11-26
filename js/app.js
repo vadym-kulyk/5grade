@@ -560,6 +560,7 @@ function shop() {
       h("div.shop__ctl",
         h("div.note.center.shop__hint", "Покрути персонажа пальцем або мишкою"),
         h("button.btn.btn--primary", { onclick: async () => { if (!(await save())) toast("Образ збережено ✨", "win"); draw(); } }, "Зберегти образ"),
+        h("button.btn", { onclick: async () => { await save(); location.hash = "#/school"; } }, "🏫 У 3D-школу"),
         slots, info)),
     h("div.shop__right", tabs, grid)));
   const small = innerWidth < 820;

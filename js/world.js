@@ -98,7 +98,7 @@ export function openWorld(state) {
   mount(h("div.world",
     canvasWrap,
     h("div.world__top",
-      h("a.btn.btn--small", { href: "#/" }, "← Вийти зі школи"),
+      h("div.row.gap", h("a.btn.btn--small", { href: "#/" }, "← Вийти зі школи"), h("a.btn.btn--small", { href: "#/shop" }, "👕 Персонаж")),
       h("div.row.gap", flyBtn, padUi.btn), online),
     flyPad, jumpBtn, snowBtn, cpBtn, houseBar, timerEl,
     h("div.frost"),
