@@ -131,8 +131,17 @@ function attemptRecord(s, end) {
     correct, total, pct: total ? Math.round((correct / total) * 100) : 0,
     fast, flagged: fast >= 3 || (answered > 0 && fast / answered >= 0.3), hints: s.answers.filter((a) => a.hint).length,
     leaves: s.answers.reduce((n, a) => n + (a.leaves || 0), 0), awaySec: s.answers.reduce((n, a) => n + (a.away || 0), 0),
-    answers: s.answers.map((a) => ({ id: a.id, topic: a.topic, q: a.q, ok: a.ok, sec: a.sec, fast: !!a.fast, hint: !!a.hint, given: a.given ?? null, ...(a.leaves ? { leaves: a.leaves, away: a.away || 0 } : {}) })),
+    answers: s.answers.map((a) => ({ id: a.id, topic: a.topic, q: a.q, ok: a.ok, sec: a.sec, fast: !!a.fast, hint: !!a.hint, given: a.given ?? null, ...(a.coins ? { coins: a.coins } : {}), ...(a.leaves ? { leaves: a.leaves, away: a.away || 0 } : {}) })),
+    ...(s.order ? { order: s.order } : {}),
   };
+}
+
+// Незавершена спроба цього рівня / роботи (slot): щоб після оновлення сторінки продовжити з того ж завдання
+export async function resumable(slot) {
+  const key = state.user?.open?.[slot];
+  if (!key) return null;
+  const rec = await read(`attempts/${state.uid}/${key}`).catch(() => null);
+  return rec?.unfinished && rec.order && rec.answers?.length ? { key, rec } : null;
 }
 
 // 📝 Кожна відповідь записується одразу: незавершена спроба (unfinished) з першої відповіді,
@@ -152,6 +161,7 @@ export function liveAttempt(s) {
       s.attemptNo = (u.counters?.[k] || 0) + 1;
       upd[`users/${uid}/counters/${k}`] = s.attemptNo;
     }
+    if (s.slot) upd[`users/${uid}/open/${s.slot}`] = s.key;
   }
   const a = s.answers[s.answers.length - 1];
   if (!a.ok) upd[`mistakes/${uid}/${a.topic}~${a.id}`] = { topic: a.topic, id: a.id, box: 0, due: now + 864e5, q: a.q };
@@ -244,7 +254,8 @@ export async function saveSession(s) {
   upd[`users/${uid}/lastSeen`] = end;
   upd[`public/${uid}/xp`] = xp;
 
-  const attempt = { ...attemptRecord({ ...s, planned: 0 }, end), coins: coinsGain, xp: xpGain, attemptNo };
+  const attempt = { ...attemptRecord({ ...s, planned: 0, order: null }, end), coins: coinsGain, xp: xpGain, attemptNo };
+  if (s.slot) upd[`users/${uid}/open/${s.slot}`] = null; // спробу завершено — наступна почнеться з початку
   // Та сама спроба, що записувалась по відповідях (знімаємо позначку «перервано»);
   // якщо правила бази ще старі й не дають її дописати — зберігаємо як нову
   const key = s.key && !s.liveFailed ? s.key : push(r(`attempts/${uid}`)).key;

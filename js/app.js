@@ -2,7 +2,7 @@
 import { h, $, mount, toast, modal, shuffle, pct, ring, bar, gem, fmtDate, fmtTime, say, today, num, groupedBars, wordmark } from "./ui.js";
 import { watchAuth, logout, studentLogin, studentRegister, changePin, isTeacher, read, write, errText } from "./fb.js";
 import { CLASSES, ECONOMY, LEVELS_PER_TOPIC, TASKS_PER_LEVEL, HARD_ICON, halloweenOn, christmasOn } from "./config.js";
-import { state, onChange, bindStudent, unbind, saveSession, liveAttempt, loadAttempts, buyItem, owns, saveAvatar, savePreset, awardBadges, settleAvatar } from "./store.js";
+import { state, onChange, bindStudent, unbind, saveSession, liveAttempt, resumable, loadAttempts, buyItem, owns, saveAvatar, savePreset, awardBadges, settleAvatar } from "./store.js";
 import { RANKS, rankOf, BADGES, badgeById, topicPct, overall, diamondsOf } from "./game.js";
 import { SECTIONS, TOPICS, topicById, sectionById, shortTitle, loadTopic, allTasks, BOOK } from "../content/index.js";
 import { runQuiz } from "./quiz.js";
@@ -351,11 +351,16 @@ async function playLevel(id, n, hard = false) {
   const T = await loadTopic(id);
   const L = T.levels[n - 1];
   if (!L || (hard && !L.hard)) return go(`#/topic/${id}`);
-  const tasks = shuffle(hard ? L.hard : L.tasks).map((x) => ({ ...x, topic: id }));
-  const live = { type: "level", topic: id, level: n, hard, planned: tasks.length };
+  const pool = (hard ? L.hard : L.tasks).map((x) => ({ ...x, topic: id }));
+  const slot = `${id}_${n}_${hard ? "h" : "n"}`;
+  const old = await resumable(slot);
+  const back = old && old.rec.order.map((tid) => pool.find((x) => x.id === tid));
+  const go_on = back && back.every(Boolean); // продовжуємо, якщо завдання рівня не змінилися
+  const tasks = go_on ? back : shuffle(pool);
+  const live = { type: "level", topic: id, level: n, hard, planned: tasks.length, slot, order: tasks.map((x) => x.id), ...(go_on ? { key: old.key, attemptNo: old.rec.attemptNo } : {}) };
   runQuiz({
     title: shortTitle(t), subtitle: `Рівень ${n}: ${L.title}${hard ? ` · ${HARD_ICON} складніший` : ""}`, type: "level", rules: T.rules, theory: loadTopic,
-    tasks,
+    tasks, resume: go_on ? { answers: old.rec.answers, start: old.rec.start } : null,
     exit: () => go(`#/topic/${id}`),
     onAnswer: (answers, start) => liveAttempt(Object.assign(live, { answers, start })),
     onFinish: async (answers, start) => {
@@ -462,11 +467,15 @@ async function monitoring(sid) {
     h("p.note", "Підказки працюють, але коштують дорого. Результат побачить учитель. Пройти можна кілька разів — зберігаються всі спроби."),
     h("p.warnbox", "👀 Не виходь зі сторінки, доки пишеш роботу: учитель бачить, скільки разів і на скільки ти перемикався на інші вкладки чи застосунки."),
     h("button.btn.btn--primary.btn--big", { onclick: start }, "Почати")));
-  function start() {
-    const list = shuffle(tasks).slice(0, isDiag ? 30 : 25);
-    const live = { type: "monitoring", monitoringId: sid, title, planned: list.length };
+  if (state.user?.open?.[`mon_${sid}`]) start(); // незавершену роботу продовжуємо одразу
+  async function start() {
+    const slot = `mon_${sid}`, old = await resumable(slot);
+    const back = old && old.rec.order.map((tid) => tasks.find((x) => x.id === tid));
+    const go_on = back && back.every(Boolean);
+    const list = go_on ? back : shuffle(tasks).slice(0, isDiag ? 30 : 25);
+    const live = { type: "monitoring", monitoringId: sid, title, planned: list.length, slot, order: list.map((x) => x.id), ...(go_on ? { key: old.key, attemptNo: old.rec.attemptNo } : {}) };
     runQuiz({
-      title, type: "monitoring", rules, tasks: list,
+      title, type: "monitoring", rules, tasks: list, resume: go_on ? { answers: old.rec.answers, start: old.rec.start } : null,
       exit: () => go("#/"),
       onAnswer: (answers, st) => liveAttempt(Object.assign(live, { answers, start: st })),
       onFinish: async (answers, st) => {
@@ -493,11 +502,15 @@ async function topicMonitoring(wid) {
     h("p.note", "Підказок немає. Результат побачить учитель. Пройти можна кілька разів — зберігаються всі спроби."),
     h("p.warnbox", "👀 Не виходь зі сторінки, доки пишеш роботу: учитель бачить, скільки разів і на скільки ти перемикався на інші вкладки чи застосунки."),
     h("button.btn.btn--primary.btn--big", { onclick: start }, "Почати")));
-  function start() {
-    const list = shuffle(tasks);
-    const live = { type: "monitoring", monitoringId: `t_${wid}`, topic: id, title, planned: list.length };
+  if (state.user?.open?.[`mon_t_${wid}`]) start(); // незавершену роботу продовжуємо одразу
+  async function start() {
+    const slot = `mon_t_${wid}`, old = await resumable(slot);
+    const back = old && old.rec.order.map((tid) => tasks.find((x) => x.id === tid));
+    const go_on = back && back.every(Boolean);
+    const list = go_on ? back : shuffle(tasks);
+    const live = { type: "monitoring", monitoringId: `t_${wid}`, topic: id, title, planned: list.length, slot, order: list.map((x) => x.id), ...(go_on ? { key: old.key, attemptNo: old.rec.attemptNo } : {}) };
     runQuiz({
-      title, type: "monitoring", rules: T.rules, tasks: list, noHints: true,
+      title, type: "monitoring", rules: T.rules, tasks: list, noHints: true, resume: go_on ? { answers: old.rec.answers, start: old.rec.start } : null,
       exit: () => go(`#/topic/${id}`),
       onAnswer: (answers, st) => liveAttempt(Object.assign(live, { answers, start: st })),
       onFinish: async (answers, st) => {

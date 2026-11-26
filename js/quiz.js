@@ -170,9 +170,11 @@ R.order = (t) => {
 // opts: { title, subtitle, tasks:[{...task, topic}], type, topic, level, rules, onFinish(answers, start) , exit() }
 export function runQuiz(opts) {
   const tasks = opts.tasks;
-  const answers = [];
-  const start = Date.now();
-  let i = 0, fastStreak = 0;
+  // opts.resume: { answers, start } — продовжуємо незавершену спробу з того самого завдання
+  const answers = opts.resume ? [...opts.resume.answers] : [];
+  const start = opts.resume?.start || Date.now();
+  let i = answers.length, fastStreak = 0;
+  if (opts.resume) setTimeout(() => toast(`▶️ Продовжуємо з завдання ${i + 1} з ${tasks.length}. Попередні відповіді (і помилки) збережено.`, "info", 5000), 300);
   // Виходи зі сторінки (інша вкладка, застосунок, вимкнений екран): на якому питанні, скільки разів, на скільки
   const away = {};
   let awayAt = 0;
@@ -190,7 +192,7 @@ export function runQuiz(opts) {
   const shell = h("section.quiz", head, body);
   mount(shell);
   document.addEventListener("visibilitychange", onVis);
-  const leave = async () => { if (answers.length === 0 || (await confirmBox("Вийти? Результат цієї спроби не збережеться."))) opts.exit(); };
+  const leave = async () => { if (answers.length === 0 || (await confirmBox(opts.onAnswer ? "Вийти? Відповіді вже збережено. Коли повернешся, продовжиш із цього завдання." : "Вийти? Результат цієї спроби не збережеться."))) opts.exit(); };
 
   function drawHead() {
     head.replaceChildren(
