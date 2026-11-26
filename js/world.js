@@ -88,9 +88,10 @@ export function openWorld(state) {
   const flyPad = h("div.flypad", padBtn("⬆️", "up"), padBtn("⬇️", "down"));
   const WINTER = winterOn(state.settings);
   let jumpReq = false;
-  const jumpBtn = h("button.jumpbtn", { onpointerdown: (e) => { e.preventDefault(); jumpReq = true; } }, "⤒", h("small", "стрибок"));
+  const jumpBtn = h("button.jumpbtn", { onpointerdown: (e) => { e.preventDefault(); if (!padUi?.editing()) jumpReq = true; } }, "⤒", h("small", "стрибок"));
   const snowBtn = WINTER ? h("button.snowbtn", { onpointerdown: (e) => { e.preventDefault(); throwSnow(); } }, "❄️", h("small", "сніжка")) : null;
   const cpBtn = h("button.btn.btn--small.cpbtn", { onclick: () => toCheckpoint() }, "🚩 До контрольної точки");
+  const padUi = padLayout(stick, jumpBtn);
   const houseBar = h("div.housebar");
   const timerEl = h("div.world__timer");
   const zoomGuard = guardZoom();
@@ -98,7 +99,7 @@ export function openWorld(state) {
     canvasWrap,
     h("div.world__top",
       h("a.btn.btn--small", { href: "#/" }, "← Вийти зі школи"),
-      flyBtn, online),
+      h("div.row.gap", flyBtn, padUi.btn), online),
     flyPad, jumpBtn, snowBtn, cpBtn, houseBar, timerEl,
     h("div.frost"),
     prompt,
@@ -252,7 +253,7 @@ export function openWorld(state) {
   addEventListener("pointermove", pm); addEventListener("pointerup", pu); addEventListener("pointercancel", pu);
   // Джойстик
   const joy = { x: 0, y: 0, id: null };
-  stick.addEventListener("pointerdown", (e) => { joy.id = e.pointerId; stick.setPointerCapture(e.pointerId); moveJoy(e); });
+  stick.addEventListener("pointerdown", (e) => { if (padUi.editing()) return; joy.id = e.pointerId; stick.setPointerCapture(e.pointerId); moveJoy(e); });
   stick.addEventListener("pointermove", (e) => { if (joy.id === e.pointerId) moveJoy(e); });
   stick.addEventListener("pointerup", () => { joy.id = null; joy.x = joy.y = 0; stick.firstChild.style.transform = ""; });
   function moveJoy(e) {
@@ -260,7 +261,7 @@ export function openWorld(state) {
     let dx = (e.clientX - b.left - b.width / 2) / (b.width / 2), dy = (e.clientY - b.top - b.height / 2) / (b.height / 2);
     const l = Math.hypot(dx, dy); if (l > 1) { dx /= l; dy /= l; }
     joy.x = dx; joy.y = dy;
-    stick.firstChild.style.transform = `translate(${dx * 34}px, ${dy * 34}px)`;
+    const k = b.width * 0.28; stick.firstChild.style.transform = `translate(${dx * k}px, ${dy * k}px)`;
   }
 
   let nearDoor = null;
@@ -1053,4 +1054,51 @@ function guardZoom() {
   }
   vv?.addEventListener("resize", place); vv?.addEventListener("scroll", place); place();
   return () => { vv?.removeEventListener("resize", place); vv?.removeEventListener("scroll", place); btn.remove(); vp.content = base; };
+}
+
+// 🎮 Джойстик і кнопку стрибка можна перетягнути й збільшити; зберігаємо на цьому пристрої (localStorage)
+function padLayout(stick, jump) {
+  const KEY = "pad1", DEF = { stick: 150, jump: 88 };
+  let cfg = {}; try { cfg = JSON.parse(localStorage.getItem(KEY)) || {}; } catch {}
+  let edit = false, panel = null;
+  const els = { stick, jump };
+  function apply() {
+    for (const [k, el] of Object.entries(els)) {
+      const s = cfg[k]?.size || DEF[k];
+      el.style.width = el.style.height = `${s}px`;
+      if (k === "jump") el.style.fontSize = `${Math.round(s * 0.38)}px`;
+      const p = cfg[k]?.pos; // центр у частках екрана
+      if (p) { const x = Math.max(s / 2, Math.min(innerWidth - s / 2, p[0] * innerWidth)), y = Math.max(s / 2, Math.min(innerHeight - s / 2, p[1] * innerHeight)); Object.assign(el.style, { left: `${x - s / 2}px`, top: `${y - s / 2}px`, right: "auto", bottom: "auto" }); }
+      else Object.assign(el.style, { left: "", top: "", right: "", bottom: "" });
+    }
+  }
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(cfg)); } catch {} };
+  for (const [k, el] of Object.entries(els)) {
+    el.addEventListener("pointerdown", (e) => {
+      if (!edit) return;
+      e.preventDefault(); e.stopPropagation(); el.setPointerCapture(e.pointerId);
+      const r = el.getBoundingClientRect(), ox = e.clientX - (r.left + r.width / 2), oy = e.clientY - (r.top + r.height / 2);
+      const mv = (ev) => { (cfg[k] ||= {}).pos = [(ev.clientX - ox) / innerWidth, (ev.clientY - oy) / innerHeight]; apply(); };
+      const up = () => { el.removeEventListener("pointermove", mv); el.removeEventListener("pointerup", up); el.removeEventListener("pointercancel", up); save(); };
+      el.addEventListener("pointermove", mv); el.addEventListener("pointerup", up); el.addEventListener("pointercancel", up);
+    }, true);
+  }
+  const slider = (k, label, min, max) => h("label", label, h("input", { type: "range", min, max, value: cfg[k]?.size || DEF[k], oninput: (e) => { (cfg[k] ||= {}).size = +e.target.value; apply(); save(); } }));
+  function toggle() {
+    edit = !edit;
+    document.querySelector(".world")?.classList.toggle("padedit", edit);
+    btn.textContent = edit ? "✅ Готово" : "🎮 Кнопки";
+    panel?.remove(); panel = null;
+    if (!edit) return;
+    panel = h("div.padpanel",
+      h("b", "🎮 Перетягни джойстик і кнопку стрибка, куди тобі зручно"),
+      slider("stick", "Джойстик", 100, 240), slider("jump", "Стрибок", 60, 160),
+      h("div.row.gap", h("button.btn.btn--small.btn--primary", { onclick: toggle }, "Готово"),
+        h("button.btn.btn--small", { onclick: () => { cfg = {}; save(); apply(); toggle(); toggle(); } }, "Як було")));
+    document.querySelector(".world")?.append(panel);
+  }
+  const btn = h("button.btn.btn--small.padbtn", { onclick: toggle }, "🎮 Кнопки");
+  addEventListener("resize", apply);
+  queueMicrotask(apply);
+  return { btn, editing: () => edit };
 }

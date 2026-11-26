@@ -370,8 +370,8 @@ body.in-world { overflow: hidden; }
 .chat__log { max-height: 130px; overflow-y: auto; font-size: 14px; display: grid; gap: 2px; margin-bottom: 6px; }
 .chat__form { display: flex; gap: 6px; }
 .chat__form .input { min-height: 36px; padding: 6px 10px; }
-.stick { position: absolute; left: 24px; bottom: 24px; width: 120px; height: 120px; border-radius: 50%; background: rgba(30, 27, 38, .12); border: 2px solid rgba(30, 27, 38, .2); touch-action: none; display: none; place-items: center; }
-.stick__knob { width: 52px; height: 52px; border-radius: 50%; background: var(--lime); box-shadow: var(--shadow); pointer-events: none; }
+.stick { position: absolute; left: 24px; bottom: 24px; width: 150px; height: 150px; z-index: 6; border-radius: 50%; background: rgba(30, 27, 38, .12); border: 2px solid rgba(30, 27, 38, .2); touch-action: none; display: none; place-items: center; }
+.stick__knob { width: 44%; height: 44%; border-radius: 50%; background: var(--lime); box-shadow: var(--shadow); pointer-events: none; }
 .world__help { position: absolute; left: 12px; bottom: 12px; font-size: 13px; color: var(--muted); background: color-mix(in srgb, var(--bg) 85%, transparent); padding: 4px 10px; border-radius: 999px; }
 @media (pointer: coarse), (max-width: 700px) {
   .stick { display: grid; }
@@ -913,7 +913,7 @@ details.deleted { margin-top: 14px; } details.deleted summary { cursor: pointer;
 /* ---------- 3D-школа: стрибок, сніжки, вежа, містечко ---------- */
 .jumpbtn, .snowbtn { position: absolute; right: 16px; z-index: 6; width: 64px; height: 64px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, .92); box-shadow: 0 4px 14px rgba(0, 0, 0, .2); font-size: 26px; font-weight: 800; display: none; place-items: center; touch-action: none; }
 .jumpbtn small, .snowbtn small { display: block; font-size: 10px; font-weight: 600; margin-top: -4px; }
-.jumpbtn { bottom: 190px; } .snowbtn { bottom: 264px; }
+.jumpbtn { bottom: 190px; width: 88px; height: 88px; font-size: 34px; } .snowbtn { bottom: 290px; }
 @media (hover: none) { .jumpbtn, .snowbtn { display: grid; } }
 .snowbtn { display: grid; }
 @media (hover: hover) { .snowbtn { bottom: 140px; width: 56px; height: 56px; } }
@@ -1006,3 +1006,11 @@ details.deleted { margin-top: 14px; } details.deleted summary { cursor: pointer;
 .selfdev__h { margin-top: 22px; }
 .hero .stats:has(.stat--gem) { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 @media (max-width: 760px) { .hero .stats:has(.stat--gem) { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+/* 🎮 Налаштування кнопок у 3D-світі: перетягування й розмір (лише на сенсорних екранах) */
+.padbtn { display: none; }
+@media (pointer: coarse), (max-width: 700px) { .padbtn { display: inline-flex; } }
+.world.padedit .stick, .world.padedit .jumpbtn { outline: 3px dashed var(--violet); outline-offset: 4px; cursor: move; }
+.padpanel { position: absolute; left: 50%; top: 64px; transform: translateX(-50%); z-index: 9; display: grid; gap: 8px; width: min(360px, calc(100% - 24px)); padding: 12px 14px; border-radius: 16px; background: rgba(255, 255, 255, .96); box-shadow: 0 8px 26px rgba(0, 0, 0, .2); font-size: 14px; }
+.padpanel label { display: grid; grid-template-columns: 90px 1fr; align-items: center; gap: 8px; font-weight: 700; }
+.padpanel input[type=range] { width: 100%; accent-color: var(--lime); }
