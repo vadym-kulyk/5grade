@@ -1,5 +1,5 @@
 // Головний модуль: маршрути та сторінки учня.
-import { h, $, mount, toast, modal, shuffle, pct, ring, bar, gem, fmtDate, fmtTime, say, today, num, groupedBars, wordmark } from "./ui.js";
+import { h, $, mount, toast, modal, shuffle, pct, ring, bar, gem, fmtDate, fmtTime, today, num, groupedBars, wordmark } from "./ui.js";
 import { watchAuth, logout, studentLogin, studentRegister, changePin, isTeacher, read, write, errText } from "./fb.js";
 import { CLASSES, ECONOMY, LEVELS_PER_TOPIC, TASKS_PER_LEVEL, HARD_ICON, halloweenOn, christmasOn } from "./config.js";
 import { state, onChange, bindStudent, unbind, saveSession, liveAttempt, resumable, loadAttempts, buyItem, owns, saveAvatar, savePreset, awardBadges, settleAvatar } from "./store.js";
@@ -293,10 +293,8 @@ async function topicPage(id) {
   const mistakesHere = Object.values(state.mistakes || {}).filter((m) => m.topic === id);
 
   const theory = h("section.theory", T.theory.map((b, i) => h("article.rule.card", { id: `rule-${b.id || i}` },
-    h("div.rule__text", h("h3", b.title), h("div", { html: b.html }),
-      b.say && h("div.sayrow", b.say.map((w) => h("button.saybtn", { onclick: () => say(w) }, "🔊 ", w)))),
+    h("div.rule__text", h("h3", b.title), h("div", { html: b.html })),
     b.figure && h("figure.rule__fig", { html: b.figure }))));
-  theory.addEventListener("click", (e) => { const s = e.target.closest("[data-say]"); if (s) say(s.dataset.say); });
 
   const levels = h("div.levels", T.levels.map((L, i) => {
     const n = i + 1, st = pr.levels?.[n];

@@ -181,9 +181,6 @@ a.tcard:hover { transform: translateY(-2px); border-color: var(--lime); box-shad
 .pairs { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin: .5em 0; }
 .chip-w { padding: 3px 10px; border-radius: var(--r-sm); font-weight: 700; background: color-mix(in srgb, var(--wrong) 14%, transparent); color: var(--wrong); text-decoration: line-through; text-decoration-thickness: 2px; }
 .chip-r { padding: 3px 10px; border-radius: var(--r-sm); font-weight: 700; background: color-mix(in srgb, var(--right) 14%, transparent); color: var(--right); }
-.sayrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-.saybtn, [data-say] { cursor: pointer; }
-.saybtn { border: 1px solid var(--line); background: var(--bg); border-radius: 999px; padding: 4px 10px; font-weight: 600; }
 .levels { display: grid; gap: 10px; }
 .lvl { display: grid; grid-template-columns: 48px 1fr auto; gap: 14px; align-items: center; }
 .lvl__n { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 14px; background: var(--lime); font-family: var(--f-display); font-size: 22px; font-weight: 800; }
@@ -884,7 +881,6 @@ a.tcard:hover { transform: none; border-color: var(--ink); box-shadow: 0 0 0 1px
 .self { background: #fff; border: 1.5px dashed #e2c34a; }
 .self summary::before { content: "Перевір себе: "; }
 .self summary::after { content: " (натисни, щоб побачити відповідь)"; }
-.saybtn { border-radius: 8px; }
 .lvl__n { background: none; border: 1.5px solid var(--ink); color: var(--ink); border-radius: 10px; font-family: var(--f-display); }
 .chip-w { border-radius: 6px; } .chip-r { border-radius: 6px; }
 
